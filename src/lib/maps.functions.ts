@@ -7,7 +7,8 @@ import { createServerFn } from "@tanstack/react-start";
 //   /routes/...   -> https://routes.googleapis.com/...
 //   /maps/api/... -> https://maps.googleapis.com/maps/api/... (key as query param)
 function googleUrl(path: string, apiKey: string) {
-  if (path.startsWith("/routes/")) return `https://routes.googleapis.com${path.slice("/routes".length)}`;
+  if (path.startsWith("/routes/"))
+    return `https://routes.googleapis.com${path.slice("/routes".length)}`;
   const sep = path.includes("?") ? "&" : "?";
   return `https://maps.googleapis.com${path}${sep}key=${encodeURIComponent(apiKey)}`;
 }

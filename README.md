@@ -128,14 +128,55 @@ node scripts/seed-test-accounts.mjs --yes
 
 While running `npm run dev`, the **/login** page shows "Login as …" buttons for these. That panel is compiled out of production builds. **Never run the seed script against production.**
 
-## 10. Optional: Android app (Capacitor)
+## 10. Android app (Capacitor) & Play Store
 
+App name **AP Mart**, package ID **`com.apmart.app`** (permanent once uploaded to Play).
+
+### How it works
+The app UI is bundled **inside the APK** (static `index.html` + JS, loaded from the phone). Server work (payments, maps lookups, account actions) goes to the **deployed server** at `VITE_API_BASE_URL`. That server is the same `npm run build && npm start` that serves the website, and it allows CORS only from the app origins (`https://localhost` on Android, `capacitor://localhost` on iOS).
+
+### One-time setup
+1. **Deploy the server** (see *Deploying* below) and note its HTTPS URL.
+2. `cp .env.mobile.example .env.mobile` and set `VITE_API_BASE_URL` to that URL. The mobile build refuses to run without it.
+3. **Push:** Firebase console → add an **Android app** with package `com.apmart.app` → download `google-services.json` to `android/app/` (git-ignored).
+4. **Google sign-in:** Supabase → Authentication → URL Configuration → add `com.apmart.app://auth/callback` to *Redirect URLs*. The app opens Google sign-in in the system browser (Google blocks sign-in inside WebViews) and returns through that deep link.
+5. **Maps key:** if the browser key is restricted by HTTP referrer, add `https://localhost/*`.
+6. Install **Android Studio** (it bundles a compatible JDK; Gradle 8.14 does not run on JDK 25).
+
+### Build
 ```bash
-npm run build
-npx cap sync android
-npx cap open android      # opens Android Studio
+npm run build:mobile      # vite build --mode mobile + cap sync android
+npm run android:open      # Android Studio: run on a device/emulator
 ```
+
+### Release to Play Store
+1. Create an **upload key** once (keep it and its passwords safe, never commit them):
+   `keytool -genkeypair -v -keystore apmart-upload.jks -alias apmart -keyalg RSA -keysize 2048 -validity 10000`
+2. Add to `~/.gradle/gradle.properties` (your user home, not the repo):
+   ```
+   APMART_UPLOAD_STORE_FILE=/absolute/path/apmart-upload.jks
+   APMART_UPLOAD_STORE_PASSWORD=…
+   APMART_UPLOAD_KEY_ALIAS=apmart
+   APMART_UPLOAD_KEY_PASSWORD=…
+   ```
+3. Bump `versionCode` (and `versionName`) in `android/app/build.gradle`. **Every upload needs a higher versionCode.**
+4. `npm run android:bundle` → `android/app/build/outputs/bundle/release/app-release.aab`. Upload this **AAB** (Play does not accept APKs for new apps).
+5. Play Console: upload to **Internal testing** first. Fill in the privacy policy URL, Data safety (location, phone, address, payment info), account-deletion URL, and the location-permission declaration.
+
 `android/app/src/main/assets/public` is generated and git-ignored.
+
+> **Keep the server compatible with installed apps.** Phones keep old app versions for weeks, and they call server functions by IDs fixed at build time. When you redeploy the server, don't rename, move or change the input of a server function the app uses until most users have updated. Add a new function instead and remove the old one later.
+
+### Deploying the server
+Any Node 22 host works: it runs `npm ci && npm run build`, then `npm start` (listens on `$PORT`).
+- **Render:** `render.yaml` is included (New → Blueprint). Set the secret env vars in the dashboard. The free plan sleeps when idle; use a paid plan for production.
+- **AWS:** App Runner or Elastic Beanstalk (Node 22) with the same build/start commands, or EC2 + a reverse proxy.
+
+After deploying, set the push link base once in the SQL Editor:
+```sql
+INSERT INTO public.app_config (key, value) VALUES ('app_base_url', 'https://<your-server>')
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+```
 
 ## 11. Push notifications (OneSignal, optional)
 

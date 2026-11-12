@@ -1,0 +1,50 @@
+# Render Blueprint: deploys the AP Mart web app + API (the Node server from
+# `npm run build`). The Android app calls this server via VITE_API_BASE_URL.
+# Dashboard: New > Blueprint > pick this repo. Fill the `sync: false` values
+# in the Render dashboard (they are secrets and never live in git).
+services:
+  - type: web
+    name: ap-mart
+    runtime: node
+    region: singapore # closest Render region to India
+    plan: starter # free plan sleeps when idle -> slow first request; use a paid plan for production
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Supabase (production project)
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      # Google Maps
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: VITE_GOOGLE_MAPS_BROWSER_KEY
+        sync: false
+      # Payments
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      # Push notifications
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: VITE_FIREBASE_WEB_API_KEY
+        sync: false
+      - key: VITE_FIREBASE_PROJECT_ID
+        sync: false
+      - key: VITE_FIREBASE_APP_ID
+        sync: false
+      - key: VITE_FIREBASE_VAPID_KEY
+        sync: false

@@ -1,5 +1,37 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { User } from "@supabase/supabase-js";
+import { Capacitor } from "@capacitor/core";
+import { createClient, type User } from "@supabase/supabase-js";
+
+// Deep link the Android app registers (AndroidManifest.xml). Must also be in
+// Supabase > Authentication > URL Configuration > Redirect URLs.
+export const NATIVE_AUTH_CALLBACK = "com.apmart.app://auth/callback";
+
+let pkceClient: ReturnType<typeof createClient> | undefined;
+
+/**
+ * PKCE-mode auth client used only to start Google sign-in in the app. It shares
+ * the main client's storage + storage key, so the code verifier it saves is
+ * found by `supabase.auth.exchangeCodeForSession(code)` on /auth/callback.
+ * PKCE means the deep link only carries a one-time code that is useless without
+ * the verifier kept on this device (no tokens in a custom-scheme URL, and a
+ * code minted elsewhere cannot be exchanged here).
+ */
+function nativePkceClient() {
+  pkceClient ??= createClient(
+    import.meta.env.VITE_SUPABASE_URL as string,
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string,
+    {
+      auth: {
+        flowType: "pkce",
+        storage: localStorage,
+        persistSession: true,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    },
+  );
+  return pkceClient;
+}
 
 /**
  * Initiates Google OAuth using Supabase client.
@@ -10,6 +42,31 @@ export async function signInWithGoogle(redirectPath = "/auth/callback"): Promise
   redirected?: boolean;
 }> {
   try {
+    // Google blocks sign-in inside embedded WebViews ("disallowed_useragent"),
+    // so the app opens it in the system browser and returns via deep link.
+    if (Capacitor.isNativePlatform()) {
+      const { data, error } = await nativePkceClient().auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: NATIVE_AUTH_CALLBACK,
+          skipBrowserRedirect: true,
+          queryParams: { prompt: "select_account" },
+        },
+      });
+      if (error || !data?.url)
+        return { error: error ?? new Error("No sign-in URL"), redirected: false };
+      const { Browser } = await import("@capacitor/browser");
+      // Wait until the browser closes (signed in via deep link, or the user
+      // backed out) so the caller can stop its loading spinner.
+      let onClosed!: () => void;
+      const closed = new Promise<void>((resolve) => (onClosed = resolve));
+      const handle = await Browser.addListener("browserFinished", () => onClosed());
+      await Browser.open({ url: data.url });
+      await closed;
+      await handle.remove();
+      return { error: null, redirected: false };
+    }
+
     const normalizedPath = redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`;
     const redirectTo = `${window.location.origin}${normalizedPath}`;
 
@@ -30,7 +87,10 @@ export async function signInWithGoogle(redirectPath = "/auth/callback"): Promise
     return { error: null, redirected: true };
   } catch (err: any) {
     return {
-      error: err instanceof Error ? err : new Error(String(err) || "Failed to initialize Google sign-in"),
+      error:
+        err instanceof Error
+          ? err
+          : new Error(String(err) || "Failed to initialize Google sign-in"),
       redirected: false,
     };
   }
@@ -91,16 +151,14 @@ export async function syncUserProfile(user: User): Promise<{ error: Error | null
         return { error: updateError };
       }
     } else {
-      const { error: insertError } = await (supabase as any)
-        .from("profiles")
-        .insert({
-          id: user.id,
-          full_name: fullName,
-          avatar_url: avatarUrl || null,
-          email: email || null,
-          created_at: now,
-          updated_at: now,
-        });
+      const { error: insertError } = await (supabase as any).from("profiles").insert({
+        id: user.id,
+        full_name: fullName,
+        avatar_url: avatarUrl || null,
+        email: email || null,
+        created_at: now,
+        updated_at: now,
+      });
 
       if (insertError) {
         console.warn("[ProfileSync] Insert profile warning:", insertError.message);

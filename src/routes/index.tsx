@@ -2,7 +2,7 @@ import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Zap, Clock, Truck, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination } from "swiper/modules";
@@ -11,9 +11,12 @@ import "swiper/css/pagination";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductCard, type ProductCardData } from "@/components/ProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Hero3D } from "@/components/Hero3D";
 import { MobileHeroScene } from "@/components/MobileHeroScene";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
+
+// three.js is ~1 MB: load it only on wide screens where the 3D hero is shown.
+const Hero3D = lazy(() => import("@/components/Hero3D").then((m) => ({ default: m.Hero3D })));
 
 import offer1 from "@/assets/offer-1.jpg";
 import offer2 from "@/assets/offer-2.jpg";
@@ -37,6 +40,12 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
   const { user, roles, loading, rolesLoading } = useAuth();
+  const isMobile = useIsMobile();
+  // Decide after mount (same markup on server and first client render), and
+  // never mount WebGL on phones or in the Android app.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const showHero3D = mounted && !isMobile;
 
   const categories = useQuery({
     queryKey: ["categories"],
@@ -186,7 +195,11 @@ function HomePage() {
             transition={{ duration: 0.7, delay: 0.1 }}
             className="relative aspect-square hidden md:block"
           >
-            <Hero3D />
+            {showHero3D && (
+              <Suspense fallback={null}>
+                <Hero3D />
+              </Suspense>
+            )}
           </motion.div>
         </div>
       </section>

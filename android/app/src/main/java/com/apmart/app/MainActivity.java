@@ -1,4 +1,4 @@
-package com.flashbasket.app;
+package com.apmart.app;
 
 import com.getcapacitor.BridgeActivity;
 

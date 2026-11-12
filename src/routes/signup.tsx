@@ -84,6 +84,8 @@ function SignupPage() {
         toast.error(result.error.message || "Google sign-in failed");
         return;
       }
+      // App: the sign-in browser has closed (deep link handles success).
+      if (!result.redirected) setGoogleLoading(false);
     } catch (err: any) {
       setGoogleLoading(false);
       toast.error(err?.message || "Google sign-in failed");
