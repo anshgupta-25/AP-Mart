@@ -1,5 +1,5 @@
 // Async loader for the Google Maps JavaScript API.
-// Uses the Lovable Google Maps Platform connector browser key (referrer-restricted).
+// Uses the browser key VITE_GOOGLE_MAPS_BROWSER_KEY (restrict it by HTTP referrer).
 // Safe to call multiple times — resolves once.
 
 declare global {
@@ -11,14 +11,14 @@ declare global {
   }
 }
 
-const BROWSER_KEY = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY as string | undefined;
-const CHANNEL = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_TRACKING_ID as string | undefined;
+const BROWSER_KEY = import.meta.env.VITE_GOOGLE_MAPS_BROWSER_KEY as string | undefined;
+const CHANNEL = import.meta.env.VITE_GOOGLE_MAPS_TRACKING_ID as string | undefined;
 
 export function loadGoogleMaps(libraries: ReadonlyArray<"places" | "geometry" | "marker" | "routes"> = ["places", "geometry"]): Promise<typeof google> {
   if (typeof window === "undefined") return Promise.reject(new Error("loadGoogleMaps must be called in the browser"));
   if (window.google?.maps) return Promise.resolve(window.google);
   if (window.__gmapsPromise) return window.__gmapsPromise;
-  if (!BROWSER_KEY) return Promise.reject(new Error("Google Maps browser key missing. Reconnect the Google Maps Platform connector."));
+  if (!BROWSER_KEY) return Promise.reject(new Error("Google Maps browser key missing (set VITE_GOOGLE_MAPS_BROWSER_KEY in .env)."));
 
   window.__gmapsPromise = new Promise<typeof google>((resolve, reject) => {
     window.__gmapsInit = () => {

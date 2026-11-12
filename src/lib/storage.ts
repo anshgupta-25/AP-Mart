@@ -65,7 +65,7 @@ const SUPABASE_OBJECT_URL =
   /^https?:\/\/[a-z0-9]+\.supabase\.co\/storage\/v1\/object\/(?:sign|public|authenticated)\/([a-z0-9-]+)\/([^?#]+)/i;
 
 /**
- * Stored values may still be full Supabase Storage URLs from the old (Lovable) project, or
+ * Stored values may still be full Supabase Storage URLs from the old hosted project, or
  * signed URLs whose token expired / was redacted. Those can never load, so map them to a
  * `storage://` reference and sign them against the CURRENT project. Other URLs are untouched.
  */

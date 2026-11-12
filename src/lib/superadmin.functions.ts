@@ -34,15 +34,13 @@ export const getIntegrationStatus = createServerFn({ method: "POST" })
 
     return {
       payments: [present("RAZORPAY_KEY_ID"), present("RAZORPAY_KEY_SECRET"), present("RAZORPAY_WEBHOOK_SECRET")],
-      maps: [present("GOOGLE_MAPS_API_KEY"), present("GOOGLE_MAPS_BROWSER_KEY")],
+      maps: [present("GOOGLE_MAPS_API_KEY"), present("VITE_GOOGLE_MAPS_BROWSER_KEY")],
       messaging: [
-        present("FIREBASE_MESSAGING_API_KEY"),
+        present("FIREBASE_SERVICE_ACCOUNT_JSON"),
         present("WHATSAPP_API_TOKEN"),
         present("SMS_API_KEY"),
         present("RESEND_API_KEY"),
       ],
-
-      ai: [present("LOVABLE_API_KEY")],
       bootstrap: [present("SUPER_ADMIN_EMAIL"), present("SUPER_ADMIN_PASSWORD")],
     };
   });
