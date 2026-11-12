@@ -229,7 +229,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Remove this device's push token while still signed in (RLS needs the session).
     try {
       await disablePush(user?.id);
-    } catch {}
+    } catch {
+      // Best effort: never block sign-out on push cleanup.
+    }
     await supabase.auth.signOut();
     setRoles([]);
   };

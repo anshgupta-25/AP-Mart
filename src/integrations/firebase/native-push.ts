@@ -100,9 +100,9 @@ export async function enableNativePush(
     });
     await PushNotifications.register();
     return await result;
-  } catch (e: any) {
+  } catch (e) {
     console.warn("[push] enableNativePush error", e);
-    return { status: "error", error: String(e?.message ?? e) };
+    return { status: "error", error: e instanceof Error ? e.message : String(e) };
   }
 }
 

@@ -143,7 +143,9 @@ function RootComponent() {
         return;
       }
       // com.apmart.app://auth/callback -> host "auth", pathname "/callback"
-      if (parsed.protocol !== "com.apmart.app:" || parsed.host + parsed.pathname !== "auth/callback") return;
+      const isAuthCallback =
+        parsed.protocol === "com.apmart.app:" && parsed.host + parsed.pathname === "auth/callback";
+      if (!isAuthCallback) return;
       import("@capacitor/browser").then(({ Browser }) => Browser.close()).catch(() => {});
       const fromQuery = parsed.searchParams;
       const fromHash = new URLSearchParams(parsed.hash.replace(/^#/, ""));
