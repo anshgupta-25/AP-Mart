@@ -14,6 +14,7 @@ import apmartLogoSmall from "@/assets/apmart-logo-192.png";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Layout } from "@/components/Layout";
 import { supabase } from "@/integrations/supabase/client";
+import { Capacitor } from "@capacitor/core";
 
 
 
@@ -114,6 +115,39 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+
+  // Android app: lets CSS drop effects the WebView renders slowly (see styles.css).
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) document.documentElement.classList.add("native-app");
+  }, []);
+
+  // Android app: deep links (com.apmart.app://auth/callback#access_token=…) from the
+  // system-browser Google sign-in. Close the browser and open the path in-app.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    let remove: (() => void) | undefined;
+    (async () => {
+      const [{ App }, { Browser }] = await Promise.all([import("@capacitor/app"), import("@capacitor/browser")]);
+      const handle = await App.addListener("appUrlOpen", async ({ url }) => {
+        if (!url.startsWith("com.apmart.app://")) return;
+        Browser.close().catch(() => {});
+        // e.g. auth/callback#access_token=…&refresh_token=… (or ?error=…)
+        const rest = url.slice("com.apmart.app://".length);
+        const hashAt = rest.indexOf("#");
+        const path = "/" + (hashAt >= 0 ? rest.slice(0, hashAt) : rest);
+        const hash = new URLSearchParams(hashAt >= 0 ? rest.slice(hashAt + 1) : "");
+        const access_token = hash.get("access_token");
+        const refresh_token = hash.get("refresh_token");
+        if (access_token && refresh_token) {
+          await supabase.auth.setSession({ access_token, refresh_token });
+        }
+        // The callback page finishes sign-in (profile sync, role redirect) or shows errors.
+        router.history.push(hash.get("error") ? `${path}#${hash.toString()}` : path);
+      });
+      remove = () => handle.remove();
+    })();
+    return () => remove?.();
+  }, [router]);
 
   // Coordinate auth transitions with the router + query cache exactly once.
   // Filtered so hourly TOKEN_REFRESHED / INITIAL_SESSION events don't

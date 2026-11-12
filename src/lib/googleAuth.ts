@@ -1,4 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
+import { Capacitor } from "@capacitor/core";
+
+// Deep link the Android app registers (AndroidManifest.xml). Must also be in
+// Supabase > Authentication > URL Configuration > Redirect URLs.
+export const NATIVE_AUTH_CALLBACK = "com.apmart.app://auth/callback";
 import type { User } from "@supabase/supabase-js";
 
 /**
@@ -10,6 +15,23 @@ export async function signInWithGoogle(redirectPath = "/auth/callback"): Promise
   redirected?: boolean;
 }> {
   try {
+    // Google blocks sign-in inside embedded WebViews ("disallowed_useragent"),
+    // so the app opens it in the system browser and returns via deep link.
+    if (Capacitor.isNativePlatform()) {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: NATIVE_AUTH_CALLBACK,
+          skipBrowserRedirect: true,
+          queryParams: { prompt: "select_account" },
+        },
+      });
+      if (error || !data?.url) return { error: error ?? new Error("No sign-in URL"), redirected: false };
+      const { Browser } = await import("@capacitor/browser");
+      await Browser.open({ url: data.url });
+      return { error: null, redirected: true };
+    }
+
     const normalizedPath = redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`;
     const redirectTo = `${window.location.origin}${normalizedPath}`;
 

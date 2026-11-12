@@ -1,7 +1,9 @@
-// Firebase Cloud Messaging (web push) integration.
+// Firebase Cloud Messaging integration: web push in browsers, native FCM in the
+// Android app (see ./native-push.ts).
 // Supabase stays responsible for auth / database / storage / realtime —
 // Firebase is used ONLY to deliver push notifications.
 import { supabase } from "@/integrations/supabase/client";
+import { disableNativePush, enableNativePush, getNativeToken, isNativeApp } from "./native-push";
 
 const apiKey = import.meta.env.VITE_FIREBASE_WEB_API_KEY as string | undefined;
 const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined;
@@ -17,6 +19,8 @@ export const firebaseConfig = {
 };
 
 export function isFcmConfigured(): boolean {
+  // Native config lives in android/app/google-services.json.
+  if (isNativeApp()) return true;
   return Boolean(
     firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId && firebaseConfig.messagingSenderId && vapidKey,
   );
@@ -72,6 +76,7 @@ async function storeToken(userId: string, token: string) {
  * register the service worker, fetch the FCM token and store it in Supabase.
  */
 export async function enablePush(userId: string, opts?: { requestPermission?: boolean }): Promise<PushResult> {
+  if (isNativeApp()) return enableNativePush(userId, opts);
   try {
     if (!isFcmConfigured()) return { status: "not-configured" };
     if (typeof window === "undefined" || !("Notification" in window) || !("serviceWorker" in navigator)) {
@@ -107,6 +112,8 @@ export async function enablePush(userId: string, opts?: { requestPermission?: bo
  * Safe to call on every sign-in.
  */
 export async function refreshPushToken(userId: string): Promise<PushResult> {
+  // Native apps may prompt without a user gesture (Android 13+ runtime permission).
+  if (isNativeApp()) return enableNativePush(userId);
   if (typeof window === "undefined" || !("Notification" in window)) return { status: "unsupported" };
   if (Notification.permission !== "granted") return { status: "denied" };
   return enablePush(userId, { requestPermission: false });
@@ -114,6 +121,8 @@ export async function refreshPushToken(userId: string): Promise<PushResult> {
 
 /** Foreground messages: FCM does not show a notification itself, so we surface it. */
 export async function onForegroundMessage(handler: (payload: any) => void): Promise<() => void> {
+  // In the app, foreground notifications are already shown by the realtime listener.
+  if (isNativeApp()) return () => {};
   try {
     if (!isFcmConfigured()) return () => {};
     const { onMessage, isSupported } = await import("firebase/messaging");
@@ -127,6 +136,7 @@ export async function onForegroundMessage(handler: (payload: any) => void): Prom
 
 /** Delete the device token locally and remove it from Supabase (logout cleanup). */
 export async function disablePush(userId?: string): Promise<void> {
+  if (isNativeApp()) return disableNativePush(userId);
   try {
     if (!isFcmConfigured()) return;
     const { getToken, deleteToken, isSupported } = await import("firebase/messaging");
@@ -153,6 +163,7 @@ export async function disablePush(userId?: string): Promise<void> {
 }
 
 export async function getCurrentToken(): Promise<string | null> {
+  if (isNativeApp()) return getNativeToken();
   try {
     if (!isFcmConfigured() || Notification.permission !== "granted") return null;
     const { getToken } = await import("firebase/messaging");

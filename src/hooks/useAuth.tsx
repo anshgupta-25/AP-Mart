@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeIndianPhone } from "@/lib/phone";
+import { publicSiteOrigin } from "@/lib/api-base";
 
 export type Role = "super_admin" | "admin" | "customer" | "shopkeeper" | "delivery" | "support";
 
@@ -172,7 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/`,
+        emailRedirectTo: `${publicSiteOrigin()}/`,
         data: {
           full_name: fullName,
           phone: phone ?? null,
