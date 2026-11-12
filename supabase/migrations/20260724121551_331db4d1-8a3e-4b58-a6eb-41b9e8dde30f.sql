@@ -1,0 +1,1 @@
+ALTER FUNCTION public.plan_multi_shop_cart(uuid, double precision, double precision, text) VOLATILE;

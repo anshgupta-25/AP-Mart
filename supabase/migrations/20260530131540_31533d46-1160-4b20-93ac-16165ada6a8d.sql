@@ -1,0 +1,1 @@
+ALTER TABLE public.shops ALTER COLUMN owner_id DROP NOT NULL;

@@ -1,0 +1,1 @@
+UPDATE public.shops SET owner_id = 'ad8106ef-5d91-425c-95f4-7c2e31e5cd52' WHERE id = '11111111-1111-1111-1111-111111111111' AND owner_id IS NULL;

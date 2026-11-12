@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1788101743450,
+      "tag": "0000_fcm_push_tokens_and_dispatch",
+      "breakpoints": true
+    }
+  ]
+}

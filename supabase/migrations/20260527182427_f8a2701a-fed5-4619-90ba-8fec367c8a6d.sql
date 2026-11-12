@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.restore_order_stock(UUID) FROM authenticated;
