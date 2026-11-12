@@ -15,6 +15,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { Layout } from "@/components/Layout";
 import { supabase } from "@/integrations/supabase/client";
 import { Capacitor } from "@capacitor/core";
+import { setNativeNavigator } from "@/integrations/firebase/native-push";
 
 
 
@@ -112,6 +113,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+// The launch URL stays the same for the process lifetime: handle it once.
+let launchUrlHandled = false;
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
@@ -121,32 +125,56 @@ function RootComponent() {
     if (Capacitor.isNativePlatform()) document.documentElement.classList.add("native-app");
   }, []);
 
-  // Android app: deep links (com.apmart.app://auth/callback#access_token=…) from the
-  // system-browser Google sign-in. Close the browser and open the path in-app.
+  // Android app: deep link back from the system-browser Google sign-in
+  // (com.apmart.app://auth/callback?code=… or ?error=…). Only the PKCE code or
+  // error is forwarded; /auth/callback exchanges the code using the verifier
+  // stored on this device, so a code minted elsewhere cannot sign anyone in.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
+    let cancelled = false;
     let remove: (() => void) | undefined;
+
+    const handleUrl = (url: string | undefined) => {
+      if (!url) return;
+      let parsed: URL;
+      try {
+        parsed = new URL(url);
+      } catch {
+        return;
+      }
+      // com.apmart.app://auth/callback -> host "auth", pathname "/callback"
+      if (parsed.protocol !== "com.apmart.app:" || parsed.host + parsed.pathname !== "auth/callback") return;
+      import("@capacitor/browser").then(({ Browser }) => Browser.close()).catch(() => {});
+      const fromQuery = parsed.searchParams;
+      const fromHash = new URLSearchParams(parsed.hash.replace(/^#/, ""));
+      const forward = new URLSearchParams();
+      for (const key of ["code", "error", "error_code", "error_description"]) {
+        const v = fromQuery.get(key) ?? fromHash.get(key);
+        if (v) forward.set(key, v);
+      }
+      router.history.push(`/auth/callback?${forward.toString()}`);
+    };
+
     (async () => {
-      const [{ App }, { Browser }] = await Promise.all([import("@capacitor/app"), import("@capacitor/browser")]);
-      const handle = await App.addListener("appUrlOpen", async ({ url }) => {
-        if (!url.startsWith("com.apmart.app://")) return;
-        Browser.close().catch(() => {});
-        // e.g. auth/callback#access_token=…&refresh_token=… (or ?error=…)
-        const rest = url.slice("com.apmart.app://".length);
-        const hashAt = rest.indexOf("#");
-        const path = "/" + (hashAt >= 0 ? rest.slice(0, hashAt) : rest);
-        const hash = new URLSearchParams(hashAt >= 0 ? rest.slice(hashAt + 1) : "");
-        const access_token = hash.get("access_token");
-        const refresh_token = hash.get("refresh_token");
-        if (access_token && refresh_token) {
-          await supabase.auth.setSession({ access_token, refresh_token });
-        }
-        // The callback page finishes sign-in (profile sync, role redirect) or shows errors.
-        router.history.push(hash.get("error") ? `${path}#${hash.toString()}` : path);
-      });
+      const { App } = await import("@capacitor/app");
+      const handle = await App.addListener("appUrlOpen", ({ url }) => handleUrl(url));
+      if (cancelled) return void handle.remove();
       remove = () => handle.remove();
+      // The link may have launched the app from scratch (process killed while in the browser).
+      if (!launchUrlHandled) {
+        launchUrlHandled = true;
+        handleUrl((await App.getLaunchUrl())?.url);
+      }
     })();
-    return () => remove?.();
+
+    // Push notification taps navigate through the router (see native-push.ts).
+    setNativeNavigator((path) => router.history.push(path));
+
+    return () => {
+      cancelled = true;
+      remove?.();
+      setNativeNavigator(null);
+    };
   }, [router]);
 
   // Coordinate auth transitions with the router + query cache exactly once.

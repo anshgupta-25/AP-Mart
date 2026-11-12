@@ -3,6 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeIndianPhone } from "@/lib/phone";
 import { publicSiteOrigin } from "@/lib/api-base";
+import { disablePush } from "@/integrations/firebase/messaging";
 
 export type Role = "super_admin" | "admin" | "customer" | "shopkeeper" | "delivery" | "support";
 
@@ -224,6 +225,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     try {
       sessionStorage.removeItem(SESSION_MARKER);
+    } catch {}
+    // Remove this device's push token while still signed in (RLS needs the session).
+    try {
+      await disablePush(user?.id);
     } catch {}
     await supabase.auth.signOut();
     setRoles([]);

@@ -10,7 +10,19 @@ const corsMiddleware = createMiddleware().server(async ({ request, next }) => {
   const cors = corsHeadersFor(request.headers.get("origin"));
   if (!cors) return next();
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
-  const result = await next();
+  let result: Awaited<ReturnType<typeof next>>;
+  try {
+    result = await next();
+  } catch (error) {
+    // Errors rethrown by errorMiddleware (HTTP errors with a statusCode) would
+    // otherwise reach the app without CORS headers and surface as "Failed to fetch".
+    const e = error as { statusCode?: number; status?: number; message?: string };
+    const status = e?.statusCode ?? e?.status ?? 500;
+    return new Response(JSON.stringify({ error: e?.message ?? "Request failed" }), {
+      status,
+      headers: { ...cors, "content-type": "application/json" },
+    });
+  }
   // Copy into a fresh Response: headers on some responses are immutable.
   const res = result.response;
   const headers = new Headers(res.headers);

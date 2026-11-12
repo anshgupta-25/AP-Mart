@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { defineConfig, loadEnv } from "vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
@@ -22,7 +23,19 @@ export default defineConfig(({ mode }) => {
     );
   }
 
+  // Native push needs android/app/google-services.json; without it calling
+  // PushNotifications.register() crashes the app, so the client keeps push off.
+  const nativePush =
+    mode === "mobile" &&
+    existsSync(fileURLToPath(new URL("./android/app/google-services.json", import.meta.url)));
+  if (mode === "mobile" && !nativePush) {
+    console.warn(
+      "[mobile] android/app/google-services.json not found: push notifications disabled in this build.",
+    );
+  }
+
   return {
+    define: { "import.meta.env.VITE_NATIVE_PUSH": JSON.stringify(String(nativePush)) },
     server: {
       host: "::",
       port: 8080,

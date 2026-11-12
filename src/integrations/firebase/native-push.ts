@@ -10,10 +10,29 @@ import type { PushResult } from "./messaging";
 
 export const isNativeApp = () => Capacitor.isNativePlatform();
 
-let listenersReady = false;
-let tokenWaiter: ((r: PushResult) => void) | null = null;
+/**
+ * True only when the mobile build found android/app/google-services.json (set in
+ * vite.config.ts). Without it Firebase is not initialised natively and calling
+ * PushNotifications.register() crashes the app, so push stays off.
+ */
+export const isNativePushConfigured = () => import.meta.env.VITE_NATIVE_PUSH === "true";
+
+let listenersPromise: Promise<void> | null = null;
+let tokenWaiters: Array<(r: PushResult) => void> = [];
 let lastToken: string | null = null;
 let currentUserId: string | null = null;
+let navigate: ((path: string) => void) | null = null;
+
+/** Root component registers the router so notification taps navigate in-app. */
+export function setNativeNavigator(fn: ((path: string) => void) | null) {
+  navigate = fn;
+}
+
+function settleWaiters(result: PushResult) {
+  const waiters = tokenWaiters;
+  tokenWaiters = [];
+  for (const w of waiters) w(result);
+}
 
 async function storeToken(userId: string, token: string) {
   const { error } = await supabase.from("fcm_tokens").upsert(
@@ -29,32 +48,29 @@ async function storeToken(userId: string, token: string) {
   if (error) console.warn("[push] failed to store token", error.message);
 }
 
-// Open an in-app path without reloading the app (TanStack Router listens to popstate).
-function openInApp(url: unknown) {
-  if (typeof url !== "string" || !url.startsWith("/")) return;
-  window.history.pushState({}, "", url);
-  window.dispatchEvent(new PopStateEvent("popstate"));
-}
-
-async function ensureListeners() {
-  if (listenersReady) return;
-  listenersReady = true;
-  const { PushNotifications } = await import("@capacitor/push-notifications");
-
-  await PushNotifications.addListener("registration", async ({ value }) => {
-    lastToken = value;
-    if (currentUserId) await storeToken(currentUserId, value);
-    tokenWaiter?.({ status: "registered", token: value });
-    tokenWaiter = null;
+// Attach listeners once; concurrent callers share the same promise, and a
+// failed attempt can be retried.
+function ensureListeners(): Promise<void> {
+  listenersPromise ??= (async () => {
+    const { PushNotifications } = await import("@capacitor/push-notifications");
+    await PushNotifications.addListener("registration", async ({ value }) => {
+      lastToken = value;
+      if (currentUserId) await storeToken(currentUserId, value);
+      settleWaiters({ status: "registered", token: value });
+    });
+    await PushNotifications.addListener("registrationError", ({ error }) => {
+      settleWaiters({ status: "error", error: String(error) });
+    });
+    // User tapped a notification: open the page it points to.
+    await PushNotifications.addListener("pushNotificationActionPerformed", ({ notification }) => {
+      const url = notification.data?.url;
+      if (typeof url === "string" && url.startsWith("/")) navigate?.(url);
+    });
+  })().catch((e) => {
+    listenersPromise = null;
+    throw e;
   });
-  await PushNotifications.addListener("registrationError", ({ error }) => {
-    tokenWaiter?.({ status: "error", error: String(error) });
-    tokenWaiter = null;
-  });
-  // User tapped a notification: open the page it points to.
-  await PushNotifications.addListener("pushNotificationActionPerformed", ({ notification }) => {
-    openInApp(notification.data?.url);
-  });
+  return listenersPromise;
 }
 
 /** Ask for permission (Android 13+ shows a prompt), register with FCM and store the token. */
@@ -62,6 +78,7 @@ export async function enableNativePush(
   userId: string,
   opts?: { requestPermission?: boolean },
 ): Promise<PushResult> {
+  if (!isNativePushConfigured()) return { status: "not-configured" };
   try {
     const { PushNotifications } = await import("@capacitor/push-notifications");
     currentUserId = userId;
@@ -75,7 +92,7 @@ export async function enableNativePush(
     if (perm.receive !== "granted") return { status: "denied" };
 
     const result = new Promise<PushResult>((resolve) => {
-      tokenWaiter = resolve;
+      tokenWaiters.push(resolve);
       setTimeout(
         () => resolve({ status: "error", error: "Timed out waiting for FCM token" }),
         15_000,
@@ -89,19 +106,26 @@ export async function enableNativePush(
   }
 }
 
-/** Remove this device's token on logout. */
+/**
+ * Logout cleanup. Call while still signed in (fcm_tokens RLS needs the session).
+ * Always unregisters the device from FCM, so even if the row could not be deleted
+ * the token is dead and the server prunes it on the next send.
+ */
 export async function disableNativePush(userId?: string) {
+  currentUserId = null;
+  if (!isNativePushConfigured()) return;
   try {
-    currentUserId = null;
-    if (!lastToken) return;
-    const query = supabase.from("fcm_tokens").delete().eq("token", lastToken);
-    if (userId) await query.eq("user_id", userId);
-    else await query;
+    if (lastToken) {
+      const query = supabase.from("fcm_tokens").delete().eq("token", lastToken);
+      const { error } = userId ? await query.eq("user_id", userId) : await query;
+      if (error) console.warn("[push] failed to delete token", error.message);
+    }
     const { PushNotifications } = await import("@capacitor/push-notifications");
     await PushNotifications.unregister();
-    lastToken = null;
   } catch (e) {
     console.warn("[push] disableNativePush error", e);
+  } finally {
+    lastToken = null;
   }
 }
 

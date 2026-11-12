@@ -21,11 +21,8 @@ export function toApiUrl(input: RequestInfo | URL): RequestInfo | URL {
 }
 
 // Origins the Android/iOS app runs on. Requests from these may call the server.
-const NATIVE_APP_ORIGINS = new Set([
-  "https://localhost",
-  "capacitor://localhost",
-  "http://localhost",
-]);
+// Android uses https://localhost (Capacitor default); capacitor://localhost is iOS.
+const NATIVE_APP_ORIGINS = new Set(["https://localhost", "capacitor://localhost"]);
 
 /** CORS headers for a request coming from the native app, or null for other origins. */
 export function corsHeadersFor(origin: string | null): Record<string, string> | null {

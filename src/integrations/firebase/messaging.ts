@@ -3,7 +3,13 @@
 // Supabase stays responsible for auth / database / storage / realtime —
 // Firebase is used ONLY to deliver push notifications.
 import { supabase } from "@/integrations/supabase/client";
-import { disableNativePush, enableNativePush, getNativeToken, isNativeApp } from "./native-push";
+import {
+  disableNativePush,
+  enableNativePush,
+  getNativeToken,
+  isNativeApp,
+  isNativePushConfigured,
+} from "./native-push";
 
 const apiKey = import.meta.env.VITE_FIREBASE_WEB_API_KEY as string | undefined;
 const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined;
@@ -19,8 +25,8 @@ export const firebaseConfig = {
 };
 
 export function isFcmConfigured(): boolean {
-  // Native config lives in android/app/google-services.json.
-  if (isNativeApp()) return true;
+  // Native config lives in android/app/google-services.json (detected at build time).
+  if (isNativeApp()) return isNativePushConfigured();
   return Boolean(
     firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId && firebaseConfig.messagingSenderId && vapidKey,
   );

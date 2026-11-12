@@ -133,7 +133,7 @@ While running `npm run dev`, the **/login** page shows "Login as …" buttons fo
 App name **AP Mart**, package ID **`com.apmart.app`** (permanent once uploaded to Play).
 
 ### How it works
-The app UI is bundled **inside the APK** (static `index.html` + JS, loaded from the phone). Server work (payments, maps lookups, account actions) goes to the **deployed server** at `VITE_API_BASE_URL`. That server is the same `npm run build && npm start` that serves the website, and it allows CORS only from the app origins (`https://localhost`, `capacitor://localhost`).
+The app UI is bundled **inside the APK** (static `index.html` + JS, loaded from the phone). Server work (payments, maps lookups, account actions) goes to the **deployed server** at `VITE_API_BASE_URL`. That server is the same `npm run build && npm start` that serves the website, and it allows CORS only from the app origins (`https://localhost` on Android, `capacitor://localhost` on iOS).
 
 ### One-time setup
 1. **Deploy the server** (see *Deploying* below) and note its HTTPS URL.
@@ -164,6 +164,8 @@ npm run android:open      # Android Studio: run on a device/emulator
 5. Play Console: upload to **Internal testing** first. Fill in the privacy policy URL, Data safety (location, phone, address, payment info), account-deletion URL, and the location-permission declaration.
 
 `android/app/src/main/assets/public` is generated and git-ignored.
+
+> **Keep the server compatible with installed apps.** Phones keep old app versions for weeks, and they call server functions by IDs fixed at build time. When you redeploy the server, don't rename, move or change the input of a server function the app uses until most users have updated. Add a new function instead and remove the old one later.
 
 ### Deploying the server
 Any Node 22 host works: it runs `npm ci && npm run build`, then `npm start` (listens on `$PORT`).

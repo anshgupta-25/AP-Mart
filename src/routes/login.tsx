@@ -95,7 +95,9 @@ function LoginPage() {
         setGoogleLoading(false);
         return toast.error(result.error.message || "Google sign-in failed");
       }
-      // If redirected to Google OAuth consent page, browser navigates away
+      // Web: the page navigates away to Google. App: the sign-in browser has
+      // closed (deep link handles success), so re-enable the button.
+      if (!result.redirected) setGoogleLoading(false);
     } catch (err: any) {
       setGoogleLoading(false);
       toast.error(err?.message || "Google sign-in failed");
