@@ -21,7 +21,7 @@ After sign-in, `/dashboard` sends each user to the portal for their role. Roles 
 
 ## 1. Prerequisites
 
-- **Node.js 20+** and **npm** (a `bun.lock` also exists, but the team standard is npm)
+- **Node.js 22+** and **npm** (Capacitor 8's CLI requires Node 22)
 - **Git**
 - A **Supabase account** (free tier is fine)
 - Optional: Supabase CLI (`npm i -g supabase`), Android Studio (mobile build)
@@ -47,7 +47,16 @@ Each developer should use their **own** Supabase project (or a shared team dev p
 cp .env.example .env
 ```
 
-Fill in the five Supabase values in `.env`. Optional keys (Razorpay, Google Maps, Firebase) are listed in `.env.example`; the app runs without them but those features will be disabled.
+Fill in the five Supabase values and `SUPABASE_SERVICE_ROLE_KEY` in `.env` (server code needs it for payments and admin actions). Optional keys are listed in `.env.example`; the app runs without them but those features are disabled:
+
+| Feature | Variables | Google / provider setup |
+|---|---|---|
+| Maps, address search | `VITE_GOOGLE_MAPS_BROWSER_KEY` | Enable **Maps JavaScript API** + **Places API**; restrict the key by HTTP referrer |
+| Pin to address, ETA, routes | `GOOGLE_MAPS_API_KEY` | Enable **Geocoding API** + **Routes API** |
+| Payments | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | Razorpay dashboard (test mode for dev) |
+| Push notifications | `VITE_FIREBASE_*`, `FIREBASE_SERVICE_ACCOUNT_JSON` | Firebase console: web app config, Cloud Messaging VAPID key, service account key |
+
+All variables in `.env` (not just `VITE_*`) are loaded into the server's `process.env`: by `vite.config.ts` in dev, and by `npm start` in production. Keep server secrets in `.env` itself; `npm start` does not read `.env.local` or `.env.[mode]`.
 
 > `.env` is git-ignored. **Never commit keys.** The service-role key must never be put in a `VITE_*` variable or any frontend code.
 
@@ -93,7 +102,8 @@ Open **http://localhost:8080**. Other commands:
 | Command | Purpose |
 |---|---|
 | `npm run dev` | Dev server on port 8080 |
-| `npm run build` | Production build (`.output/`) |
+| `npm run build` | Production build (`.output/`, Node server) |
+| `npm start` | Run the production build (reads `.env`) |
 | `npm run preview` | Serve the production build locally |
 | `npm run lint` | ESLint |
 | `npx tsc --noEmit` | Type check |

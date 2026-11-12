@@ -27,22 +27,24 @@ export const getIntegrationStatus = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     await assertSuperAdmin(context as any);
 
+    // Client keys are inlined at build time, so also check the built value.
+    const buildTimeEnv: Record<string, string | undefined> = {
+      VITE_GOOGLE_MAPS_BROWSER_KEY: import.meta.env.VITE_GOOGLE_MAPS_BROWSER_KEY,
+    };
     const present = (name: string) => {
-      const v = process.env[name];
+      const v = process.env[name] || buildTimeEnv[name];
       return { name, configured: !!v && v.length > 0 };
     };
 
     return {
       payments: [present("RAZORPAY_KEY_ID"), present("RAZORPAY_KEY_SECRET"), present("RAZORPAY_WEBHOOK_SECRET")],
-      maps: [present("GOOGLE_MAPS_API_KEY"), present("GOOGLE_MAPS_BROWSER_KEY")],
+      maps: [present("GOOGLE_MAPS_API_KEY"), present("VITE_GOOGLE_MAPS_BROWSER_KEY")],
       messaging: [
-        present("FIREBASE_MESSAGING_API_KEY"),
+        present("FIREBASE_SERVICE_ACCOUNT_JSON"),
         present("WHATSAPP_API_TOKEN"),
         present("SMS_API_KEY"),
         present("RESEND_API_KEY"),
       ],
-
-      ai: [present("LOVABLE_API_KEY")],
       bootstrap: [present("SUPER_ADMIN_EMAIL"), present("SUPER_ADMIN_PASSWORD")],
     };
   });

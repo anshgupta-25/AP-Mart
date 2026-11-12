@@ -3,10 +3,10 @@
 // Firebase is used ONLY to deliver push notifications.
 import { supabase } from "@/integrations/supabase/client";
 
-const apiKey = import.meta.env.VITE_LOVABLE_CONNECTOR_FIREBASE_MESSAGING_WEB_API_KEY as string | undefined;
-const projectId = import.meta.env.VITE_LOVABLE_CONNECTOR_FIREBASE_MESSAGING_PROJECT_ID as string | undefined;
-const appId = import.meta.env.VITE_LOVABLE_CONNECTOR_FIREBASE_MESSAGING_APP_ID as string | undefined;
-const vapidKey = import.meta.env.VITE_LOVABLE_CONNECTOR_FIREBASE_MESSAGING_VAPID_KEY as string | undefined;
+const apiKey = import.meta.env.VITE_FIREBASE_WEB_API_KEY as string | undefined;
+const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined;
+const appId = import.meta.env.VITE_FIREBASE_APP_ID as string | undefined;
+const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY as string | undefined;
 
 export const firebaseConfig = {
   apiKey: apiKey ?? "",
@@ -82,7 +82,7 @@ export async function enablePush(userId: string, opts?: { requestPermission?: bo
 
     let permission = Notification.permission;
     if (permission === "default") {
-      // Browsers refuse the prompt inside a cross-origin iframe (Lovable preview).
+      // Browsers refuse the prompt inside a cross-origin iframe (e.g. an embedded preview).
       if (window.top !== window.self) return { status: "open-in-new-tab" };
       if (opts?.requestPermission === false) return { status: "denied" };
       permission = await Notification.requestPermission();

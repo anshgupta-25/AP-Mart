@@ -3,26 +3,33 @@
 // surfaces (Maps JS, Places Autocomplete) use the VITE_ browser key.
 import { createServerFn } from "@tanstack/react-start";
 
-const GATEWAY = "https://connector-gateway.lovable.dev/google_maps";
+// Maps a short path to Google's endpoint:
+//   /routes/...   -> https://routes.googleapis.com/...
+//   /maps/api/... -> https://maps.googleapis.com/maps/api/... (key as query param)
+function googleUrl(path: string, apiKey: string) {
+  if (path.startsWith("/routes/")) return `https://routes.googleapis.com${path.slice("/routes".length)}`;
+  const sep = path.includes("?") ? "&" : "?";
+  return `https://maps.googleapis.com${path}${sep}key=${encodeURIComponent(apiKey)}`;
+}
 
 type LatLng = { lat: number; lng: number };
 
-async function gatewayFetch(path: string, init: RequestInit = {}) {
+async function googleFetch(path: string, init: RequestInit = {}) {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-  const lovableKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey || !lovableKey) throw new Error("Google Maps gateway credentials missing");
-  const res = await fetch(`${GATEWAY}${path}`, {
+  if (!apiKey) throw new Error("Google Maps API key missing (set GOOGLE_MAPS_API_KEY in .env)");
+  // Routes API takes the key as a header; legacy web services take it in the URL (added by googleUrl).
+  const isRoutes = path.startsWith("/routes/");
+  const res = await fetch(googleUrl(path, apiKey), {
     ...init,
     headers: {
-      "Authorization": `Bearer ${lovableKey}`,
-      "X-Connection-Api-Key": apiKey,
+      ...(isRoutes ? { "X-Goog-Api-Key": apiKey } : {}),
       "Content-Type": "application/json",
       ...(init.headers ?? {}),
     },
   });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(`Google Maps gateway ${res.status}: ${body.slice(0, 200)}`);
+    throw new Error(`Google Maps ${res.status}: ${body.slice(0, 200)}`);
   }
   return res.json();
 }
@@ -53,7 +60,7 @@ export const computeRoute = createServerFn({ method: "POST" })
       routingPreference: "TRAFFIC_AWARE",
       polylineEncoding: "ENCODED_POLYLINE",
     };
-    const json = await gatewayFetch("/routes/directions/v2:computeRoutes", {
+    const json = await googleFetch("/routes/directions/v2:computeRoutes", {
       method: "POST",
       headers: { "X-Goog-FieldMask": "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline" },
       body: JSON.stringify(body),
@@ -92,7 +99,7 @@ export const rankShopsByEta = createServerFn({ method: "POST" })
       travelMode: "TWO_WHEELER",
       routingPreference: "TRAFFIC_AWARE",
     };
-    const json = await gatewayFetch("/routes/distanceMatrix/v2:computeRouteMatrix", {
+    const json = await googleFetch("/routes/distanceMatrix/v2:computeRouteMatrix", {
       method: "POST",
       headers: { "X-Goog-FieldMask": "originIndex,destinationIndex,duration,distanceMeters,condition" },
       body: JSON.stringify(body),
@@ -111,7 +118,7 @@ export const rankShopsByEta = createServerFn({ method: "POST" })
 
 /**
  * Reverse geocode a coordinate into a readable address + PIN code.
- * Uses the server-side key through the connector gateway.
+ * Uses the server-side key.
  */
 export const reverseGeocode = createServerFn({ method: "POST" })
   .inputValidator((input: { lat: number; lng: number }) => {
@@ -119,9 +126,13 @@ export const reverseGeocode = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data }) => {
-    const json = await gatewayFetch(
+    const json = await googleFetch(
       `/maps/api/geocode/json?latlng=${data.lat},${data.lng}&result_type=street_address|premise|sublocality|locality|postal_code`,
     );
+    // Geocoding reports errors in `status` with HTTP 200.
+    if (json?.status && json.status !== "OK" && json.status !== "ZERO_RESULTS") {
+      throw new Error(`Google Geocoding ${json.status}: ${json.error_message ?? "request failed"}`);
+    }
     const result = json?.results?.[0];
     if (!result) return { formatted: null, pincode: null, city: null, state: null, area: null };
     const comps: Array<{ long_name: string; short_name: string; types: string[] }> = result.address_components ?? [];
