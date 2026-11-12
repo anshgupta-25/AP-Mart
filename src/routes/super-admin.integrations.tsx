@@ -22,7 +22,6 @@ const SECTIONS: Array<{ key: string; title: string; note: string }> = [
   { key: "payments", title: "Payments — Razorpay", note: "Key ID, secret and webhook signing secret." },
   { key: "maps", title: "Google Maps Platform", note: "Server key for routing/ETA, browser key for maps." },
   { key: "messaging", title: "Notifications — Push, WhatsApp, SMS, Email", note: "Firebase Cloud Messaging, WhatsApp, SMS and email providers." },
-  { key: "ai", title: "AI provider", note: "Powers AI search and support drafts." },
   { key: "bootstrap", title: "Super Admin provisioning", note: "Credentials used once to create the platform owner." },
 ];
 

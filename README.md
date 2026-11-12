@@ -56,7 +56,7 @@ Fill in the five Supabase values and `SUPABASE_SERVICE_ROLE_KEY` in `.env` (serv
 | Payments | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | Razorpay dashboard (test mode for dev) |
 | Push notifications | `VITE_FIREBASE_*`, `FIREBASE_SERVICE_ACCOUNT_JSON` | Firebase console: web app config, Cloud Messaging VAPID key, service account key |
 
-All variables in `.env` (not just `VITE_*`) are loaded into the server's `process.env` by `vite.config.ts` in dev, and by `npm start` in production.
+All variables in `.env` (not just `VITE_*`) are loaded into the server's `process.env`: by `vite.config.ts` in dev, and by `npm start` in production. Keep server secrets in `.env` itself; `npm start` does not read `.env.local` or `.env.[mode]`.
 
 > `.env` is git-ignored. **Never commit keys.** The service-role key must never be put in a `VITE_*` variable or any frontend code.
 

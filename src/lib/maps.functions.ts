@@ -17,10 +17,12 @@ type LatLng = { lat: number; lng: number };
 async function googleFetch(path: string, init: RequestInit = {}) {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   if (!apiKey) throw new Error("Google Maps API key missing (set GOOGLE_MAPS_API_KEY in .env)");
+  // Routes API takes the key as a header; legacy web services take it in the URL (added by googleUrl).
+  const isRoutes = path.startsWith("/routes/");
   const res = await fetch(googleUrl(path, apiKey), {
     ...init,
     headers: {
-      "X-Goog-Api-Key": apiKey,
+      ...(isRoutes ? { "X-Goog-Api-Key": apiKey } : {}),
       "Content-Type": "application/json",
       ...(init.headers ?? {}),
     },
@@ -127,6 +129,10 @@ export const reverseGeocode = createServerFn({ method: "POST" })
     const json = await googleFetch(
       `/maps/api/geocode/json?latlng=${data.lat},${data.lng}&result_type=street_address|premise|sublocality|locality|postal_code`,
     );
+    // Geocoding reports errors in `status` with HTTP 200.
+    if (json?.status && json.status !== "OK" && json.status !== "ZERO_RESULTS") {
+      throw new Error(`Google Geocoding ${json.status}: ${json.error_message ?? "request failed"}`);
+    }
     const result = json?.results?.[0];
     if (!result) return { formatted: null, pincode: null, city: null, state: null, area: null };
     const comps: Array<{ long_name: string; short_name: string; types: string[] }> = result.address_components ?? [];

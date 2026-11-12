@@ -27,8 +27,12 @@ export const getIntegrationStatus = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     await assertSuperAdmin(context as any);
 
+    // Client keys are inlined at build time, so also check the built value.
+    const buildTimeEnv: Record<string, string | undefined> = {
+      VITE_GOOGLE_MAPS_BROWSER_KEY: import.meta.env.VITE_GOOGLE_MAPS_BROWSER_KEY,
+    };
     const present = (name: string) => {
-      const v = process.env[name];
+      const v = process.env[name] || buildTimeEnv[name];
       return { name, configured: !!v && v.length > 0 };
     };
 
