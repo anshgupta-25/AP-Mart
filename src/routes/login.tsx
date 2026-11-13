@@ -7,7 +7,7 @@ import { Eye, EyeOff, Lock, Mail, Loader2, ShieldCheck } from "lucide-react";
 import { useAuth, homeForRoles } from "@/hooks/useAuth";
 import { PhoneOtpForm } from "@/components/PhoneOtpForm";
 import { supabase } from "@/integrations/supabase/client";
-import { signInWithGoogle } from "@/lib/googleAuth";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { toast } from "sonner";
 import { describeAuthError } from "@/lib/authErrors";
 import { LogoMark } from "@/components/Logo";
@@ -34,7 +34,6 @@ function LoginPage() {
   const [show, setShow] = useState(false);
   const [remember, setRemember] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
 
   const { signIn } = useAuth();
   const navigate = useNavigate();
@@ -84,25 +83,6 @@ function LoginPage() {
     toast.success("Welcome back");
   }
 
-  async function handleGoogle() {
-    setGoogleLoading(true);
-    try {
-      if (next) {
-        sessionStorage.setItem("flashbasket.auth.next", next);
-      }
-      const result = await signInWithGoogle("/auth/callback");
-      if (result.error) {
-        setGoogleLoading(false);
-        return toast.error(result.error.message || "Google sign-in failed");
-      }
-      // Web: the page navigates away to Google. App: the sign-in browser has
-      // closed (deep link handles success), so re-enable the button.
-      if (!result.redirected) setGoogleLoading(false);
-    } catch (err: any) {
-      setGoogleLoading(false);
-      toast.error(err?.message || "Google sign-in failed");
-    }
-  }
 
   async function handleForgot() {
     const target = email || window.prompt("Enter your email to receive a reset link") || "";
@@ -221,24 +201,7 @@ function LoginPage() {
             <div className="relative flex justify-center"><span className="bg-card px-3 text-xs text-muted-foreground">or</span></div>
           </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleGoogle}
-            disabled={submitting || googleLoading}
-            className="w-full h-11 rounded-xl font-bold gap-2"
-          >
-            {googleLoading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                Connecting to Google…
-              </>
-            ) : (
-              <>
-                <GoogleIcon /> Continue with Google
-              </>
-            )}
-          </Button>
+          <GoogleSignInButton next={next} />
 
           <p className="mt-5 text-center text-xs text-muted-foreground">
             Don't have an account?{" "}
@@ -251,10 +214,3 @@ function LoginPage() {
   );
 }
 
-function GoogleIcon() {
-  return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden>
-      <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.24 1.4-1.7 4.1-5.5 4.1-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.7 3.4 14.6 2.4 12 2.4 6.7 2.4 2.5 6.6 2.5 12s4.2 9.6 9.5 9.6c5.5 0 9.1-3.8 9.1-9.3 0-.6-.1-1.1-.2-1.6H12z" />
-    </svg>
-  );
-}

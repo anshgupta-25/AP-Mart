@@ -75,7 +75,6 @@ import { Route as CustomerApplyRouteImport } from './routes/customer.apply'
 import { Route as CustomerAddressSetupRouteImport } from './routes/customer.address-setup'
 import { Route as CustomerAboutRouteImport } from './routes/customer.about'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
-import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminSupportRouteImport } from './routes/admin.support'
 import { Route as AdminShopsRouteImport } from './routes/admin.shops'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
@@ -440,11 +439,6 @@ const CategorySlugRoute = CategorySlugRouteImport.update({
   path: '/category/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthCallbackRoute = AuthCallbackRouteImport.update({
-  id: '/callback',
-  path: '/callback',
-  getParentRoute: () => AuthRoute,
-} as any)
 const AdminSupportRoute = AdminSupportRouteImport.update({
   id: '/support',
   path: '/support',
@@ -613,7 +607,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRoute
-  '/auth': typeof AuthRouteWithChildren
+  '/auth': typeof AuthRoute
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/customer': typeof CustomerRouteWithChildren
@@ -649,7 +643,6 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/shops': typeof AdminShopsRoute
   '/admin/support': typeof AdminSupportRoute
-  '/auth/callback': typeof AuthCallbackRoute
   '/category/$slug': typeof CategorySlugRoute
   '/customer/about': typeof CustomerAboutRoute
   '/customer/address-setup': typeof CustomerAddressSetupRoute
@@ -714,7 +707,7 @@ export interface FileRoutesByTo {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRoute
-  '/auth': typeof AuthRouteWithChildren
+  '/auth': typeof AuthRoute
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/customer': typeof CustomerRouteWithChildren
@@ -750,7 +743,6 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/shops': typeof AdminShopsRoute
   '/admin/support': typeof AdminSupportRoute
-  '/auth/callback': typeof AuthCallbackRoute
   '/category/$slug': typeof CategorySlugRoute
   '/customer/about': typeof CustomerAboutRoute
   '/customer/address-setup': typeof CustomerAddressSetupRoute
@@ -816,7 +808,7 @@ export interface FileRoutesById {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRoute
-  '/auth': typeof AuthRouteWithChildren
+  '/auth': typeof AuthRoute
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/customer': typeof CustomerRouteWithChildren
@@ -852,7 +844,6 @@ export interface FileRoutesById {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/shops': typeof AdminShopsRoute
   '/admin/support': typeof AdminSupportRoute
-  '/auth/callback': typeof AuthCallbackRoute
   '/category/$slug': typeof CategorySlugRoute
   '/customer/about': typeof CustomerAboutRoute
   '/customer/address-setup': typeof CustomerAddressSetupRoute
@@ -955,7 +946,6 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/shops'
     | '/admin/support'
-    | '/auth/callback'
     | '/category/$slug'
     | '/customer/about'
     | '/customer/address-setup'
@@ -1056,7 +1046,6 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/shops'
     | '/admin/support'
-    | '/auth/callback'
     | '/category/$slug'
     | '/customer/about'
     | '/customer/address-setup'
@@ -1157,7 +1146,6 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/shops'
     | '/admin/support'
-    | '/auth/callback'
     | '/category/$slug'
     | '/customer/about'
     | '/customer/address-setup'
@@ -1223,7 +1211,7 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRouteWithChildren
   AppRoute: typeof AppRoute
-  AuthRoute: typeof AuthRouteWithChildren
+  AuthRoute: typeof AuthRoute
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRoute
   CustomerRoute: typeof CustomerRouteWithChildren
@@ -1713,13 +1701,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CategorySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/callback': {
-      id: '/auth/callback'
-      path: '/callback'
-      fullPath: '/auth/callback'
-      preLoaderRoute: typeof AuthCallbackRouteImport
-      parentRoute: typeof AuthRoute
-    }
     '/admin/support': {
       id: '/admin/support'
       path: '/support'
@@ -2007,16 +1988,6 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
-interface AuthRouteChildren {
-  AuthCallbackRoute: typeof AuthCallbackRoute
-}
-
-const AuthRouteChildren: AuthRouteChildren = {
-  AuthCallbackRoute: AuthCallbackRoute,
-}
-
-const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
-
 interface CustomerRouteChildren {
   CustomerAboutRoute: typeof CustomerAboutRoute
   CustomerAddressSetupRoute: typeof CustomerAddressSetupRoute
@@ -2179,7 +2150,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRoute: AccountRoute,
   AdminRoute: AdminRouteWithChildren,
   AppRoute: AppRoute,
-  AuthRoute: AuthRouteWithChildren,
+  AuthRoute: AuthRoute,
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRoute,
   CustomerRoute: CustomerRouteWithChildren,

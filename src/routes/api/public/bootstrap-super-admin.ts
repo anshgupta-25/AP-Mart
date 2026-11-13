@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { bootstrapSuperAdminImpl } from "@/lib/superadmin.functions";
 
 /**
  * One-time Super Admin provisioning endpoint.
@@ -13,6 +12,7 @@ export const Route = createFileRoute("/api/public/bootstrap-super-admin")({
   server: {
     handlers: {
       POST: async () => {
+        const { bootstrapSuperAdminImpl } = await import("@/lib/superadmin.server");
         const result = await bootstrapSuperAdminImpl();
         return Response.json(result, { status: result.ok ? 200 : 400 });
       },

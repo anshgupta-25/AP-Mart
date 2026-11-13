@@ -113,9 +113,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-// The launch URL stays the same for the process lifetime: handle it once.
-let launchUrlHandled = false;
-
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
@@ -125,56 +122,13 @@ function RootComponent() {
     if (Capacitor.isNativePlatform()) document.documentElement.classList.add("native-app");
   }, []);
 
-  // Android app: deep link back from the system-browser Google sign-in
-  // (com.apmart.app://auth/callback?code=… or ?error=…). Only the PKCE code or
-  // error is forwarded; /auth/callback exchanges the code using the verifier
-  // stored on this device, so a code minted elsewhere cannot sign anyone in.
+  // Android app: push notification taps navigate through the router.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
-    let cancelled = false;
-    let remove: (() => void) | undefined;
-
-    const handleUrl = (url: string | undefined) => {
-      if (!url) return;
-      let parsed: URL;
-      try {
-        parsed = new URL(url);
-      } catch {
-        return;
-      }
-      // com.apmart.app://auth/callback -> host "auth", pathname "/callback"
-      const isAuthCallback =
-        parsed.protocol === "com.apmart.app:" && parsed.host + parsed.pathname === "auth/callback";
-      if (!isAuthCallback) return;
-      import("@capacitor/browser").then(({ Browser }) => Browser.close()).catch(() => {});
-      const fromQuery = parsed.searchParams;
-      const fromHash = new URLSearchParams(parsed.hash.replace(/^#/, ""));
-      const forward = new URLSearchParams();
-      for (const key of ["code", "error", "error_code", "error_description"]) {
-        const v = fromQuery.get(key) ?? fromHash.get(key);
-        if (v) forward.set(key, v);
-      }
-      router.history.push(`/auth/callback?${forward.toString()}`);
-    };
-
-    (async () => {
-      const { App } = await import("@capacitor/app");
-      const handle = await App.addListener("appUrlOpen", ({ url }) => handleUrl(url));
-      if (cancelled) return void handle.remove();
-      remove = () => handle.remove();
-      // The link may have launched the app from scratch (process killed while in the browser).
-      if (!launchUrlHandled) {
-        launchUrlHandled = true;
-        handleUrl((await App.getLaunchUrl())?.url);
-      }
-    })();
-
     // Push notification taps navigate through the router (see native-push.ts).
     setNativeNavigator((path) => router.history.push(path));
 
     return () => {
-      cancelled = true;
-      remove?.();
       setNativeNavigator(null);
     };
   }, [router]);

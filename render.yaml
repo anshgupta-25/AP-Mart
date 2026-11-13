@@ -25,6 +25,9 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
+      # Google Sign-In (public OAuth client ID)
+      - key: VITE_GOOGLE_CLIENT_ID
+        sync: false
       # Google Maps
       - key: GOOGLE_MAPS_API_KEY
         sync: false

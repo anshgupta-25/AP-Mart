@@ -89,7 +89,7 @@ In **Authentication**:
 - **URL Configuration** → Site URL: your site URL (`http://localhost:8080` for local). Redirect URLs: add `http://localhost:8080/**` (and your deployed URL).
 - **Providers → Email**: enabled, *Confirm email* on.
 - **Emails → SMTP Settings**: set up a **custom SMTP provider** (Resend, Brevo, SendGrid, …). The built-in Supabase mailer only delivers to your own team members and is heavily rate-limited — without custom SMTP, sign-ups fail with *"Error sending confirmation email"*. Use a verified sender address.
-- **Providers → Google** (optional): create an OAuth client in Google Cloud Console and add `https://<your-project-ref>.supabase.co/auth/v1/callback` as an authorized redirect URI.
+- **Google sign-in does not use the Supabase Google provider.** It uses Google Identity Services directly: create a Web OAuth client in Google Cloud Console, add your site origins (e.g. `http://localhost:8080`) under *Authorized JavaScript origins*, and set `VITE_GOOGLE_CLIENT_ID`. No client secret is needed.
 
 ## 8. Run the app
 
@@ -139,7 +139,7 @@ The app UI is bundled **inside the APK** (static `index.html` + JS, loaded from 
 1. **Deploy the server** (see *Deploying* below) and note its HTTPS URL.
 2. `cp .env.mobile.example .env.mobile` and set `VITE_API_BASE_URL` to that URL. The mobile build refuses to run without it.
 3. **Push:** Firebase console → add an **Android app** with package `com.apmart.app` → download `google-services.json` to `android/app/` (git-ignored).
-4. **Google sign-in:** Supabase → Authentication → URL Configuration → add `com.apmart.app://auth/callback` to *Redirect URLs*. The app opens Google sign-in in the system browser (Google blocks sign-in inside WebViews) and returns through that deep link.
+4. **Google sign-in:** uses Google Identity Services in the WebView; `https://localhost` must be accepted as an authorized JavaScript origin for the OAuth client, otherwise use email/password in the app.
 5. **Maps key:** if the browser key is restricted by HTTP referrer, add `https://localhost/*`.
 6. Install **Android Studio** (it bundles a compatible JDK; Gradle 8.14 does not run on JDK 25).
 
@@ -219,7 +219,7 @@ android/           Capacitor Android project
 | Problem | Fix |
 |---|---|
 | "Error sending confirmation email" on sign-up | Configure custom SMTP (step 7). |
-| Google sign-in fails | Add the Supabase callback URL in Google Cloud and your site to Supabase Redirect URLs (step 7). |
+| Google sign-in fails | Set `VITE_GOOGLE_CLIENT_ID` and add your site origin to the OAuth client's *Authorized JavaScript origins* in Google Cloud. |
 | Product images show a cart icon | The image file isn't in this project's Storage bucket (see step 11), or the bucket policy isn't applied. |
 | "Missing Supabase environment variable(s)" | `.env` missing or not filled; restart `npm run dev`. |
 | Products/categories empty | Run `02_core_catalog_data.sql` and make sure the customer has a saved address in a serviceable PIN code. |
