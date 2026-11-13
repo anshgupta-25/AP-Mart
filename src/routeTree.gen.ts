@@ -107,6 +107,7 @@ import { Route as CustomerOrdersIdRouteImport } from './routes/customer.orders.$
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
 import { Route as ApiPublicFcmDispatchRouteImport } from './routes/api/public/fcm-dispatch'
 import { Route as ApiPublicBootstrapSuperAdminRouteImport } from './routes/api/public/bootstrap-super-admin'
+import { Route as ApiPublicAuthGoogleRouteImport } from './routes/api/public/auth-google'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 
 const WishlistRoute = WishlistRouteImport.update({
@@ -602,6 +603,11 @@ const ApiPublicBootstrapSuperAdminRoute =
     path: '/api/public/bootstrap-super-admin',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAuthGoogleRoute = ApiPublicAuthGoogleRouteImport.update({
+  id: '/api/public/auth-google',
+  path: '/api/public/auth-google',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminOrdersIdRoute = AdminOrdersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -697,6 +703,7 @@ export interface FileRoutesByFullPath {
   '/support/tickets': typeof SupportTicketsRouteWithChildren
   '/orders/': typeof OrdersIndexRoute
   '/admin/orders/$id': typeof AdminOrdersIdRoute
+  '/api/public/auth-google': typeof ApiPublicAuthGoogleRoute
   '/api/public/bootstrap-super-admin': typeof ApiPublicBootstrapSuperAdminRoute
   '/api/public/fcm-dispatch': typeof ApiPublicFcmDispatchRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
@@ -798,6 +805,7 @@ export interface FileRoutesByTo {
   '/support/tickets': typeof SupportTicketsRouteWithChildren
   '/orders': typeof OrdersIndexRoute
   '/admin/orders/$id': typeof AdminOrdersIdRoute
+  '/api/public/auth-google': typeof ApiPublicAuthGoogleRoute
   '/api/public/bootstrap-super-admin': typeof ApiPublicBootstrapSuperAdminRoute
   '/api/public/fcm-dispatch': typeof ApiPublicFcmDispatchRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
@@ -900,6 +908,7 @@ export interface FileRoutesById {
   '/support/tickets': typeof SupportTicketsRouteWithChildren
   '/orders/': typeof OrdersIndexRoute
   '/admin/orders/$id': typeof AdminOrdersIdRoute
+  '/api/public/auth-google': typeof ApiPublicAuthGoogleRoute
   '/api/public/bootstrap-super-admin': typeof ApiPublicBootstrapSuperAdminRoute
   '/api/public/fcm-dispatch': typeof ApiPublicFcmDispatchRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
@@ -1003,6 +1012,7 @@ export interface FileRouteTypes {
     | '/support/tickets'
     | '/orders/'
     | '/admin/orders/$id'
+    | '/api/public/auth-google'
     | '/api/public/bootstrap-super-admin'
     | '/api/public/fcm-dispatch'
     | '/api/public/razorpay-webhook'
@@ -1104,6 +1114,7 @@ export interface FileRouteTypes {
     | '/support/tickets'
     | '/orders'
     | '/admin/orders/$id'
+    | '/api/public/auth-google'
     | '/api/public/bootstrap-super-admin'
     | '/api/public/fcm-dispatch'
     | '/api/public/razorpay-webhook'
@@ -1205,6 +1216,7 @@ export interface FileRouteTypes {
     | '/support/tickets'
     | '/orders/'
     | '/admin/orders/$id'
+    | '/api/public/auth-google'
     | '/api/public/bootstrap-super-admin'
     | '/api/public/fcm-dispatch'
     | '/api/public/razorpay-webhook'
@@ -1244,6 +1256,7 @@ export interface RootRouteChildren {
   ProductSlugRoute: typeof ProductSlugRoute
   SuperadminDashboardRoute: typeof SuperadminDashboardRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
+  ApiPublicAuthGoogleRoute: typeof ApiPublicAuthGoogleRoute
   ApiPublicBootstrapSuperAdminRoute: typeof ApiPublicBootstrapSuperAdminRoute
   ApiPublicFcmDispatchRoute: typeof ApiPublicFcmDispatchRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
@@ -1937,6 +1950,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBootstrapSuperAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/auth-google': {
+      id: '/api/public/auth-google'
+      path: '/api/public/auth-google'
+      fullPath: '/api/public/auth-google'
+      preLoaderRoute: typeof ApiPublicAuthGoogleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/orders/$id': {
       id: '/admin/orders/$id'
       path: '/$id'
@@ -2200,6 +2220,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProductSlugRoute: ProductSlugRoute,
   SuperadminDashboardRoute: SuperadminDashboardRoute,
   OrdersIndexRoute: OrdersIndexRoute,
+  ApiPublicAuthGoogleRoute: ApiPublicAuthGoogleRoute,
   ApiPublicBootstrapSuperAdminRoute: ApiPublicBootstrapSuperAdminRoute,
   ApiPublicFcmDispatchRoute: ApiPublicFcmDispatchRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,

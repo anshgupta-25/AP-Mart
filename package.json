@@ -17,6 +17,7 @@
     "android:bundle": "npm run build:mobile && cd android && ./gradlew bundleRelease"
   },
   "dependencies": {
+    "jose": "^6.2.17",
     "@capacitor/android": "^8.5.2",
     "@capacitor/app": "^8.1.2",
     "@capacitor/browser": "^8.0.5",
