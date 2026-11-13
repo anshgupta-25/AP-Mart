@@ -139,7 +139,7 @@ CREATE OR REPLACE FUNCTION public.update_ticket_status(_ticket_id uuid, _status 
 AS $function$
 DECLARE
   _uid uuid := auth.uid();
-  _cur ticket_status;
+  _cur text;
   _resolver uuid;
   _assignee uuid;
   _creator uuid;
@@ -154,7 +154,7 @@ BEGIN
 
   -- Lock the row so two people resolving at the same moment are serialised:
   -- the second one sees the first one's result.
-  SELECT status, resolved_by, assigned_to
+  SELECT status::text, resolved_by, assigned_to
     INTO _cur, _resolver, _assignee
     FROM public.support_tickets
     WHERE id = _ticket_id
@@ -167,7 +167,7 @@ BEGIN
   IF _status = 'resolved' AND _cur = 'closed' THEN
     RAISE EXCEPTION 'This ticket is already closed';
   END IF;
-  IF _status = _cur THEN
+  IF _status::text = _cur THEN
     RETURN; -- nothing changed: no update, no duplicate notification
   END IF;
 
