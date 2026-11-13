@@ -100,10 +100,10 @@ export function ProfileScreen({ next }: { next: string }) {
       updater: removeRow(id),
       request: () => supabase.from("addresses").delete().eq("id", id),
       success: "Deleted",
+      // The deleted address may have been the delivery address: refresh the header,
+      // PIN-code-based catalog, eligible shops and checkout's address list.
+      onSuccess: refreshDelivery,
     });
-    // The deleted address may have been the delivery address: refresh the header,
-    // PIN-code-based catalog, eligible shops and checkout's address list.
-    refreshDelivery();
   };
 
   const initials = (profile.data?.full_name ?? user.email ?? "U").slice(0, 2).toUpperCase();

@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useCustomerProducts } from "@/hooks/useCustomerProducts";
 import { useHeaderOffset } from "@/hooks/useHeaderOffset";
-import { CatalogFilterButton, isCatalogMode, useCatalogProducts, type CatalogParams, type CatalogSort } from "@/components/customer/CatalogFilters";
+import { CatalogFilterButton, isCatalogMode, toRpcSort, useCatalogProducts, type CatalogParams, type CatalogSort } from "@/components/customer/CatalogFilters";
 
 const search = z.object({
   q: z.string().optional(),
@@ -60,7 +60,7 @@ function ProductsPage() {
 
   const catRow = categories.data?.find((c: any) => c.slug === cat) ?? null;
   const catalogMode = isCatalogMode(params);
-  const sortKey = sort === "price-asc" ? "price_asc" : sort === "price-desc" ? "price_desc" : sort === "rating" ? "rating" : "relevance";
+  const sortKey = toRpcSort(sort);
   const rpcProducts = useCustomerProducts({
     categoryId: catRow?.id ?? null,
     search: q ?? null,

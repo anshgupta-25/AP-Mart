@@ -21,13 +21,13 @@ const statusColor: Record<string, string> = {
   no_shop_available: "bg-destructive/10 text-destructive",
 };
 
-/**
- * Single orders list for both /orders and /customer/orders: guest sign-in gate, item thumbnails,
- * shop name, cancel reason, all statuses, and a 20 s refetch. `detail` picks the detail-route family.
- */
 // Same terminal set the database uses (see delete-shop guard migration).
 const FINISHED_STATUSES = new Set(["delivered", "cancelled", "no_shop_available"]);
 
+/**
+ * Single orders list for both /orders and /customer/orders: guest sign-in gate, item thumbnails,
+ * shop name, cancel reason, all statuses, and a 20 s refetch while any order is in progress. `detail` picks the detail-route family.
+ */
 export function OrdersList({ detail, next }: { detail: "public" | "customer"; next: string }) {
   const { user } = useAuth();
   const orders = useQuery({

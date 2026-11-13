@@ -1,7 +1,6 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
-import { Heart, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { AuthRequired } from "@/components/AuthRequired";
 
 export const Route = createFileRoute("/wishlist")({
   head: () => ({
@@ -26,16 +25,8 @@ function WishlistGate() {
     );
   }
 
-  if (!user) {
-    return (
-      <AuthRequired
-        next="/customer/wishlist"
-        title="Save Your Favourites"
-        description="Sign in to keep your favourite products handy and reorder them in one tap."
-        icon={<Heart className="h-9 w-9 text-primary" strokeWidth={1.75} />}
-      />
-    );
-  }
+  // Guests: show the favourites saved on this device (same as /favourites).
+  if (!user) return <Navigate to="/favourites" replace />;
 
   return <Navigate to="/customer/wishlist" replace />;
 }

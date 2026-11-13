@@ -20,12 +20,15 @@ export function ImageInput({
   bucket,
   label = "Image",
   required = true,
+  maxEdge,
 }: {
   value: string;
   onChange: (url: string) => void;
   bucket: Bucket;
   label?: string;
   required?: boolean;
+  /** Longest image edge after upload; defaults by bucket (see uploadImage). */
+  maxEdge?: number;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -53,7 +56,7 @@ export function ImageInput({
     try {
       // New product uploads always go to `products`; `product-images` is legacy.
       const target = bucket === "product-images" ? "products" : bucket;
-      const stored = await uploadImage({ bucket: target, file, maxBytes: 5 * 1024 * 1024 });
+      const stored = await uploadImage({ bucket: target, file, maxBytes: 5 * 1024 * 1024, maxEdge });
       onChange(stored.ref);
       setPreviewUrl(null); // the saved reference renders immediately via StorageImg
       toast.success("Uploaded");

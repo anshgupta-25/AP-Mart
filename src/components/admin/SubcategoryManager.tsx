@@ -252,6 +252,7 @@ function SubcategoryForm({
             onChange={setImage}
             bucket="categories"
             label="Subcategory image"
+            maxEdge={1200}
             required={false}
           />
           <div className="grid grid-cols-2 gap-3">

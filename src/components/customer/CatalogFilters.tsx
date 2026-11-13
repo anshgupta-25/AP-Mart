@@ -19,6 +19,11 @@ export interface CatalogParams {
   stock?: boolean;
 }
 
+/** Maps the UI sort to the `list_customer_products` RPC sort ("discount" is applied client-side). */
+export function toRpcSort(sort: CatalogSort): "relevance" | "price_asc" | "price_desc" | "rating" {
+  return sort === "price-asc" ? "price_asc" : sort === "price-desc" ? "price_desc" : sort === "rating" ? "rating" : "relevance";
+}
+
 /** True when any advanced filter is active, i.e. the catalog query (collections / product_categories) applies. */
 export function isCatalogMode(p: CatalogParams) {
   return !!(p.coll || p.pc || p.disc || p.stock || (p.max && p.max < 1000) || p.sort === "discount");
@@ -53,21 +58,26 @@ export function useCatalogProducts(p: CatalogParams & { search?: string | null }
   });
   const ids = coll ? (collectionIds.data ?? null) : null;
 
-  const rpcSort = sort === "price-asc" ? "price_asc" : sort === "price-desc" ? "price_desc" : sort === "rating" ? "rating" : "relevance";
   const products = useCustomerProducts({
     categoryId: pc,
     search,
-    sort: rpcSort,
+    sort: toRpcSort(sort),
     ids,
-    limit: 200,
+    // Price / discount filters run on the client, so fetch the whole eligible
+    // catalogue for this PIN code (not a top-N slice) before filtering.
+    limit: 1000,
     // Wait for the collection's product ids before querying.
     enabled: enabled && (!coll || collectionIds.isSuccess),
     key: `catalog:${coll ?? ""}`,
   });
 
   const data = useMemo(() => {
+    if (coll && collectionIds.isError) return [] as ProductCardData[];
     if (coll && collectionIds.isSuccess && collectionIds.data.length === 0) return [] as ProductCardData[];
-    if (!products.data) return undefined;
+    // Still loading this filter's ids / products: show skeletons, never the
+    // previous filter's rows (useCustomerProducts keeps them as placeholder).
+    if (coll && !collectionIds.isSuccess) return undefined;
+    if (!products.data || products.isPlaceholderData) return undefined;
     let rows = products.data;
     if (max < 1000) rows = rows.filter((x) => Number(x.price) <= max);
     if (stock) rows = rows.filter((x) => Number(x.stock) > 0);
@@ -78,7 +88,7 @@ export function useCatalogProducts(p: CatalogParams & { search?: string | null }
           (Number(b.mrp) - Number(b.price)) / Number(b.mrp || 1) - (Number(a.mrp) - Number(a.price)) / Number(a.mrp || 1),
       );
     return rows.slice(0, 60);
-  }, [products.data, coll, collectionIds.isSuccess, collectionIds.data, max, stock, disc, sort]);
+  }, [products.data, products.isPlaceholderData, coll, collectionIds.isSuccess, collectionIds.isError, collectionIds.data, max, stock, disc, sort]);
 
   return { data };
 }
