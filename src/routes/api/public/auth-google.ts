@@ -45,6 +45,30 @@ async function handle(request: Request): Promise<Response> {
       google_sub: identity.sub,
     };
 
+    // Pre-hijack defence: an UNCONFIRMED account with this email may have been
+    // registered by someone else with a password they chose. Google has just
+    // proven ownership of the address, so replace that password before the
+    // account is confirmed by the magic link below.
+    for (let page = 1; page <= 10; page++) {
+      const { data: list, error: listErr } = await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage: 1000,
+      });
+      if (listErr) throw listErr;
+      const existing = list.users.find((u) => (u.email ?? "").toLowerCase() === identity.email);
+      if (existing) {
+        if (!existing.email_confirmed_at) {
+          const { error: resetErr } = await supabaseAdmin.auth.admin.updateUserById(existing.id, {
+            password: crypto.randomUUID() + crypto.randomUUID(),
+            email_confirm: true,
+          });
+          if (resetErr) throw resetErr;
+        }
+        break;
+      }
+      if (list.users.length < 1000) break;
+    }
+
     // generateLink(magiclink) creates the user if missing and returns a token we can redeem.
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: "magiclink",
