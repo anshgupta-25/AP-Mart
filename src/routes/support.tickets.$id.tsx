@@ -116,8 +116,9 @@ function Page() {
   };
 
   const setStatus = async (s: string, notes?: string) => {
-    const payload: any = { _ticket_id: id, _status: s };
-    if (notes !== undefined) payload._notes = notes;
+    // Always send _notes: with it omitted, Postgres cannot choose between the two
+    // update_ticket_status overloads ("best candidate function" error).
+    const payload: any = { _ticket_id: id, _status: s, _notes: notes ?? null };
     const { error } = await supabase.rpc("update_ticket_status", payload);
     if (error) toast.error(error.message);
     else {

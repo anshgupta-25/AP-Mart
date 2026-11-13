@@ -3,8 +3,6 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -12,18 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Search,
-  Phone,
-  MapPin,
-  Store,
-  User,
-  CheckCircle2,
-  Loader2,
-  ExternalLink,
-} from "lucide-react";
+import { Search, Phone, MapPin, Store, User, ExternalLink } from "lucide-react";
 import { TICKET_CATEGORIES } from "@/components/SupportTicketForm";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/support/tickets/")({
   head: () => ({ meta: [{ title: "Support Tickets — AP Mart" }] }),
@@ -172,12 +160,6 @@ function Page() {
                   >
                     <ExternalLink className="h-3.5 w-3.5" /> Open
                   </Link>
-                  {t.status !== "resolved" && t.status !== "closed" && (
-                    <ResolveButton
-                      ticketId={t.id}
-                      onDone={() => qc.invalidateQueries({ queryKey: ["support-tickets-list"] })}
-                    />
-                  )}
                 </div>
               </header>
 
@@ -231,72 +213,6 @@ function Page() {
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-function ResolveButton({ ticketId, onDone }: { ticketId: string; onDone: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [notes, setNotes] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  const resolve = async () => {
-    setBusy(true);
-    const { error } = await supabase.rpc("update_ticket_status", {
-      _ticket_id: ticketId,
-      _status: "resolved",
-      _notes: notes.trim() || null,
-    });
-    setBusy(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Ticket resolved. User notified.");
-    setOpen(false);
-    setNotes("");
-    onDone();
-  };
-
-  if (!open) {
-    return (
-      <Button
-        size="sm"
-        onClick={() => setOpen(true)}
-        className="h-8 gap-1.5 rounded-full bg-primary-soft px-3.5 text-small font-semibold text-primary-ink shadow-none ring-1 ring-inset ring-primary/20 hover:bg-primary hover:text-primary-foreground"
-      >
-        <CheckCircle2 className="h-3.5 w-3.5" /> Resolve issue
-      </Button>
-    );
-  }
-  return (
-    <div className="mt-2 w-full space-y-2 rounded-xl bg-primary-soft p-3">
-      <Textarea
-        rows={2}
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        placeholder="Resolution notes (optional) — sent to user"
-      />
-      <div className="flex justify-end gap-2">
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => {
-            setOpen(false);
-            setNotes("");
-          }}
-        >
-          Cancel
-        </Button>
-        <Button size="sm" onClick={resolve} disabled={busy} className="gap-1">
-          {busy ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <CheckCircle2 className="h-3.5 w-3.5" />
-          )}
-          Mark resolved
-        </Button>
-      </div>
     </div>
   );
 }
