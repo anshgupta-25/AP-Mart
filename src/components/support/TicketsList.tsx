@@ -106,6 +106,8 @@ export function TicketsList({
   const [role, setRole] = useState<string>("all");
   const [cat, setCat] = useState<string>("all");
   const [q, setQ] = useState("");
+  const [unassignedOnly, setUnassignedOnly] = useState(false);
+  const isAdmin = detail === "admin";
 
   useEffect(() => {
     const ch = supabase
@@ -129,6 +131,17 @@ export function TicketsList({
     refetchInterval: 30000,
   });
 
+  // Admin view shows who is handling each ticket.
+  const agents = useQuery({
+    queryKey: ["support-agents-names"],
+    enabled: isAdmin,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from("support_agents").select("user_id, display_name");
+      return new Map((data ?? []).map((a) => [a.user_id, a.display_name ?? "Agent"]));
+    },
+  });
+
   const all = tickets.data ?? [];
   const query = q.trim().toLowerCase();
 
@@ -139,12 +152,13 @@ export function TicketsList({
         (t) =>
           (role === "all" || t.role_at_creation === role) &&
           (cat === "all" || t.category === cat) &&
+          (!unassignedOnly || (!t.assigned_to && !isDoneStatus(t.status))) &&
           (!query ||
             t.title.toLowerCase().includes(query) ||
             t.ticket_number.toLowerCase().includes(query) ||
             (t.full_name ?? "").toLowerCase().includes(query)),
       ),
-    [all, role, cat, query],
+    [all, role, cat, query, unassignedOnly],
   );
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: narrowed.length };
@@ -153,12 +167,15 @@ export function TicketsList({
   }, [narrowed]);
   const filtered = status === "all" ? narrowed : narrowed.filter((t) => t.status === status);
 
-  const openCount = all.filter((t) => t.status !== "resolved" && t.status !== "closed").length;
-  const hasFilters = role !== "all" || cat !== "all" || !!query;
+  const openCount = all.filter((t) => !isDoneStatus(t.status)).length;
+  const unassignedCount = all.filter((t) => !t.assigned_to && !isDoneStatus(t.status)).length;
+  const resolvedCount = all.filter((t) => t.status === "resolved").length;
+  const hasFilters = role !== "all" || cat !== "all" || !!query || unassignedOnly;
   const clearFilters = () => {
     setRole("all");
     setCat("all");
     setQ("");
+    setUnassignedOnly(false);
   };
 
   const roleItem = ROLES.find((r) => r.value === role) ?? ROLES[0];
@@ -170,9 +187,40 @@ export function TicketsList({
       <header className="px-1">
         <h1 className="text-[20px] font-semibold tracking-[-0.02em]">{title}</h1>
         <p className="mt-0.5 text-[12.5px] text-muted-foreground">
-          {tickets.isLoading ? "Loading…" : `${openCount} need attention · ${all.length} total`}
+          {isAdmin
+            ? "Every ticket also goes to the support team. Whoever resolves it first closes it out."
+            : tickets.isLoading
+              ? "Loading…"
+              : `${openCount} need attention · ${all.length} total`}
         </p>
       </header>
+
+      {isAdmin && (
+        <div className="grid grid-cols-3 gap-2.5">
+          <StatTile
+            label="Pending"
+            value={openCount}
+            dot="bg-amber-500"
+            loading={tickets.isLoading}
+          />
+          <StatTile
+            label="Unassigned"
+            value={unassignedCount}
+            dot="bg-destructive"
+            loading={tickets.isLoading}
+            active={unassignedOnly}
+            onClick={() => setUnassignedOnly((v) => !v)}
+          />
+          <StatTile
+            label="Resolved"
+            value={resolvedCount}
+            dot="bg-primary"
+            loading={tickets.isLoading}
+            active={status === "resolved"}
+            onClick={() => setStatus((v) => (v === "resolved" ? "all" : "resolved"))}
+          />
+        </div>
+      )}
 
       {/* Search + filters */}
       <div className="space-y-3">
@@ -318,7 +366,26 @@ export function TicketsList({
                         title={t.status.replace(/_/g, " ")}
                       />
                       <span className="truncate text-[13.5px] font-medium">{t.title}</span>
-                      <span className="ml-auto shrink-0 text-[11.5px] tabular-nums text-muted-foreground">
+                      {isAdmin && !isDoneStatus(t.status) && (
+                        <span
+                          className={cn(
+                            "ml-auto max-w-[7rem] shrink-0 truncate rounded-full px-2 py-0.5 text-[10.5px] font-medium",
+                            t.assigned_to
+                              ? "bg-secondary text-muted-foreground"
+                              : "bg-destructive/10 text-destructive",
+                          )}
+                        >
+                          {t.assigned_to
+                            ? (agents.data?.get(t.assigned_to) ?? "Assigned")
+                            : "Unassigned"}
+                        </span>
+                      )}
+                      <span
+                        className={cn(
+                          "shrink-0 text-[11.5px] tabular-nums text-muted-foreground",
+                          !(isAdmin && !isDoneStatus(t.status)) && "ml-auto",
+                        )}
+                      >
                         {timeAgo(t.created_at)}
                       </span>
                     </div>
@@ -432,5 +499,48 @@ function TicketLink({
     <Link to="/support/tickets/$id" params={{ id }} className={className}>
       {children}
     </Link>
+  );
+}
+
+function isDoneStatus(s: string) {
+  return s === "resolved" || s === "closed";
+}
+
+function StatTile({
+  label,
+  value,
+  dot,
+  loading,
+  active,
+  onClick,
+}: {
+  label: string;
+  value: number;
+  dot: string;
+  loading?: boolean;
+  active?: boolean;
+  onClick?: () => void;
+}) {
+  const body = (
+    <>
+      <span className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+        <span className={cn("h-1.5 w-1.5 rounded-full", dot)} />
+        {label}
+      </span>
+      <span className="mt-1 block text-[19px] font-semibold tabular-nums tracking-tight">
+        {loading ? "–" : value}
+      </span>
+    </>
+  );
+  const cls = cn(
+    "rounded-2xl border bg-card px-3 py-2.5 text-left transition-colors",
+    active ? "border-foreground/80 ring-1 ring-foreground/80" : "border-border/60",
+  );
+  return onClick ? (
+    <button type="button" onClick={onClick} aria-pressed={active} className={cn(cls, "press")}>
+      {body}
+    </button>
+  ) : (
+    <div className={cls}>{body}</div>
   );
 }

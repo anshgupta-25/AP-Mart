@@ -109,6 +109,18 @@ export function TicketView({ id }: { id: string }) {
 
   const t = ctx.data?.ticket;
 
+  const resolverId: string | null = t?.resolved_by ?? null;
+  const resolver = useQuery({
+    queryKey: ["ticket-staff-name", resolverId],
+    enabled: !!resolverId && resolverId !== user?.id,
+    staleTime: 10 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("ticket_staff_name", { _user_id: resolverId! });
+      if (error) return null;
+      return data;
+    },
+  });
+
   const send = async () => {
     if (!reply.trim()) return;
     setBusy(true);
@@ -146,8 +158,10 @@ export function TicketView({ id }: { id: string }) {
     const { error } = await supabase.rpc("update_ticket_status", payload);
     setStatusBusy(null);
     if (error) {
+      // e.g. "Already resolved by <name>" when someone else got there first.
       toast.error(error.message);
       if (prev) qc.setQueryData(key, prev);
+      qc.invalidateQueries({ queryKey: key });
     } else {
       toast.success(okMsg);
       qc.invalidateQueries({ queryKey: key });
@@ -195,6 +209,11 @@ export function TicketView({ id }: { id: string }) {
     return agents.data?.find((a) => a.user_id === uid)?.display_name ?? "Agent";
   };
   const assignee = agentName(t.assigned_to);
+  const resolverName = !t.resolved_by
+    ? null
+    : t.resolved_by === user?.id
+      ? "You"
+      : (resolver.data ?? agentName(t.resolved_by));
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-10 pt-5 md:px-6 lg:grid lg:grid-cols-3 lg:gap-8">
@@ -375,7 +394,12 @@ export function TicketView({ id }: { id: string }) {
           </PropRow>
           {t.resolved_at && t.status === "resolved" && (
             <PropRow label="Resolved">
-              <span className="text-[13px] text-muted-foreground">{fmt(t.resolved_at)}</span>
+              <span className="text-right text-[13px] text-muted-foreground">
+                {resolverName && (
+                  <span className="font-medium text-foreground">{resolverName} · </span>
+                )}
+                {fmt(t.resolved_at)}
+              </span>
             </PropRow>
           )}
         </Section>
