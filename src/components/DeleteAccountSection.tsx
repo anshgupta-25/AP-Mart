@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { checkAccountDeletion, deleteMyAccount } from "@/lib/account.functions";
+import { errorMessage } from "@/lib/utils";
 
 /**
  * Self-service account deletion — available to every role.
@@ -63,9 +64,9 @@ export function DeleteAccountSection({ className = "" }: { className?: string })
       await signOut();
       toast.success("Your account has been permanently deleted.");
       navigate({ to: "/login", replace: true });
-    } catch (e: any) {
-      setBlocked(e?.message ?? "Could not delete your account. Please try again.");
-      toast.error(e?.message ?? "Could not delete your account.");
+    } catch (e) {
+      setBlocked(errorMessage(e, "Could not delete your account. Please try again."));
+      toast.error(errorMessage(e, "Could not delete your account."));
     } finally {
       setBusy(false);
     }

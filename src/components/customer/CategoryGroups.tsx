@@ -17,7 +17,7 @@ function useSubcategoriesAll() {
     queryKey: ["home-subcategories"],
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("subcategories")
         .select("id, category_id, name, icon, image_url")
         .eq("is_active", true)

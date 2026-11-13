@@ -41,7 +41,7 @@ function HealthPage() {
       const results = await Promise.all(
         TABLES.map(async (t) => {
           const { count, error } = await supabase
-            .from(t as any)
+            .from(t)
             .select("id", { count: "exact", head: true });
           return { table: t, count: error ? null : (count ?? 0) };
         }),

@@ -156,7 +156,7 @@ function Page() {
         .eq("shop_id", shopId)
         .limit(1000);
       if (error) throw error;
-      return (data ?? []) as any as InvRow[];
+      return (data ?? []) as InvRow[];
     },
     enabled: !!shopId,
   });

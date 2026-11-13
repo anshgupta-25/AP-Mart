@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { DeliveryTypeBadge } from "@/components/FastDeliveryBadge";
 import { stockTone, type EnrichedItem } from "./useOrderDetails";
 import { StorageImg } from "@/components/StorageImg";
+import type { OrderRow } from "./useOrderDetails";
+import { asAddress } from "@/lib/address";
 
 /* ---------------- Items with inventory impact ---------------- */
 
@@ -117,7 +119,7 @@ export function OrderSummaryCard({
   productCount,
   totalQuantity,
 }: {
-  order: any;
+  order: OrderRow;
   productCount: number;
   totalQuantity: number;
 }) {
@@ -156,9 +158,9 @@ export function OrderSummaryCard({
 
 /* ---------------- Customer info ---------------- */
 
-export function CustomerInfoCard({ order }: { order: any }) {
-  const a = (order.address ?? {}) as any;
-  const phone = a.phone as string | undefined;
+export function CustomerInfoCard({ order }: { order: OrderRow }) {
+  const a = asAddress(order.address);
+  const phone = a.phone ?? undefined;
   return (
     <div className="space-y-2 rounded-xl border border-border/70 bg-card p-4 text-meta">
       <div className="section-title">Customer</div>
@@ -200,8 +202,8 @@ export function CustomerInfoCard({ order }: { order: any }) {
 
 /* ---------------- Meta strip ---------------- */
 
-export function OrderMetaStrip({ order }: { order: any }) {
-  const a = (order.address ?? {}) as any;
+export function OrderMetaStrip({ order }: { order: OrderRow }) {
+  const a = asAddress(order.address);
   const chips: [string, string][] = [
     ["Placed", order.placed_at ? new Date(order.placed_at).toLocaleString() : "—"],
     [

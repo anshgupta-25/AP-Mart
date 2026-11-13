@@ -13,6 +13,8 @@ import { MessageCustomerDialog } from "@/components/MessageCustomerDialog";
 import { FastDeliveryBadge, PriorityDot, useCountdown } from "@/components/FastDeliveryBadge";
 import { cn } from "@/lib/utils";
 import { runOptimistic, removeRow } from "@/lib/optimistic";
+import { asAddress } from "@/lib/address";
+import type { Tables } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/delivery/dashboard")({
   head: () => ({ meta: [{ title: "Delivery Dashboard — AP Mart" }] }),
@@ -22,7 +24,7 @@ export const Route = createFileRoute("/delivery/dashboard")({
 function Page() {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const [partner, setPartner] = useState<any>(null);
+  const [partner, setPartner] = useState<Tables<"delivery_partners"> | null>(null);
   const [myPos, setMyPos] = useState<{ lat: number; lng: number } | null>(null);
   const watchRef = useRef<number | null>(null);
 
@@ -65,7 +67,9 @@ function Page() {
   useEffect(() => {
     const beep = () => {
       try {
-        const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
+        const AC =
+          window.AudioContext ||
+          (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
         if (!AC) return;
         const ctx = new AC();
         const o = ctx.createOscillator();
@@ -185,7 +189,7 @@ function Page() {
           .from("shops")
           .select("id,name,latitude,longitude")
           .in("id", shopIds);
-        shopMap = Object.fromEntries((shops ?? []).map((s: any) => [s.id, s]));
+        shopMap = Object.fromEntries((shops ?? []).map((s) => [s.id, s]));
       }
       return list.map((o: any) => ({ ...o, shop: shopMap[o.shop_id] }));
     },
@@ -281,7 +285,7 @@ function Page() {
       const { data: hours } = await supabase.rpc("partner_today_hours", {
         _partner_id: partner.id,
       });
-      const open = (rows ?? []).find((r: any) => !r.check_out_at) ?? null;
+      const open = (rows ?? []).find((r) => !r.check_out_at) ?? null;
       return { rows: rows ?? [], hours: Number(hours ?? 0), open };
     },
     enabled: !!partner,
@@ -302,7 +306,7 @@ function Page() {
     else {
       toast.success("Checked out");
       attendance.refetch();
-      setPartner((p: any) => (p ? { ...p, is_online: false } : p));
+      setPartner((p) => (p ? { ...p, is_online: false } : p));
     }
   };
 
@@ -368,7 +372,7 @@ function Page() {
 
         <section className="space-y-2.5">
           <h2 className="section-title">Active deliveries</h2>
-          {(myDeliveries.data ?? []).map((o: any) => {
+          {(myDeliveries.data ?? []).map((o) => {
             const points = [
               myPos ? { lat: myPos.lat, lng: myPos.lng, label: "You" } : null,
               o.shop
@@ -378,7 +382,7 @@ function Page() {
                 ? {
                     lat: o.delivery_lat,
                     lng: o.delivery_lng,
-                    label: `Drop: ${(o.address as any)?.name ?? "Customer"}`,
+                    label: `Drop: ${asAddress(o.address).name ?? "Customer"}`,
                   }
                 : null,
             ].filter(Boolean) as { lat: number; lng: number; label: string }[];
@@ -437,7 +441,7 @@ function Page() {
               </span>
             )}
           </div>
-          {(assigned.data ?? []).map((o: any) => (
+          {(assigned.data ?? []).map((o) => (
             <PriorityOrderRow
               key={o.id}
               o={o}
@@ -463,7 +467,7 @@ function Page() {
               </span>
             )}
           </div>
-          {(available.data ?? []).map((o: any) => (
+          {(available.data ?? []).map((o) => (
             <PriorityOrderRow
               key={o.id}
               o={o}
@@ -506,7 +510,7 @@ function Page() {
           </div>
           {(attendance.data?.rows.length ?? 0) > 0 && (
             <div className="mt-3 divide-y divide-border/60 border-t border-border/60">
-              {(attendance.data?.rows ?? []).map((r: any) => {
+              {(attendance.data?.rows ?? []).map((r) => {
                 const inT = new Date(r.check_in_at);
                 const outT = r.check_out_at ? new Date(r.check_out_at) : null;
                 const hrs = ((outT ?? new Date()).getTime() - inT.getTime()) / 3.6e6;
@@ -576,7 +580,7 @@ function PriorityOrderRow({
   const deadline =
     isFast && o.placed_at ? new Date(new Date(o.placed_at).getTime() + 30 * 60 * 1000) : null;
   const countdown = useCountdown(deadline);
-  const addr = o.address as any;
+  const addr = asAddress(o.address);
 
   return (
     <div

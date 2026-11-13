@@ -23,6 +23,9 @@ import {
 import { toast } from "sonner";
 import { uploadFile } from "@/lib/storage";
 import { Loader2, Paperclip, X } from "lucide-react";
+import { rpcArgs } from "@/integrations/supabase/rpc";
+import type { Database } from "@/integrations/supabase/types";
+import { errorMessage } from "@/lib/utils";
 
 const SUPPORT_TYPES = [
   "image/jpeg",
@@ -73,7 +76,7 @@ export function SupportTicketForm({
         .eq("user_id", user.id)
         .order("placed_at", { ascending: false })
         .limit(20);
-      setOrders((data ?? []) as any);
+      setOrders(data ?? []);
     })();
   }, [open, user]);
 
@@ -92,33 +95,36 @@ export function SupportTicketForm({
     }
     setSubmitting(true);
     try {
-      const { data: ticketId, error } = await (supabase as any).rpc("create_support_ticket", {
-        _title: title.trim(),
-        _description: description.trim(),
-        _category: category,
-        _order_id: orderId || null,
-      });
+      const { data: ticketId, error } = await supabase.rpc(
+        "create_support_ticket",
+        rpcArgs("create_support_ticket", {
+          _title: title.trim(),
+          _description: description.trim(),
+          _category: category as Database["public"]["Enums"]["ticket_category"],
+          _order_id: orderId || null,
+        }),
+      );
       if (error) throw error;
 
-      if (file && ticketId) {
+      if (file && ticketId && user) {
         try {
           const stored = await uploadFile({
             bucket: "support-attachments",
             file,
-            folder: `${user?.id}/${ticketId}`,
+            folder: `${user.id}/${ticketId}`,
             allowedTypes: SUPPORT_TYPES,
             maxBytes: SUPPORT_MAX_BYTES,
           });
-          await (supabase as any).from("ticket_attachments").insert({
+          await supabase.from("ticket_attachments").insert({
             ticket_id: ticketId,
-            uploaded_by: user?.id,
+            uploaded_by: user.id,
             file_url: stored.ref,
             file_name: file.name,
             mime: file.type,
           });
-        } catch (upErr: any) {
+        } catch (upErr) {
           toast.error(
-            "Ticket created but attachment failed: " + (upErr?.message ?? "upload error"),
+            "Ticket created but attachment failed: " + errorMessage(upErr, "upload error"),
           );
         }
       }
@@ -127,8 +133,8 @@ export function SupportTicketForm({
       reset();
       onOpenChange(false);
       onCreated?.(ticketId as string);
-    } catch (e: any) {
-      toast.error(e.message ?? "Could not create ticket");
+    } catch (e) {
+      toast.error(errorMessage(e, "Could not create ticket"));
     } finally {
       setSubmitting(false);
     }

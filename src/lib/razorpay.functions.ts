@@ -217,7 +217,7 @@ export const refundPayment = createServerFn({ method: "POST" })
     // Verify caller is admin via has_role RPC
     const { data: isAdmin, error: roleErr } = await supabase.rpc("has_role", {
       _user_id: context.userId,
-      _role: "admin" as any,
+      _role: "admin",
     });
     if (roleErr) throw new Error(roleErr.message);
     if (!isAdmin) throw new Error("Forbidden");

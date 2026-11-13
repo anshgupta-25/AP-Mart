@@ -56,7 +56,7 @@ function Page() {
   const ctx = useQuery({
     queryKey: ["ticket-context", id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("support_ticket_context", {
+      const { data, error } = await supabase.rpc("support_ticket_context", {
         _ticket_id: id,
       });
       if (error) throw error;
@@ -67,23 +67,23 @@ function Page() {
   const messages = useQuery({
     queryKey: ["ticket-messages", id],
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("support_messages")
         .select("id, body, sender_id, sender_role, is_internal_note, created_at")
         .eq("ticket_id", id)
         .order("created_at", { ascending: true });
-      return (data ?? []) as any[];
+      return data ?? [];
     },
   });
 
   const agents = useQuery({
     queryKey: ["support-agents-list"],
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("support_agents")
         .select("user_id, display_name, is_active")
         .eq("is_active", true);
-      return (data ?? []) as any[];
+      return data ?? [];
     },
   });
 
@@ -92,7 +92,7 @@ function Page() {
   const send = async () => {
     if (!reply.trim()) return;
     setBusy(true);
-    const { error } = await (supabase as any).rpc("post_ticket_message", {
+    const { error } = await supabase.rpc("post_ticket_message", {
       _ticket_id: id,
       _body: reply.trim(),
       _is_internal: internal,
@@ -108,7 +108,7 @@ function Page() {
   const setStatus = async (s: string, notes?: string) => {
     const payload: any = { _ticket_id: id, _status: s };
     if (notes !== undefined) payload._notes = notes;
-    const { error } = await (supabase as any).rpc("update_ticket_status", payload);
+    const { error } = await supabase.rpc("update_ticket_status", payload);
     if (error) toast.error(error.message);
     else {
       toast.success("Status updated");
@@ -117,7 +117,7 @@ function Page() {
   };
 
   const assign = async (agentId: string) => {
-    const { error } = await (supabase as any).rpc("assign_ticket", {
+    const { error } = await supabase.rpc("assign_ticket", {
       _ticket_id: id,
       _agent_id: agentId,
     });

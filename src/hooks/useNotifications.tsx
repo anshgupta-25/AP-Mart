@@ -65,7 +65,7 @@ export function useNotifications() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          const n: any = payload.new;
+          const n = payload.new;
           toast(n.title, { description: n.body ?? undefined });
         },
       )

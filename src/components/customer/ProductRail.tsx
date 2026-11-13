@@ -25,7 +25,7 @@ export function ProductRail({
             <p className="mt-0.5 truncate text-small text-muted-foreground">{subtitle}</p>
           )}
         </div>
-        <Link to={to as any} className="press shrink-0 text-meta font-semibold text-primary">
+        <Link to={to} className="press shrink-0 text-meta font-semibold text-primary">
           See all
         </Link>
       </div>

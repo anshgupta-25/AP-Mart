@@ -148,7 +148,7 @@ async function handler({ request }: { request: Request }) {
     notification_id: notification.id,
     category: notification.category ?? "system",
   };
-  const url = (notification.data as any)?.url;
+  const url = (notification.data as { url?: unknown } | null)?.url;
   if (typeof url === "string") payloadData["url"] = url;
 
   // FCM requires an absolute HTTPS click-through link; the DB stores app-relative paths.

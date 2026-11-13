@@ -37,8 +37,8 @@ export function MoreSheet({
                   return (
                     <Link
                       key={i.to}
-                      to={path as any}
-                      search={search as any}
+                      to={path}
+                      search={search}
                       onClick={() => onOpenChange(false)}
                       className={cn(
                         "press flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 text-center",

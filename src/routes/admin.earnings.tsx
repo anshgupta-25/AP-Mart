@@ -225,7 +225,7 @@ function Page() {
       if (!ids.length) return new Map<string, { full_name: string | null; phone: string | null }>();
       const { data } = await supabase.from("profiles").select("id,full_name,phone").in("id", ids);
       const m = new Map<string, { full_name: string | null; phone: string | null }>();
-      (data ?? []).forEach((p: any) => m.set(p.id, { full_name: p.full_name, phone: p.phone }));
+      (data ?? []).forEach((p) => m.set(p.id, { full_name: p.full_name, phone: p.phone }));
       return m;
     },
   });
@@ -412,7 +412,7 @@ function Page() {
           s.pincode.includes(needle),
       );
     list = [...list].sort((a, b) => {
-      const av = a[sortBy] as any,
+      const av = a[sortBy],
         bv = b[sortBy] as any;
       if (av == null) return 1;
       if (bv == null) return -1;

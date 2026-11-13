@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { rupees } from "@/lib/format";
 import { Truck, Activity, BarChart3, Users, Star, UserCog, X, Clock } from "lucide-react";
 import { partnerStatusMeta, timeAgo } from "@/lib/partnerStatus";
+import { asAddress } from "@/lib/address";
 
 export const Route = createFileRoute("/shopkeeper/delivery")({
   head: () => ({ meta: [{ title: "Delivery — AP Mart" }] }),
@@ -88,7 +89,7 @@ function Page() {
     queryKey: ["shop-team", shopId],
     queryFn: async () => {
       if (!shopId) return [] as TeamPartner[];
-      const { data, error } = await supabase.rpc("shop_live_team" as any, { _shop_id: shopId });
+      const { data, error } = await supabase.rpc("shop_live_team", { _shop_id: shopId });
       if (error) throw error;
       return (data ?? []) as TeamPartner[];
     },
@@ -132,7 +133,7 @@ function Page() {
 
   const perfByPartner = useMemo(() => {
     const m: Record<string, any> = {};
-    (perf.data ?? []).forEach((r: any) => {
+    (perf.data ?? []).forEach((r) => {
       m[r.partner_id] = r;
     });
     return m;
@@ -277,7 +278,7 @@ function Page() {
         <section>
           <h2 className="section-title mb-3">Active orders</h2>
           <div className="space-y-3">
-            {(orders.data ?? []).map((o: any) => {
+            {(orders.data ?? []).map((o) => {
               const p = teamById(o.partner_id);
               return (
                 <div
@@ -290,8 +291,8 @@ function Page() {
                       <span className="font-normal text-muted-foreground">· {rupees(o.total)}</span>
                     </div>
                     <div className="text-meta capitalize text-muted-foreground">
-                      {o.status.replace(/_/g, " ")} · {(o.address as any)?.line1},{" "}
-                      {(o.address as any)?.city}
+                      {o.status.replace(/_/g, " ")} · {asAddress(o.address).line1},{" "}
+                      {asAddress(o.address).city}
                     </div>
                     <div className="mt-1 text-meta">
                       {p ? (

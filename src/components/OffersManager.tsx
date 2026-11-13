@@ -72,10 +72,7 @@ export function OffersManager({
   const list = useQuery({
     queryKey: ["offers-manage", lockedScope ?? "all", shopId ?? "*"],
     queryFn: async () => {
-      let q = supabase
-        .from("offers" as any)
-        .select("*")
-        .order("display_order");
+      let q = supabase.from("offers").select("*").order("display_order");
       if (lockedScope === "shop" && shopId) q = q.eq("shop_id", shopId);
       const { data, error } = await q;
       if (error) throw error;
@@ -85,7 +82,7 @@ export function OffersManager({
 
   const upsert = useMutation({
     mutationFn: async (f: FormState) => {
-      const payload: any = {
+      const payload = {
         title: f.title,
         subtitle: f.subtitle || null,
         image_url: f.image_url,
@@ -97,11 +94,8 @@ export function OffersManager({
         display_order: Number(f.display_order) || 0,
       };
       const { error } = f.id
-        ? await supabase
-            .from("offers" as any)
-            .update(payload)
-            .eq("id", f.id)
-        : await supabase.from("offers" as any).insert(payload);
+        ? await supabase.from("offers").update(payload).eq("id", f.id)
+        : await supabase.from("offers").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -110,15 +104,12 @@ export function OffersManager({
       qc.invalidateQueries({ queryKey: ["offers-manage"] });
       qc.invalidateQueries({ queryKey: ["offers-public"] });
     },
-    onError: (e: any) => toast.error(e.message ?? "Save failed"),
+    onError: (e) => toast.error(e.message ?? "Save failed"),
   });
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("offers" as any)
-        .delete()
-        .eq("id", id);
+      const { error } = await supabase.from("offers").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -126,7 +117,7 @@ export function OffersManager({
       qc.invalidateQueries({ queryKey: ["offers-manage"] });
       qc.invalidateQueries({ queryKey: ["offers-public"] });
     },
-    onError: (e: any) => toast.error(e.message ?? "Delete failed"),
+    onError: (e) => toast.error(e.message ?? "Delete failed"),
   });
 
   return (

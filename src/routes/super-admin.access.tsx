@@ -19,6 +19,9 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import type { Database } from "@/integrations/supabase/types";
+
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 export const Route = createFileRoute("/super-admin/access")({
   head: () => ({
@@ -84,15 +87,17 @@ function AccessPage() {
 
   const toggleRole = useMutation({
     mutationFn: async ({ userId, role, has }: { userId: string; role: string; has: boolean }) => {
-      const fn = has ? "admin_remove_role" : "admin_assign_role";
-      const { error } = await supabase.rpc(fn as any, { _user_id: userId, _role: role as any });
+      const args = { _user_id: userId, _role: role as AppRole };
+      const { error } = has
+        ? await supabase.rpc("admin_remove_role", args)
+        : await supabase.rpc("admin_assign_role", args);
       if (error) throw error;
     },
     onSuccess: (_d, v) => {
       toast.success(v.has ? "Role removed" : "Role granted");
       qc.invalidateQueries({ queryKey: ["super-admin"] });
     },
-    onError: (e: any) => toast.error(cleanError(e?.message)),
+    onError: (e) => toast.error(cleanError(e?.message)),
     onSettled: () => setPending(null),
   });
 
@@ -108,7 +113,7 @@ function AccessPage() {
       toast.success("Account status updated");
       qc.invalidateQueries({ queryKey: ["super-admin"] });
     },
-    onError: (e: any) => toast.error(cleanError(e?.message)),
+    onError: (e) => toast.error(cleanError(e?.message)),
   });
 
   return (
@@ -133,7 +138,7 @@ function AccessPage() {
 
       {error ? (
         <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-small text-destructive">
-          {cleanError((error as any)?.message)}
+          {cleanError(error?.message)}
         </div>
       ) : isLoading ? (
         <div className="grid place-items-center py-12">

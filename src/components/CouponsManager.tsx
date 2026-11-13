@@ -64,16 +64,16 @@ export function CouponsManager({ readOnly = false }: { readOnly?: boolean }) {
 
   const upsert = useMutation({
     mutationFn: async (f: FormState) => {
-      const payload: any = {
+      const payload = {
         code: f.code.trim().toUpperCase(),
         description: f.description || null,
         type: f.type,
         value: Number(f.value),
         min_order: Number(f.min_order) || 0,
         max_discount:
-          f.max_discount === null || (f.max_discount as any) === "" ? null : Number(f.max_discount),
+          f.max_discount === null || String(f.max_discount) === "" ? null : Number(f.max_discount),
         usage_limit:
-          f.usage_limit === null || (f.usage_limit as any) === "" ? null : Number(f.usage_limit),
+          f.usage_limit === null || String(f.usage_limit) === "" ? null : Number(f.usage_limit),
         expires_at: f.expires_at || null,
         active: f.active,
       };
@@ -87,7 +87,7 @@ export function CouponsManager({ readOnly = false }: { readOnly?: boolean }) {
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["coupons-manage"] });
     },
-    onError: (e: any) => toast.error(e.message ?? "Save failed"),
+    onError: (e) => toast.error(e.message ?? "Save failed"),
   });
 
   const toggleActive = useMutation({
@@ -96,7 +96,7 @@ export function CouponsManager({ readOnly = false }: { readOnly?: boolean }) {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["coupons-manage"] }),
-    onError: (e: any) => toast.error(e.message ?? "Update failed"),
+    onError: (e) => toast.error(e.message ?? "Update failed"),
   });
 
   const del = useMutation({
@@ -108,7 +108,7 @@ export function CouponsManager({ readOnly = false }: { readOnly?: boolean }) {
       toast.success("Coupon removed");
       qc.invalidateQueries({ queryKey: ["coupons-manage"] });
     },
-    onError: (e: any) => toast.error(e.message ?? "Delete failed"),
+    onError: (e) => toast.error(e.message ?? "Delete failed"),
   });
 
   return (

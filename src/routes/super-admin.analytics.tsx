@@ -40,17 +40,17 @@ function AnalyticsPage() {
   });
 
   const orders = data ?? [];
-  const paid = orders.filter((o: any) => o.payment_status === "paid" || o.payment_status === "cod");
-  const revenue = paid.reduce((s: number, o: any) => s + Number(o.total ?? 0), 0);
-  const delivered = orders.filter((o: any) => o.status === "delivered").length;
-  const cancelled = orders.filter((o: any) => o.status === "cancelled").length;
-  const customers = new Set(orders.map((o: any) => o.user_id)).size;
+  const paid = orders.filter((o) => o.payment_status === "paid" || o.payment_status === "cod");
+  const revenue = paid.reduce((s: number, o) => s + Number(o.total ?? 0), 0);
+  const delivered = orders.filter((o) => o.status === "delivered").length;
+  const cancelled = orders.filter((o) => o.status === "cancelled").length;
+  const customers = new Set(orders.map((o) => o.user_id)).size;
   const aov = paid.length ? revenue / paid.length : 0;
 
   const byDay = new Map<string, number>();
   for (const o of paid) {
-    const d = new Date((o as any).placed_at).toISOString().slice(0, 10);
-    byDay.set(d, (byDay.get(d) ?? 0) + Number((o as any).total ?? 0));
+    const d = new Date(o.placed_at).toISOString().slice(0, 10);
+    byDay.set(d, (byDay.get(d) ?? 0) + Number(o.total ?? 0));
   }
   const days = Array.from(byDay.entries())
     .sort(([a], [b]) => (a < b ? -1 : 1))

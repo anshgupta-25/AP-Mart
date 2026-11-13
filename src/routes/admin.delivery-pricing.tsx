@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -129,7 +130,7 @@ function Page() {
   const zones = useQuery({
     queryKey: ["admin-delivery-zones"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("admin_list_delivery_zones");
+      const { data, error } = await supabase.rpc("admin_list_delivery_zones");
       if (error) throw error;
       return (data ?? []) as Zone[];
     },
@@ -158,7 +159,7 @@ function Page() {
       toast.error("Invalid PIN Code");
       return;
     }
-    const { error } = await (supabase as any).rpc("admin_upsert_delivery_zone", { _data: z });
+    const { error } = await supabase.rpc("admin_upsert_delivery_zone", { _data: z });
     if (error) {
       toast.error(error.message);
       return;
@@ -169,7 +170,7 @@ function Page() {
   };
 
   const del = async (z: Zone) => {
-    const { error } = await (supabase as any).rpc("admin_delete_delivery_zone", { _id: z.id });
+    const { error } = await supabase.rpc("admin_delete_delivery_zone", { _id: z.id });
     if (error) return toast.error(error.message);
     toast.success("Deleted");
     setConfirmDel(null);
@@ -179,7 +180,7 @@ function Page() {
   const duplicate = async (z: Zone) => {
     const newPin = window.prompt(`Duplicate ${z.pin_code} — enter a new PIN Code:`);
     if (!newPin) return;
-    const { error } = await (supabase as any).rpc("admin_duplicate_delivery_zone", {
+    const { error } = await supabase.rpc("admin_duplicate_delivery_zone", {
       _id: z.id,
       _new_pin: newPin.trim(),
     });
@@ -222,7 +223,7 @@ function Page() {
               className="pl-10"
             />
           </div>
-          <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
+          <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
             <SelectTrigger className="h-11 w-full rounded-xl border-0 bg-secondary md:w-56">
               <SelectValue />
             </SelectTrigger>
@@ -486,14 +487,17 @@ function Page() {
   );
 }
 
-function Th({ children, className = "" }: any) {
+/** A money amount as stored or typed in a form (rendered through Number()). */
+type Money = number | string | null | undefined;
+
+function Th({ children, className = "" }: { children?: ReactNode; className?: string }) {
   return (
     <th className={`px-3 py-3 text-left text-small font-medium text-muted-foreground ${className}`}>
       {children}
     </th>
   );
 }
-function Td({ children, className = "" }: any) {
+function Td({ children, className = "" }: { children?: ReactNode; className?: string }) {
   return <td className={`px-3 py-2.5 align-middle ${className}`}>{children}</td>;
 }
 function Row({ k, v }: { k: string; v: string }) {
@@ -504,7 +508,7 @@ function Row({ k, v }: { k: string; v: string }) {
     </div>
   );
 }
-function TierCell({ enabled, fee, eta }: { enabled: boolean; fee: any; eta: string }) {
+function TierCell({ enabled, fee, eta }: { enabled: boolean; fee: Money; eta: string }) {
   if (!enabled) return <span className="text-muted-foreground">—</span>;
   return (
     <div className="text-xs">
@@ -513,7 +517,19 @@ function TierCell({ enabled, fee, eta }: { enabled: boolean; fee: any; eta: stri
     </div>
   );
 }
-function TierView({ label, enabled, fee, eta, min }: any) {
+function TierView({
+  label,
+  enabled,
+  fee,
+  eta,
+  min,
+}: {
+  label: string;
+  enabled: boolean;
+  fee: Money;
+  eta: string | number;
+  min?: Money;
+}) {
   return (
     <div className="rounded-xl bg-secondary/70 p-3.5">
       <div className="flex items-center justify-between">
@@ -624,7 +640,7 @@ function ZoneDialog({
                 <Field label="Fee Type">
                   <Select
                     value={z.handling_type ?? "fixed"}
-                    onValueChange={(v) => set("handling_type", v as any)}
+                    onValueChange={(v) => set("handling_type", v as Zone["handling_type"])}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -640,7 +656,7 @@ function ZoneDialog({
                     <Input
                       type="number"
                       value={String(z.handling_percentage ?? "")}
-                      onChange={(e) => set("handling_percentage", e.target.value as any)}
+                      onChange={(e) => set("handling_percentage", e.target.value)}
                     />
                   </Field>
                 ) : (
@@ -648,7 +664,7 @@ function ZoneDialog({
                     <Input
                       type="number"
                       value={String(z.default_handling_fee ?? "")}
-                      onChange={(e) => set("default_handling_fee", e.target.value as any)}
+                      onChange={(e) => set("default_handling_fee", e.target.value)}
                     />
                   </Field>
                 )}
@@ -656,7 +672,7 @@ function ZoneDialog({
                   <Input
                     type="number"
                     value={String(z.free_handling_above ?? "")}
-                    onChange={(e) => set("free_handling_above", e.target.value as any)}
+                    onChange={(e) => set("free_handling_above", e.target.value)}
                   />
                 </Field>
               </div>
@@ -668,21 +684,21 @@ function ZoneDialog({
                   <Input
                     type="number"
                     value={String(z.standard_handling_fee ?? "")}
-                    onChange={(e) => set("standard_handling_fee", e.target.value as any)}
+                    onChange={(e) => set("standard_handling_fee", e.target.value)}
                   />
                 </Field>
                 <Field label="Fast (₹)">
                   <Input
                     type="number"
                     value={String(z.fast_handling_fee ?? "")}
-                    onChange={(e) => set("fast_handling_fee", e.target.value as any)}
+                    onChange={(e) => set("fast_handling_fee", e.target.value)}
                   />
                 </Field>
                 <Field label="Express (₹)">
                   <Input
                     type="number"
                     value={String(z.express_handling_fee ?? "")}
-                    onChange={(e) => set("express_handling_fee", e.target.value as any)}
+                    onChange={(e) => set("express_handling_fee", e.target.value)}
                   />
                 </Field>
               </div>
@@ -714,9 +730,9 @@ function TierBlock({
 }: {
   title: string;
   enabled: boolean;
-  fee: any;
+  fee: Money;
   eta: string;
-  min: any;
+  min: Money;
   onEnabled: (v: boolean) => void;
   onFee: (v: string) => void;
   onEta: (v: string) => void;

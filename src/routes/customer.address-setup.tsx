@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { LocationPicker } from "@/components/maps/LocationPicker";
 import { isValidPincode, normalizePincode, normalizePlace } from "@/lib/pincode";
 import { reverseGeocode } from "@/lib/maps.functions";
-import { cn } from "@/lib/utils";
+import { cn, errorMessage } from "@/lib/utils";
 
 export const Route = createFileRoute("/customer/address-setup")({
   head: () => ({
@@ -82,8 +82,10 @@ function AddressSetupPage() {
         state: g.state ?? f.state,
         pincode: g.pincode ?? f.pincode,
       }));
-    } catch (e: any) {
-      toast.error(e?.message ?? "Could not read that location — please fill the address manually");
+    } catch (e) {
+      toast.error(
+        errorMessage(e, "Could not read that location — please fill the address manually"),
+      );
     }
   };
 

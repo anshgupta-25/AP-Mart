@@ -18,7 +18,7 @@ export const Route = createFileRoute("/delivery")({
 
 function DeliveryShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { user, loading, rolesLoading, roles } = useAuth() as any;
+  const { user, loading, rolesLoading, roles } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {

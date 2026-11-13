@@ -20,17 +20,19 @@ import {
   Wallet,
   ShieldCheck,
   Mail,
+  type LucideIcon,
 } from "lucide-react";
 import { rupees } from "@/lib/format";
 import { DeleteAccountSection } from "@/components/DeleteAccountSection";
+import type { Tables } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/shopkeeper/settings")({ component: Page });
 
 function Page() {
-  const { user, signOut, roles } = useAuth() as any;
+  const { user, signOut, roles } = useAuth();
   const navigate = useNavigate();
-  const [shop, setShop] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [shop, setShop] = useState<Tables<"shops"> | null>(null);
+  const [profile, setProfile] = useState<Partial<Tables<"profiles">> | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
@@ -73,14 +75,14 @@ function Page() {
             .eq("shop_id", shop.id)
             .in("status", ["placed", "accepted_by_shop", "packing", "packed"]),
         ]);
-      const revenue = (rev ?? []).reduce((s: number, r: any) => s + Number(r.total || 0), 0);
+      const revenue = (rev ?? []).reduce((s: number, r) => s + Number(r.total || 0), 0);
       return { products: products ?? 0, orders: orders ?? 0, revenue, pending: pending ?? 0 };
     },
     enabled: !!shop,
   });
 
   const saveProfile = async () => {
-    if (!user) return;
+    if (!user || !profile) return;
     setSavingProfile(true);
     const { error } = await supabase.from("profiles").upsert({
       id: user.id,
@@ -94,6 +96,7 @@ function Page() {
   };
 
   const saveShop = async () => {
+    if (!shop) return;
     const { error } = await supabase
       .from("shops")
       .update({
@@ -328,7 +331,15 @@ function Field({
   );
 }
 
-function StatCard({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+}) {
   return (
     <div className="rounded-xl border border-border/70 bg-card p-3.5">
       <div className="flex items-center gap-2 text-small text-muted-foreground">

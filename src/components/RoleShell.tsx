@@ -1,12 +1,13 @@
+import type { LucideIcon } from "lucide-react";
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, type Role } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
 export interface NavItem {
   to: string;
   label: string;
-  icon: any;
+  icon: LucideIcon;
 }
 
 export function RoleShell({
@@ -18,9 +19,9 @@ export function RoleShell({
   role: "shopkeeper" | "delivery" | "admin" | "customer";
   nav: NavItem[];
   children?: ReactNode;
-  requireRoles?: string[];
+  requireRoles?: Role[];
 }) {
-  const { user, loading, rolesLoading, roles } = useAuth() as any;
+  const { user, loading, rolesLoading, roles } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 

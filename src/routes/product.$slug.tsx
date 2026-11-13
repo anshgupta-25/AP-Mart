@@ -39,6 +39,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { StorageImg } from "@/components/StorageImg";
+import { rpcArgs } from "@/integrations/supabase/rpc";
 
 export const Route = createFileRoute("/product/$slug")({
   head: ({ params }) => ({ meta: [{ title: `${params.slug} — AP Mart` }] }),
@@ -76,7 +77,7 @@ function ProductPage() {
     queryKey: ["product-variants", product.data?.id],
     enabled: !!product.data?.id,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("product_variants")
         .select("*")
         .eq("product_id", product.data!.id)
@@ -95,7 +96,8 @@ function ProductPage() {
         .select("value")
         .eq("key", "enable_customer_shop_selection")
         .maybeSingle();
-      const raw = (data as any)?.value;
+      // Stored as text ("true"/"false"); older rows may hold a JSON boolean.
+      const raw: unknown = data?.value;
       return raw === false || raw === "false" ? false : true;
     },
   });
@@ -146,13 +148,16 @@ function ProductPage() {
     ],
     enabled: !!product.data?.id,
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("product_shop_availability", {
-        _product_id: product.data!.id,
-        _variant_id: selected?.id ?? null,
-        _pincode: delivery.pincode ?? null,
-        _lat: delivery.lat,
-        _lng: delivery.lng,
-      });
+      const { data, error } = await supabase.rpc(
+        "product_shop_availability",
+        rpcArgs("product_shop_availability", {
+          _product_id: product.data!.id,
+          _variant_id: selected?.id ?? null,
+          _pincode: delivery.pincode ?? null,
+          _lat: delivery.lat,
+          _lng: delivery.lng,
+        }),
+      );
       if (error) throw error;
       const row = (Array.isArray(data) ? data[0] : data) ?? null;
       return { open: Number(row?.open_shops ?? 0), closed: Number(row?.closed_shops ?? 0) };
@@ -186,10 +191,10 @@ function ProductPage() {
   }, [baseShops, selectedShop]);
 
   const similar = useCustomerProducts({
-    categoryId: (product.data as any)?.category_id ?? null,
+    categoryId: product.data?.category_id ?? null,
     limit: 14,
     key: `similar:${slug}`,
-    enabled: !!(product.data as any)?.category_id,
+    enabled: !!product.data?.category_id,
   });
 
   const [conflict, setConflict] = useState<{

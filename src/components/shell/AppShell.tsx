@@ -24,7 +24,7 @@ function NavLink({
   const [path, qs] = item.to.split("?");
   const search = qs ? Object.fromEntries(new URLSearchParams(qs)) : undefined;
   return (
-    <Link to={path as any} search={search as any} className={className}>
+    <Link to={path} search={search} className={className}>
       {children}
     </Link>
   );

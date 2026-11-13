@@ -105,19 +105,16 @@ function Page() {
       setOpen(false);
       setEditing(null);
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e) => toast.error(e.message),
   });
 
   const patch = useMutation({
     mutationFn: async ({ id, values }: { id: string; values: Partial<Category> }) => {
-      const { error } = await supabase
-        .from("categories")
-        .update(values as any)
-        .eq("id", id);
+      const { error } = await supabase.from("categories").update(values).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-categories"] }),
-    onError: (e: any) => toast.error(e.message),
+    onError: (e) => toast.error(e.message),
   });
 
   const del = useMutation({
@@ -130,7 +127,7 @@ function Page() {
       qc.invalidateQueries({ queryKey: ["admin-categories"] });
       setConfirmDel(null);
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e) => toast.error(e.message),
   });
 
   const filtered = data.filter((c) => c.name.toLowerCase().includes(q.toLowerCase()));

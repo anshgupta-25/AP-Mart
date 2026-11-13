@@ -23,18 +23,20 @@ import {
   LifeBuoy,
   MessageCircle,
   ChevronRight,
+  type LucideIcon,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { SupportTicketForm } from "@/components/SupportTicketForm";
 import { DeleteAccountSection } from "@/components/DeleteAccountSection";
+import type { Tables } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/delivery/profile")({ component: Page });
 
 function Page() {
-  const { user, signOut, roles } = useAuth() as any;
+  const { user, signOut, roles } = useAuth();
   const navigate = useNavigate();
-  const [partner, setPartner] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [partner, setPartner] = useState<Tables<"delivery_partners"> | null>(null);
+  const [profile, setProfile] = useState<Partial<Tables<"profiles">> | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPartner, setSavingPartner] = useState(false);
   const [ticketOpen, setTicketOpen] = useState(false);
@@ -80,7 +82,7 @@ function Page() {
             .eq("partner_id", partner.id)
             .gte("check_in_at", new Date(Date.now() - 7 * 86400000).toISOString()),
         ]);
-      const weekHours = (weekRows ?? []).reduce((sum: number, r: any) => {
+      const weekHours = (weekRows ?? []).reduce((sum: number, r) => {
         const out = r.check_out_at ? new Date(r.check_out_at) : new Date();
         return sum + (out.getTime() - new Date(r.check_in_at).getTime()) / 3.6e6;
       }, 0);
@@ -96,7 +98,7 @@ function Page() {
   });
 
   const saveProfile = async () => {
-    if (!user) return;
+    if (!user || !profile) return;
     setSavingProfile(true);
     const { error } = await supabase.from("profiles").upsert({
       id: user.id,
@@ -376,7 +378,7 @@ function StatCard({
   value,
   tint,
 }: {
-  icon: any;
+  icon: LucideIcon;
   label: string;
   value: string;
   tint: string;

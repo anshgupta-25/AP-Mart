@@ -152,7 +152,7 @@ function Page() {
       setOpen(false);
       setEditing(null);
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e) => toast.error(e.message),
   });
 
   const del = useMutation({
@@ -165,7 +165,7 @@ function Page() {
       qc.invalidateQueries({ queryKey: ["admin-products"] });
       setConfirmDel(null);
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e) => toast.error(e.message),
   });
 
   let filtered = data.filter((p) => p.name.toLowerCase().includes(q.toLowerCase()));

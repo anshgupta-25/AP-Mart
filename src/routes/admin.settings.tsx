@@ -25,13 +25,14 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import { DeleteAccountSection } from "@/components/DeleteAccountSection";
+import type { Tables } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/admin/settings")({ component: Page });
 
 function Page() {
-  const { user, signOut, roles } = useAuth() as any;
+  const { user, signOut, roles } = useAuth();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Partial<Tables<"profiles">> | null>(null);
   const [saving, setSaving] = useState(false);
   const [ticketOpen, setTicketOpen] = useState(false);
   const [shopSelectionEnabled, setShopSelectionEnabled] = useState<boolean>(true);
@@ -53,7 +54,8 @@ function Page() {
       .eq("key", "enable_customer_shop_selection")
       .maybeSingle()
       .then(({ data }) => {
-        const raw = (data as any)?.value;
+        // Stored as text ("true"/"false"); older rows may hold a JSON boolean.
+        const raw: unknown = data?.value;
         setShopSelectionEnabled(raw === false || raw === "false" ? false : true);
       });
   }, [user]);
@@ -61,9 +63,11 @@ function Page() {
   const toggleShopSelection = async (next: boolean) => {
     setSavingShopSel(true);
     setShopSelectionEnabled(next);
-    const { error } = await (supabase as any)
-      .from("app_config")
-      .upsert({ key: "enable_customer_shop_selection", value: next }, { onConflict: "key" });
+    const { error } = await supabase.from("app_config").upsert(
+      // app_config.value is text; readers accept "true" / "false".
+      { key: "enable_customer_shop_selection", value: String(next) },
+      { onConflict: "key" },
+    );
     setSavingShopSel(false);
     if (error) {
       setShopSelectionEnabled(!next);
@@ -74,7 +78,7 @@ function Page() {
   };
 
   const saveProfile = async () => {
-    if (!user) return;
+    if (!user || !profile) return;
     setSaving(true);
     const { error } = await supabase.from("profiles").upsert({
       id: user.id,

@@ -9,6 +9,7 @@ import { CategoryGroups } from "@/components/customer/CategoryGroups";
 import { loadProductCategoriesMap } from "@/lib/productCategories";
 import { useDeliveryContext } from "@/hooks/useDeliveryContext";
 import { useHeaderOffset } from "@/hooks/useHeaderOffset";
+import { rpcArgs } from "@/integrations/supabase/rpc";
 
 const search = z.object({ q: z.string().optional(), chip: z.string().optional() });
 
@@ -68,20 +69,23 @@ function CategoriesBrowse() {
     gcTime: 30 * 60 * 1000,
     placeholderData: (prev) => prev,
     queryFn: async () => {
-      const { data } = await (supabase as any).rpc("list_customer_products", {
-        _pincode: pincode,
-        _category_id: null,
-        _search: null,
-        _only_featured: false,
-        _only_bestseller: false,
-        _sort: "relevance",
-        _limit: 1000,
-        _ids: null,
-      });
-      const rows = (data ?? []) as any[];
+      const { data } = await supabase.rpc(
+        "list_customer_products",
+        rpcArgs("list_customer_products", {
+          _pincode: pincode,
+          _category_id: null,
+          _search: null,
+          _only_featured: false,
+          _only_bestseller: false,
+          _sort: "relevance",
+          _limit: 1000,
+          _ids: null,
+        }),
+      );
+      const rows = data ?? [];
       const linkMap = await loadProductCategoriesMap(rows.map((r) => r.id));
       const map: Record<string, number> = {};
-      rows.forEach((r: any) => {
+      rows.forEach((r) => {
         const cats = linkMap[r.id]?.length ? linkMap[r.id] : r.category_id ? [r.category_id] : [];
         new Set(cats).forEach((cid) => {
           map[cid] = (map[cid] ?? 0) + 1;
@@ -117,7 +121,7 @@ function CategoriesBrowse() {
 
   const onSubmitSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) navigate({ to: "/products", search: { q: query.trim() } as any });
+    if (query.trim()) navigate({ to: "/products", search: { q: query.trim() } });
   };
 
   return (
@@ -195,11 +199,11 @@ function CategoriesBrowse() {
               </Link>
             </div>
             <div className="scrollbar-hide flex gap-2.5 overflow-x-auto px-4">
-              {collections.data.map((col: any) => (
+              {collections.data.map((col) => (
                 <Link
                   key={col.id}
                   to="/products"
-                  search={{ coll: col.id } as any}
+                  search={{ coll: col.id }}
                   className="press relative block h-[104px] w-[200px] shrink-0 overflow-hidden rounded-xl bg-foreground/80"
                 >
                   {col.image_url && (

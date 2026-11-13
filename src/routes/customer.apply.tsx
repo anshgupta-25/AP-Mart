@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Store, Truck, ArrowLeft, Clock, Check, X } from "lucide-react";
+import { Store, Truck, ArrowLeft, Clock, Check, X, type LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/customer/apply")({
 });
 
 function ApplyPage() {
-  const { user, roles, loading } = useAuth() as any;
+  const { user, roles, loading } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [tab, setTab] = useState<"shopkeeper" | "delivery">("shopkeeper");
@@ -24,13 +24,15 @@ function ApplyPage() {
   const requests = useQuery({
     queryKey: ["my-role-requests", user?.id],
     queryFn: async () =>
-      (
-        await supabase
-          .from("role_requests")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("submitted_at", { ascending: false })
-      ).data ?? [],
+      !user
+        ? []
+        : ((
+            await supabase
+              .from("role_requests")
+              .select("*")
+              .eq("user_id", user.id)
+              .order("submitted_at", { ascending: false })
+          ).data ?? []),
     enabled: !!user,
   });
 
@@ -57,7 +59,7 @@ function ApplyPage() {
       setSk({ shop_name: "", shop_address: "", shop_phone: "", shop_description: "" });
       setDp({ vehicle_type: "", vehicle_number: "", phone: "", license: "" });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e) => toast.error(e.message),
   });
 
   if (loading) return null;
@@ -89,7 +91,7 @@ function ApplyPage() {
       {(requests.data ?? []).length > 0 && (
         <div className="space-y-3 rounded-xl border border-border/70 bg-card p-4">
           <div className="eyebrow">Your requests</div>
-          {(requests.data ?? []).map((r: any) => (
+          {(requests.data ?? []).map((r) => (
             <div key={r.id} className="flex items-center justify-between text-meta">
               <div className="capitalize font-semibold">{r.requested_role}</div>
               <StatusPill status={r.status} reason={r.rejection_reason} />
@@ -269,7 +271,7 @@ function Already({ label }: { label: string }) {
 }
 
 function StatusPill({ status, reason }: { status: string; reason?: string | null }) {
-  const map: Record<string, { c: string; Icon: any; label: string }> = {
+  const map: Record<string, { c: string; Icon: LucideIcon; label: string }> = {
     pending: { c: "bg-tint-sun text-warning-foreground", Icon: Clock, label: "Pending" },
     approved: { c: "bg-primary-soft text-primary-ink", Icon: Check, label: "Approved" },
     rejected: { c: "bg-destructive/10 text-destructive", Icon: X, label: "Rejected" },

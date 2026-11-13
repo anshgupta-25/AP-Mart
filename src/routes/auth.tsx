@@ -19,6 +19,7 @@ import {
   normalizeIndianPhone,
   withRequestTimeout,
 } from "@/lib/phone";
+import { errorMessage } from "@/lib/utils";
 
 async function redirectByRole(navigate: ReturnType<typeof useNavigate>, userId: string) {
   const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
@@ -68,9 +69,9 @@ function AuthPage() {
         // App: the sign-in browser has closed (deep link handles success).
         setGoogleLoading(false);
       }
-    } catch (err: any) {
+    } catch (err) {
       setGoogleLoading(false);
-      toast.error(err?.message || "Google sign-in failed");
+      toast.error(errorMessage(err, "Google sign-in failed"));
     }
   };
 

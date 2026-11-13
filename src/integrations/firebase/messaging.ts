@@ -2,6 +2,7 @@
 // Android app (see ./native-push.ts).
 // Supabase stays responsible for auth / database / storage / realtime —
 // Firebase is used ONLY to deliver push notifications.
+import type { MessagePayload, Messaging } from "firebase/messaging";
 import { supabase } from "@/integrations/supabase/client";
 import {
   disableNativePush,
@@ -10,6 +11,7 @@ import {
   isNativeApp,
   isNativePushConfigured,
 } from "./native-push";
+import { errorMessage } from "@/lib/utils";
 
 const apiKey = import.meta.env.VITE_FIREBASE_WEB_API_KEY as string | undefined;
 const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined;
@@ -46,7 +48,7 @@ export type PushStatus =
 
 export type PushResult = { status: PushStatus; token?: string; error?: string };
 
-let messagingPromise: Promise<any> | null = null;
+let messagingPromise: Promise<Messaging> | null = null;
 
 async function getMessagingInstance() {
   if (!messagingPromise) {
@@ -118,9 +120,9 @@ export async function enablePush(
 
     await storeToken(userId, token);
     return { status: "registered", token };
-  } catch (e: any) {
+  } catch (e) {
     console.warn("[FCM] enablePush error", e);
-    return { status: "error", error: String(e?.message ?? e) };
+    return { status: "error", error: errorMessage(e) };
   }
 }
 
@@ -138,7 +140,9 @@ export async function refreshPushToken(userId: string): Promise<PushResult> {
 }
 
 /** Foreground messages: FCM does not show a notification itself, so we surface it. */
-export async function onForegroundMessage(handler: (payload: any) => void): Promise<() => void> {
+export async function onForegroundMessage(
+  handler: (payload: MessagePayload) => void,
+): Promise<() => void> {
   // In the app, foreground notifications are already shown by the realtime listener.
   if (isNativeApp()) return () => {};
   try {

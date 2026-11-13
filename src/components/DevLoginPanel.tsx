@@ -27,7 +27,7 @@ export function DevLoginPanel() {
     setBusy(email);
     const { error } = await signIn(email, TEST_PASSWORD, true);
     setBusy(null);
-    if (error) return toast.error(describeAuthError(error as any));
+    if (error) return toast.error(describeAuthError(error));
     navigate({ to: "/dashboard", replace: true }); // /dashboard redirects by the account's role
   }
 

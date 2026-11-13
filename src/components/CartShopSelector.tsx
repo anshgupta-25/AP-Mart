@@ -26,6 +26,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { rupees } from "@/lib/format";
 import { toast } from "sonner";
+import { rpcArgs } from "@/integrations/supabase/rpc";
 
 type CartShop = {
   shop_id: string;
@@ -58,11 +59,14 @@ export function CartShopSelector({
     queryKey: ["eligible-shops-cart", user?.id, pincode, lat, lng, items.length],
     enabled: !!user && items.length > 0,
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("list_eligible_shops_for_cart", {
-        _pincode: pincode ?? null,
-        _lat: lat,
-        _lng: lng,
-      });
+      const { data, error } = await supabase.rpc(
+        "list_eligible_shops_for_cart",
+        rpcArgs("list_eligible_shops_for_cart", {
+          _pincode: pincode ?? null,
+          _lat: lat,
+          _lng: lng,
+        }),
+      );
       if (error) throw error;
       return (data ?? []) as CartShop[];
     },

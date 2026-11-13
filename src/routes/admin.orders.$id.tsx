@@ -39,9 +39,9 @@ function Page() {
     queryKey: ["admin-order-meta", id, q.data?.order?.shop_id, q.data?.order?.partner_id],
     enabled: !!q.data,
     queryFn: async () => {
-      const o: any = q.data!.order;
+      const o = q.data!.order;
       const [shops, partner] = await Promise.all([
-        supabase.rpc("admin_list_shops").then((r) => (r.data as any[]) ?? []),
+        supabase.rpc("admin_list_shops").then((r) => r.data ?? []),
         o.partner_id
           ? supabase
               .from("delivery_partners")
@@ -51,7 +51,7 @@ function Page() {
               .then((r) => r.data)
           : null,
       ]);
-      const shopMap = new Map(shops.map((s: any) => [s.id, s]));
+      const shopMap = new Map(shops.map((s) => [s.id, s]));
       return { shop: o.shop_id ? (shopMap.get(o.shop_id) ?? null) : null, shopMap, partner };
     },
   });
@@ -69,7 +69,7 @@ function Page() {
       </div>
     );
 
-  const { order: o, items, children, totalQuantity, productCount } = q.data as any;
+  const { order: o, items, children, totalQuantity, productCount } = q.data;
   const shopEarnings = Number(o.subtotal ?? 0) - Number(o.discount ?? 0);
   const commission = Math.max(
     0,
@@ -97,8 +97,8 @@ function Page() {
           {children.length > 0 && (
             <div className="space-y-1 rounded-xl border border-border/70 bg-card p-4">
               <div className="section-title mb-2">Shops on this order ({children.length})</div>
-              {children.map((c: any) => {
-                const s: any = c.shop_id ? meta.data?.shopMap?.get(c.shop_id) : null;
+              {children.map((c) => {
+                const s = c.shop_id ? meta.data?.shopMap?.get(c.shop_id) : null;
                 return (
                   <Link
                     key={c.id}

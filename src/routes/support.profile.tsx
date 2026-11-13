@@ -26,7 +26,7 @@ function Page() {
 
   useEffect(() => {
     if (!user) return;
-    (supabase as any)
+    supabase
       .from("support_agents")
       .select("display_name, is_active")
       .eq("user_id", user.id)
@@ -35,7 +35,7 @@ function Page() {
         setName(data?.display_name ?? "");
         setActive(data?.is_active ?? true);
       });
-    (supabase as any)
+    supabase
       .from("profiles")
       .select("full_name, phone")
       .eq("id", user.id)
@@ -50,12 +50,12 @@ function Page() {
     if (!user) return;
     setBusy(true);
     const [r1, r2] = await Promise.all([
-      (supabase as any).from("support_agents").upsert({
+      supabase.from("support_agents").upsert({
         user_id: user.id,
         display_name: name,
         is_active: active,
       }),
-      (supabase as any).from("profiles").upsert({
+      supabase.from("profiles").upsert({
         id: user.id,
         full_name: fullName,
         phone,

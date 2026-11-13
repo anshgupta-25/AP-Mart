@@ -189,7 +189,7 @@ function SuperAdminDashboard() {
         ].map((t) => (
           <Link
             key={t.to}
-            to={t.to as any}
+            to={t.to}
             className="press rounded-xl border border-border/70 bg-card p-4 transition-colors hover:bg-secondary/40"
           >
             <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary-soft text-primary-ink">
@@ -207,7 +207,7 @@ function SuperAdminDashboard() {
           <p className="mt-2 text-small text-muted-foreground">No security events recorded yet.</p>
         ) : (
           <ul className="mt-3 divide-y divide-border/60">
-            {(recentEvents ?? []).map((e: any) => (
+            {(recentEvents ?? []).map((e) => (
               <li key={e.id} className="flex items-center justify-between gap-3 py-2.5 text-small">
                 <span className="font-medium">{e.event_type.replace(/_/g, " ")}</span>
                 <span className="text-muted-foreground">

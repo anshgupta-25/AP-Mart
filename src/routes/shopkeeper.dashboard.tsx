@@ -22,6 +22,8 @@ import {
 import { Link } from "@tanstack/react-router";
 import { DeliveryTypeBadge } from "@/components/FastDeliveryBadge";
 import { runOptimistic, patchRow, removeRow } from "@/lib/optimistic";
+import { asAddress } from "@/lib/address";
+import { rpcArgs } from "@/integrations/supabase/rpc";
 
 export const Route = createFileRoute("/shopkeeper/dashboard")({
   head: () => ({ meta: [{ title: "Shopkeeper Dashboard — AP Mart" }] }),
@@ -124,7 +126,7 @@ function Page() {
     queryKey: ["shop-expiry-summary", shopId],
     queryFn: async () => {
       if (!shopId) return { expired: 0, week: 0, month: 0, valueAtRisk: 0 };
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("shop_products")
         .select("stock, price, expiry_date, is_available")
         .eq("shop_id", shopId)
@@ -163,7 +165,7 @@ function Page() {
   // Multi-shop child orders must use the child-aware RPCs so the parent order
   // (the one the customer tracks) gets its status rolled up correctly.
   const isChildOrder = (id: string) =>
-    !!(orders.data ?? []).find((o: any) => o.id === id)?.parent_order_id;
+    !!(orders.data ?? []).find((o) => o.id === id)?.parent_order_id;
 
   const accept = async (id: string) => {
     const child = isChildOrder(id);
@@ -172,7 +174,7 @@ function Page() {
       keys: [["shop-orders", shopId]],
       updater: patchRow(id, { status: "accepted_by_shop" }),
       request: () =>
-        (supabase.rpc as any)(
+        supabase.rpc(
           child ? "shop_accept_child" : "shop_accept_order",
           child ? { _child_id: id, _prep_minutes: 15 } : { _order_id: id },
         ),
@@ -188,10 +190,15 @@ function Page() {
       // rejected orders leave this shop's queue immediately
       updater: removeRow(id),
       request: () =>
-        (supabase.rpc as any)(
-          child ? "shop_reject_child" : "shop_reject_order",
-          child ? { _child_id: id, _reason: reason } : { _order_id: id, _reason: reason },
-        ),
+        child
+          ? supabase.rpc(
+              "shop_reject_child",
+              rpcArgs("shop_reject_child", { _child_id: id, _reason: reason }),
+            )
+          : supabase.rpc(
+              "shop_reject_order",
+              rpcArgs("shop_reject_order", { _order_id: id, _reason: reason }),
+            ),
       success: "Order rejected — re-routing to next shop",
     });
   };
@@ -202,7 +209,7 @@ function Page() {
       keys: [["shop-orders", shopId]],
       updater: patchRow(id, { status: "packed" }),
       request: () =>
-        (supabase.rpc as any)(
+        supabase.rpc(
           child ? "shop_mark_child_ready" : "shop_mark_packed",
           child ? { _child_id: id } : { _order_id: id },
         ),
@@ -311,13 +318,13 @@ function Page() {
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2 text-body font-semibold">
                               {o.order_number}
-                              <DeliveryTypeBadge type={(o as any).delivery_type} size="xs" />
+                              <DeliveryTypeBadge type={o.delivery_type} size="xs" />
                             </div>
                             <div className="mt-0.5 text-small text-muted-foreground">
                               {itemStats.data?.[o.id]?.qty ?? 0} items ·{" "}
-                              {String((o as any).payment_method ?? "").toUpperCase()}
-                              {(o as any).assignment_distance_km != null
-                                ? ` · ${Number((o as any).assignment_distance_km).toFixed(1)} km`
+                              {String(o.payment_method ?? "").toUpperCase()}
+                              {o.assignment_distance_km != null
+                                ? ` · ${Number(o.assignment_distance_km).toFixed(1)} km`
                                 : ""}
                             </div>
                           </div>
@@ -331,8 +338,8 @@ function Page() {
                           </div>
                         </div>
                         <div className="mt-2 truncate text-small text-muted-foreground">
-                          {(o.address as any)?.name} — {(o.address as any)?.line1}
-                          {(o as any).delivery_pincode ? ` · ${(o as any).delivery_pincode}` : ""}
+                          {asAddress(o.address).name} — {asAddress(o.address).line1}
+                          {o.delivery_pincode ? ` · ${o.delivery_pincode}` : ""}
                         </div>
                       </Link>
                       {o.status === "awaiting_shop" && (
@@ -427,7 +434,7 @@ function QuickLink({
   label: string;
 }) {
   return (
-    <Link to={to as any} className="press flex min-h-12 items-center gap-3 px-4 py-2">
+    <Link to={to} className="press flex min-h-12 items-center gap-3 px-4 py-2">
       <span className={`grid h-9 w-9 place-items-center rounded-lg ${tint}`}>{icon}</span>
       <span className="flex-1 text-body font-medium">{label}</span>
       <ChevronRight className="h-4 w-4 text-muted-foreground/60" />

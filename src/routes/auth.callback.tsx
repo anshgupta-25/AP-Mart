@@ -7,6 +7,7 @@ import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { LogoMark } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/utils";
 
 export const Route = createFileRoute("/auth/callback")({
   head: () => ({ meta: [{ title: "Authenticating — AP Mart" }] }),
@@ -116,7 +117,7 @@ function AuthCallbackPage() {
         const user = session.user;
 
         // 4. Verify account active status (Requirement 8 - blocked accounts)
-        const { data: profileCheck } = await (supabase as any)
+        const { data: profileCheck } = await supabase
           .from("profiles")
           .select("status, is_active")
           .eq("id", user.id)
@@ -148,7 +149,7 @@ function AuthCallbackPage() {
           .from("user_roles")
           .select("role")
           .eq("user_id", user.id);
-        const roles = (rolesData ?? []).map((r: any) => r.role as string);
+        const roles = (rolesData ?? []).map((r) => r.role as string);
 
         // Check if there was a saved return route
         const savedNext =
@@ -167,19 +168,19 @@ function AuthCallbackPage() {
         setTimeout(() => {
           if (!isMounted) return;
           if (isStaff) {
-            const destination = homeForRoles(roles as any);
-            navigate({ to: destination as any, replace: true });
+            const destination = homeForRoles(roles);
+            navigate({ to: destination, replace: true });
           } else {
             const destination =
               savedNext && savedNext.startsWith("/") ? savedNext : "/customer/dashboard";
-            navigate({ to: destination as any, replace: true });
+            navigate({ to: destination, replace: true });
           }
         }, 600);
-      } catch (err: any) {
+      } catch (err) {
         console.error("[OAuth Callback] Unexpected error:", err);
         if (isMounted) {
           setStatus("error");
-          setMessage(err?.message || "An unexpected error occurred during Google sign-in.");
+          setMessage(errorMessage(err, "An unexpected error occurred during Google sign-in."));
         }
         toast.error("Google sign-in error");
         setTimeout(() => {

@@ -8,7 +8,7 @@ export const Route = createFileRoute("/shopkeeper/coupons")({
 });
 
 function ShopkeeperCouponsPage() {
-  const { roles } = useAuth() as any;
+  const { roles } = useAuth();
   const isAdmin = (roles ?? []).includes("admin");
   return (
     <div className="mx-auto max-w-6xl space-y-5 px-4 py-4 md:px-6">

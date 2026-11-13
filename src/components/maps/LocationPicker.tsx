@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { MapPin, Crosshair, Search } from "lucide-react";
 import { toast } from "sonner";
 import { loadGoogleMaps } from "@/lib/googleMaps";
+import { errorMessage } from "@/lib/utils";
 
 export type LatLng = { lat: number; lng: number };
 
@@ -135,8 +136,8 @@ export function LocationPicker({
             .slice(0, 6)
             .map((p) => ({ placeId: p.placeId, text: p.text?.toString() ?? "" })),
         );
-      } catch (e: any) {
-        console.warn("places autocomplete:", e?.message ?? e);
+      } catch (e) {
+        console.warn("places autocomplete:", errorMessage(e));
       }
     }, 220);
   };
@@ -159,8 +160,8 @@ export function LocationPicker({
       mapRef.current?.setZoom(17);
       // Reset session token after each picked place (billing best practice)
       sessionTokenRef.current = new g.maps.places.AutocompleteSessionToken();
-    } catch (e: any) {
-      toast.error(e?.message ?? "Could not load place");
+    } catch (e) {
+      toast.error(errorMessage(e, "Could not load place"));
     }
   };
 

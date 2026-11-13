@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useDeliveryContext } from "./useDeliveryContext";
+import { rpcArgs } from "@/integrations/supabase/rpc";
 
 export interface Subcategory {
   id: string;
@@ -36,10 +37,14 @@ export function useCategorySubcategories(categoryId?: string | null) {
     staleTime: 5 * 60 * 1000,
     placeholderData: (prev) => prev,
     queryFn: async (): Promise<SubcategoryWithCount[]> => {
-      const { data, error } = await (supabase as any).rpc("list_category_subcategories", {
-        _category_id: categoryId,
-        _pincode: pincode,
-      });
+      if (!categoryId) return [];
+      const { data, error } = await supabase.rpc(
+        "list_category_subcategories",
+        rpcArgs("list_category_subcategories", {
+          _category_id: categoryId,
+          _pincode: pincode,
+        }),
+      );
       if (error) throw error;
       return (data ?? []) as SubcategoryWithCount[];
     },
@@ -53,7 +58,8 @@ export function useSubcategories(categoryId?: string | null, activeOnly = false)
     enabled: !!categoryId,
     staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<Subcategory[]> => {
-      let q = (supabase as any)
+      if (!categoryId) return [];
+      let q = supabase
         .from("subcategories")
         .select(
           "id, category_id, name, slug, image_url, icon, display_order, is_active, is_featured",
@@ -85,7 +91,7 @@ export function useSubcategoriesForCategories(categoryIds: string[], activeOnly 
     enabled: ids.length > 0,
     staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<Subcategory[]> => {
-      let q = (supabase as any)
+      let q = supabase
         .from("subcategories")
         .select(
           "id, category_id, name, slug, image_url, icon, display_order, is_active, is_featured",

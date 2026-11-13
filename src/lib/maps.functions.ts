@@ -126,8 +126,8 @@ export const rankShopsByEta = createServerFn({ method: "POST" })
     });
     const rows = Array.isArray(json) ? json : [];
     const ranked = rows
-      .filter((r: any) => r?.condition === "ROUTE_EXISTS")
-      .map((r: any) => ({
+      .filter((r) => r?.condition === "ROUTE_EXISTS")
+      .map((r) => ({
         shopId: data.shops[r.originIndex].id,
         etaSeconds: Number(String(r.duration ?? "0s").replace(/s$/, "")) || 0,
         distanceMeters: Number(r.distanceMeters ?? 0),

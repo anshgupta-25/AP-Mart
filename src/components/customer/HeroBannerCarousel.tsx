@@ -47,7 +47,7 @@ function useOffers() {
     staleTime: 5 * 60_000,
     queryFn: async () => {
       const now = new Date().toISOString();
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("offers")
         .select("id, title, subtitle, image_url, link_url, badge, starts_at, ends_at")
         .eq("is_active", true)
@@ -75,7 +75,7 @@ function OfferLink({
   const [path, qs] = (href && href.startsWith("/") ? href : "/products").split("?");
   const search = qs ? Object.fromEntries(new URLSearchParams(qs)) : undefined;
   return (
-    <Link to={path as any} search={search as any} className={className}>
+    <Link to={path} search={search} className={className}>
       {children}
     </Link>
   );

@@ -53,7 +53,7 @@ function Row({
   hint?: string;
 }) {
   return (
-    <Link to={to as any} className={rowCls}>
+    <Link to={to} className={rowCls}>
       <IconTile tint={tint}>{icon}</IconTile>
       <span className="flex-1 text-body font-medium">{label}</span>
       {hint && <span className="text-meta text-muted-foreground">{hint}</span>}
@@ -242,7 +242,7 @@ export function ProfileScreen({ next }: { next: string }) {
           </div>
         ) : (
           <div className="divide-y divide-border/60">
-            {addresses.data?.map((a: any) => (
+            {addresses.data?.map((a) => (
               <div
                 key={a.id}
                 className="flex min-h-12 items-start justify-between gap-3 px-3.5 py-3"

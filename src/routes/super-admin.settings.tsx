@@ -1,7 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Save, Wrench, Flag, Truck, Bell, Sparkles, CreditCard } from "lucide-react";
+import {
+  Loader2,
+  Save,
+  Wrench,
+  Flag,
+  Truck,
+  Bell,
+  Sparkles,
+  CreditCard,
+  type LucideIcon,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -31,7 +41,7 @@ export const Route = createFileRoute("/super-admin/settings")({
  *  keys live in encrypted backend secrets and are never readable from the app. */
 type Group = {
   title: string;
-  icon: any;
+  icon: LucideIcon;
   items: Array<{ key: string; label: string; hint?: string; kind: "bool" | "text" }>;
 };
 
@@ -114,7 +124,7 @@ function PlatformSettings() {
       const { data, error } = await supabase.from("app_config").select("key, value");
       if (error) throw error;
       const map: Record<string, string> = {};
-      for (const row of data ?? []) map[(row as any).key] = (row as any).value;
+      for (const row of data ?? []) map[row.key] = row.value;
       return map;
     },
   });

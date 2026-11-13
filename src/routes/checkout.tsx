@@ -23,6 +23,7 @@ import { LocationPicker } from "@/components/maps/LocationPicker";
 import { CartShopSelector } from "@/components/CartShopSelector";
 import { useDeliveryContext } from "@/hooks/useDeliveryContext";
 import { AuthRequired } from "@/components/AuthRequired";
+import { errorMessage } from "@/lib/utils";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({ meta: [{ title: "Checkout — AP Mart" }] }),
@@ -90,7 +91,7 @@ function CheckoutPage() {
     queryKey: ["delivery-zone", activePincode],
     enabled: !!activePincode,
     queryFn: async () => {
-      const { data } = await (supabase as any).rpc("get_delivery_options_for_pincode", {
+      const { data } = await supabase.rpc("get_delivery_options_for_pincode", {
         _pincode: activePincode,
       });
       const row = Array.isArray(data) ? data[0] : data;
@@ -99,7 +100,7 @@ function CheckoutPage() {
   });
 
   const tiers = (() => {
-    const z: any = zone.data;
+    const z = zone.data;
     const arr: Array<{
       id: "standard_delivery" | "fast_delivery" | "express_delivery" | "pickup";
       icon: string;
@@ -208,7 +209,7 @@ function CheckoutPage() {
     const code = coupon.trim().toUpperCase();
     if (!code) return toast.error("Enter a coupon code");
     setApplyingCoupon(true);
-    const { data, error } = await (supabase as any).rpc("validate_coupon", {
+    const { data, error } = await supabase.rpc("validate_coupon", {
       _code: code,
       _subtotal: subtotal,
     });
@@ -292,16 +293,16 @@ function CheckoutPage() {
     const addr = addresses.data.find((a) => a.id === selectedAddr);
     if (!addr) return toast.error("Please add a delivery address");
 
-    const lat = coords?.lat ?? (addr as any).lat;
-    const lng = coords?.lng ?? (addr as any).lng;
+    const lat = coords?.lat ?? addr.lat;
+    const lng = coords?.lng ?? addr.lng;
     if (lat == null || lng == null) {
       toast.error("Please pin your delivery location on the map to continue.");
       return;
     }
-    const addressWithCoords: any = { ...addr, lat, lng };
+    const addressWithCoords = { ...addr, lat, lng };
 
     setPlacing(true);
-    const { data, error } = await (supabase as any).rpc("place_multi_shop_order", {
+    const { data, error } = await supabase.rpc("place_multi_shop_order", {
       _address: addressWithCoords,
       _payment_method: method,
       _coupon_code: appliedCoupon?.code ?? undefined,
@@ -348,8 +349,8 @@ function CheckoutPage() {
         razorpayOrderId: rzp.razorpayOrderId,
         orderNumber: rzp.orderNumber,
         prefill: {
-          name: (addr as any).name,
-          contact: (addr as any).phone,
+          name: addr.name,
+          contact: addr.phone,
           email: user.email ?? undefined,
         },
         onSuccess: async (resp) => {
@@ -366,8 +367,8 @@ function CheckoutPage() {
             toast.success("Payment successful");
             clear();
             navigate({ to: "/orders/$id", params: { id: orderId } });
-          } catch (e: any) {
-            toast.error(e.message ?? "Payment verification failed");
+          } catch (e) {
+            toast.error(errorMessage(e, "Payment verification failed"));
           } finally {
             safeSetPlacing(false);
           }
@@ -389,9 +390,9 @@ function CheckoutPage() {
           navigate({ to: "/orders/$id", params: { id: orderId } });
         },
       });
-    } catch (e: any) {
+    } catch (e) {
       setPlacing(false);
-      toast.error(e.message ?? "Could not start payment");
+      toast.error(errorMessage(e, "Could not start payment"));
     }
   };
 

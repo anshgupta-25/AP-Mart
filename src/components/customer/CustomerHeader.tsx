@@ -73,7 +73,7 @@ export function CustomerHeader({
             return (
               <Link
                 key={l.label}
-                to={to as any}
+                to={to}
                 className={cn(
                   "rounded-lg px-3 py-1.5 text-body font-medium",
                   active ? "bg-card text-primary" : "text-foreground/75 hover:bg-card/70",

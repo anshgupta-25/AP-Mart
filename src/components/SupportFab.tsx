@@ -18,7 +18,7 @@ export function SupportFab({ className = "" }: { className?: string }) {
         }
       >
         <Button
-          onClick={() => nav({ to: "/support/my-tickets" as any })}
+          onClick={() => nav({ to: "/support/my-tickets" })}
           variant="secondary"
           size="sm"
           className="rounded-full border border-border/70 bg-card text-small shadow-soft"

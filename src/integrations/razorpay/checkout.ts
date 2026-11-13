@@ -1,7 +1,19 @@
 // Loads the Razorpay Checkout script and opens the modal.
+type RazorpaySuccess = {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+};
+type RazorpayFailure = { error?: { code?: string; description?: string } };
+interface RazorpayInstance {
+  on(event: "payment.failed", cb: (resp: RazorpayFailure) => void): void;
+  open(): void;
+}
+type RazorpayConstructor = new (options: Record<string, unknown>) => RazorpayInstance;
+
 declare global {
   interface Window {
-    Razorpay?: any;
+    Razorpay?: RazorpayConstructor;
   }
 }
 
@@ -40,6 +52,7 @@ export interface OpenCheckoutOpts {
 
 export async function openRazorpayCheckout(opts: OpenCheckoutOpts) {
   await loadScript();
+  if (!window.Razorpay) throw new Error("Razorpay checkout failed to load");
   const rzp = new window.Razorpay({
     key: opts.keyId,
     amount: opts.amount,
@@ -50,10 +63,10 @@ export async function openRazorpayCheckout(opts: OpenCheckoutOpts) {
     prefill: opts.prefill,
     theme: { color: "#A3E635" },
     method: { upi: true, card: true, netbanking: true, wallet: true, emi: false, paylater: false },
-    handler: (resp: any) => opts.onSuccess(resp),
+    handler: (resp: RazorpaySuccess) => opts.onSuccess(resp),
     modal: { ondismiss: () => opts.onDismiss?.() },
   });
-  rzp.on("payment.failed", (resp: any) => {
+  rzp.on("payment.failed", (resp: RazorpayFailure) => {
     opts.onFailure({
       code: resp?.error?.code,
       description: resp?.error?.description,

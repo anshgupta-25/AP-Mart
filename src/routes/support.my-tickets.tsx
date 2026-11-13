@@ -21,12 +21,12 @@ function Page() {
     queryKey: ["my-tickets", user?.id],
     queryFn: async () => {
       if (!user) return [];
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("support_tickets")
         .select("id, ticket_number, title, category, status, created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-      return (data ?? []) as any[];
+      return data ?? [];
     },
     enabled: !!user,
   });
@@ -83,7 +83,7 @@ function Page() {
       <SupportTicketForm
         open={open}
         onOpenChange={setOpen}
-        onCreated={(id) => nav({ to: "/support/ticket/$id" as any, params: { id } as any })}
+        onCreated={(id) => nav({ to: "/support/ticket/$id", params: { id } })}
       />
     </div>
   );

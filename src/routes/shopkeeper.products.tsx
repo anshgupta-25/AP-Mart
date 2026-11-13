@@ -58,6 +58,7 @@ import { CatalogDialogContent } from "@/components/CatalogBrowser";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { StorageImg } from "@/components/StorageImg";
+import { errorMessage } from "@/lib/utils";
 
 export const Route = createFileRoute("/shopkeeper/products")({
   head: () => ({ meta: [{ title: "Products — Shopkeeper" }] }),
@@ -161,7 +162,7 @@ function Page() {
         .order("created_at", { ascending: false })
         .limit(500);
       if (error) throw error;
-      return (data ?? []) as any as ShopProduct[];
+      return (data ?? []) as ShopProduct[];
     },
     enabled: !!shopId,
   });
@@ -498,7 +499,7 @@ function EditDialog({
             image_gallery: gallery,
             category_id: categoryIds[0] ?? null,
             subcategory_id: subcategoryIds[0] ?? null,
-          } as any)
+          })
           .eq("id", item.product_id);
         if (pErr) throw pErr;
         await saveProductCategories(item.product_id, categoryIds);
@@ -514,14 +515,14 @@ function EditDialog({
           is_available: available,
           manufacturing_date: mfgDate || null,
           expiry_date: expDate || null,
-        } as any)
+        })
         .eq("id", item.id);
       if (error) throw error;
 
       toast.success("Updated");
       onSaved();
-    } catch (e: any) {
-      toast.error(e.message ?? "Failed to update");
+    } catch (e) {
+      toast.error(errorMessage(e, "Failed to update"));
     } finally {
       setSaving(false);
     }
@@ -675,12 +676,12 @@ function CreateNewProduct({
     enabled: debouncedName.length >= 2,
     staleTime: 30_000,
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("find_catalog_duplicate", {
+      const { data, error } = await supabase.rpc("find_catalog_duplicate", {
         _name: debouncedName,
         _shop_id: shopId,
       });
       if (error) throw error;
-      const row = ((data ?? []) as any[])[0];
+      const row = (data ?? [])[0];
       return (row ?? null) as {
         id: string;
         name: string;
@@ -778,7 +779,7 @@ function CreateNewProduct({
         is_available: true,
         manufacturing_date: mfgDate || null,
         expiry_date: expDate || null,
-      } as any);
+      });
       if (sErr) throw sErr;
 
       if (isVariantMode) {
@@ -786,8 +787,8 @@ function CreateNewProduct({
       }
       toast.success("Product created");
       onDone();
-    } catch (e: any) {
-      toast.error(e.message ?? "Failed to create");
+    } catch (e) {
+      toast.error(errorMessage(e, "Failed to create"));
     } finally {
       setSaving(false);
     }

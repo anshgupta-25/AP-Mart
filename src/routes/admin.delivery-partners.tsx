@@ -33,6 +33,7 @@ import { toast } from "sonner";
 import { rupees } from "@/lib/format";
 import { Truck, Activity, BarChart3, Circle, Trash2, UserPlus, Radio, Clock } from "lucide-react";
 import { partnerStatusMeta, timeAgo } from "@/lib/partnerStatus";
+import { asAddress } from "@/lib/address";
 
 export const Route = createFileRoute("/admin/delivery-partners")({
   head: () => ({ meta: [{ title: "Delivery — AP Mart Admin" }] }),
@@ -96,8 +97,7 @@ function Page() {
     qc.invalidateQueries({ queryKey: ["admin-perf"] });
   };
 
-  const shopName = (id: string | null) =>
-    (shops.data ?? []).find((s: any) => s.id === id)?.name ?? "—";
+  const shopName = (id: string | null) => (shops.data ?? []).find((s) => s.id === id)?.name ?? "—";
 
   const perf = useQuery({
     queryKey: ["admin-perf"],
@@ -133,12 +133,12 @@ function Page() {
     qc.invalidateQueries({ queryKey: ["admin-perf"] });
   };
 
-  const partnerById = (id: string | null) => (partners.data ?? []).find((p: any) => p.id === id);
+  const partnerById = (id: string | null) => (partners.data ?? []).find((p) => p.id === id);
 
   const live = useQuery({
     queryKey: ["admin-live-partners"],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("admin_live_partners" as any);
+      const { data, error } = await supabase.rpc("admin_live_partners");
       if (error) throw error;
       return (data ?? []) as Array<{
         partner_id: string;
@@ -181,7 +181,7 @@ function Page() {
     (live.data ?? []).forEach((r) => {
       const key = r.shop_id ?? "__unassigned__";
       const name = r.shop_name ?? "Unassigned";
-      const g = groups.get(key) ?? { shop_name: name, rows: [] as any };
+      const g = groups.get(key) ?? { shop_name: name, rows: [] };
       g.rows.push(r);
       groups.set(key, g);
     });
@@ -225,17 +225,15 @@ function Page() {
       <section className="grid grid-cols-3 gap-3 md:gap-4">
         <Stat
           label="Online partners"
-          value={String((partners.data ?? []).filter((p: any) => p.is_online).length)}
+          value={String((partners.data ?? []).filter((p) => p.is_online).length)}
         />
         <Stat
           label="Active deliveries"
-          value={String(
-            (orders.data ?? []).filter((o: any) => o.status === "out_for_delivery").length,
-          )}
+          value={String((orders.data ?? []).filter((o) => o.status === "out_for_delivery").length)}
         />
         <Stat
           label="Awaiting pickup"
-          value={String((orders.data ?? []).filter((o: any) => o.status === "packed").length)}
+          value={String((orders.data ?? []).filter((o) => o.status === "packed").length)}
         />
       </section>
 
@@ -312,7 +310,7 @@ function Page() {
           Live orders
         </h2>
         <div className="space-y-3">
-          {(orders.data ?? []).map((o: any) => {
+          {(orders.data ?? []).map((o) => {
             const p = partnerById(o.partner_id);
             return (
               <div
@@ -325,8 +323,8 @@ function Page() {
                     <span className="font-normal text-muted-foreground">• {rupees(o.total)}</span>
                   </div>
                   <div className="text-small capitalize text-muted-foreground">
-                    {o.status.replace(/_/g, " ")} · {(o.address as any)?.line1},{" "}
-                    {(o.address as any)?.city}
+                    {o.status.replace(/_/g, " ")} · {asAddress(o.address).line1},{" "}
+                    {asAddress(o.address).city}
                   </div>
                   <div className="text-xs mt-1">
                     {p ? (
@@ -346,7 +344,7 @@ function Page() {
                     <SelectValue placeholder={p ? "Reassign" : "Assign partner"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {(partners.data ?? []).map((pp: any) => (
+                    {(partners.data ?? []).map((pp) => (
                       <SelectItem key={pp.id} value={pp.id}>
                         {pp.name} {pp.is_online ? "🟢" : "⚫"}
                       </SelectItem>
@@ -391,7 +389,7 @@ function Page() {
               </tr>
             </thead>
             <tbody>
-              {(perf.data ?? []).map((r: any) => {
+              {(perf.data ?? []).map((r) => {
                 const pp = partnerById(r.partner_id);
                 return (
                   <tr
@@ -428,7 +426,7 @@ function Page() {
                           <SelectValue placeholder="Transfer to…" />
                         </SelectTrigger>
                         <SelectContent>
-                          {(shops.data ?? []).map((s: any) => (
+                          {(shops.data ?? []).map((s) => (
                             <SelectItem key={s.id} value={s.id}>
                               {s.name}
                             </SelectItem>
@@ -457,7 +455,7 @@ function Page() {
 
         {/* Mobile cards */}
         <div className="space-y-3 md:hidden">
-          {(perf.data ?? []).map((r: any) => {
+          {(perf.data ?? []).map((r) => {
             const pp = partnerById(r.partner_id);
             return (
               <div key={r.partner_id} className="rounded-xl border border-border/70 bg-card p-4">
@@ -503,7 +501,7 @@ function Page() {
                       <SelectValue placeholder="Transfer to shop…" />
                     </SelectTrigger>
                     <SelectContent>
-                      {(shops.data ?? []).map((s: any) => (
+                      {(shops.data ?? []).map((s) => (
                         <SelectItem key={s.id} value={s.id}>
                           {s.name}
                         </SelectItem>
@@ -565,7 +563,7 @@ function AddPartnerDialog({
       _phone: phone.trim(),
       _vehicle: vehicle.trim() || undefined,
       _user_email: email.trim() || undefined,
-    } as any);
+    });
     setBusy(false);
     if (error) toast.error(error.message);
     else {

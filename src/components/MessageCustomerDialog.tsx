@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { MessageCircle, Send } from "lucide-react";
+import { rpcArgs } from "@/integrations/supabase/rpc";
 
 const QUICK = [
   { kind: "eta_2", label: "Arriving in 2 minutes" },
@@ -40,11 +41,14 @@ export function MessageCustomerDialog({
 
   const send = async (kind: string, message?: string) => {
     setSending(true);
-    const { error } = await supabase.rpc("partner_send_message" as any, {
-      _order_id: orderId,
-      _kind: kind,
-      _custom_message: message ?? null,
-    });
+    const { error } = await supabase.rpc(
+      "partner_send_message",
+      rpcArgs("partner_send_message", {
+        _order_id: orderId,
+        _kind: kind,
+        _custom_message: message ?? null,
+      }),
+    );
     setSending(false);
     if (error) return toast.error(error.message);
     toast.success("Customer notified");

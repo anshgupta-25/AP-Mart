@@ -8,7 +8,7 @@ export async function loadProductSubcategories(
   productId: string,
   fallbackSubcategoryId?: string | null,
 ): Promise<string[]> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("product_subcategories")
     .select("subcategory_id")
     .eq("product_id", productId);
@@ -21,7 +21,7 @@ export async function loadProductSubcategories(
 /** Replace a product's subcategory links with `subcategoryIds` (deduped). */
 export async function saveProductSubcategories(productId: string, subcategoryIds: string[]) {
   const ids = Array.from(new Set(subcategoryIds.filter(Boolean)));
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("product_subcategories")
     .select("subcategory_id")
     .eq("product_id", productId);
@@ -34,7 +34,7 @@ export async function saveProductSubcategories(productId: string, subcategoryIds
     .map((sid) => ({ product_id: productId, subcategory_id: sid }));
 
   if (toDelete.length > 0) {
-    const { error: dErr } = await (supabase as any)
+    const { error: dErr } = await supabase
       .from("product_subcategories")
       .delete()
       .eq("product_id", productId)
@@ -42,14 +42,14 @@ export async function saveProductSubcategories(productId: string, subcategoryIds
     if (dErr) throw dErr;
   }
   if (toInsert.length > 0) {
-    const { error: iErr } = await (supabase as any).from("product_subcategories").insert(toInsert);
+    const { error: iErr } = await supabase.from("product_subcategories").insert(toInsert);
     if (iErr) throw iErr;
   }
 }
 
 /** True when the category has at least one active subcategory (so it's required). */
 export async function categoryHasSubcategories(categoryId: string): Promise<boolean> {
-  const { count } = await (supabase as any)
+  const { count } = await supabase
     .from("subcategories")
     .select("id", { count: "exact", head: true })
     .eq("category_id", categoryId)
@@ -61,7 +61,7 @@ export async function categoryHasSubcategories(categoryId: string): Promise<bool
 export async function anyCategoryHasSubcategories(categoryIds: string[]): Promise<boolean> {
   const ids = Array.from(new Set(categoryIds.filter(Boolean)));
   if (ids.length === 0) return false;
-  const { count } = await (supabase as any)
+  const { count } = await supabase
     .from("subcategories")
     .select("id", { count: "exact", head: true })
     .in("category_id", ids)

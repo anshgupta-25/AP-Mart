@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { describeAuthError } from "@/lib/authErrors";
 import { LogoMark } from "@/components/Logo";
 import { DevLoginPanel } from "@/components/DevLoginPanel";
-import { cn } from "@/lib/utils";
+import { cn, errorMessage } from "@/lib/utils";
 import { publicSiteOrigin } from "@/lib/api-base";
 
 export const Route = createFileRoute("/login")({
@@ -56,14 +56,14 @@ function LoginPage() {
     } = await supabase.auth.getUser();
     if (!user) return false;
     const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
-    const roles = (data ?? []).map((r: any) => r.role);
+    const roles = (data ?? []).map((r) => r.role);
     // Everyone signs in here; each role lands on its own dashboard (customers honour ?next=).
     const isCustomerOnly = !roles.some((r: string) => r !== "customer");
     if (!isCustomerOnly) {
-      navigate({ to: homeForRoles(roles) as any, replace: true });
+      navigate({ to: homeForRoles(roles), replace: true });
       return true;
     }
-    navigate({ to: (next ?? "/customer/dashboard") as any, replace: true });
+    navigate({ to: next ?? "/customer/dashboard", replace: true });
     return true;
   }
 
@@ -102,9 +102,9 @@ function LoginPage() {
       // Web: the page navigates away to Google. App: the sign-in browser has
       // closed (deep link handles success), so re-enable the button.
       if (!result.redirected) setGoogleLoading(false);
-    } catch (err: any) {
+    } catch (err) {
       setGoogleLoading(false);
-      toast.error(err?.message || "Google sign-in failed");
+      toast.error(errorMessage(err, "Google sign-in failed"));
     }
   }
 

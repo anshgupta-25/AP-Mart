@@ -304,7 +304,7 @@ export function CollectionChips() {
       <h2 className="section-title px-4">Collections</h2>
       <div className="scrollbar-hide flex scroll-px-4 gap-2 overflow-x-auto px-4">
         {collections.data.map((c) => (
-          <Link key={c.id} to="/products" search={{ coll: c.id } as any} className={chip(false)}>
+          <Link key={c.id} to="/products" search={{ coll: c.id }} className={chip(false)}>
             {c.name}
           </Link>
         ))}

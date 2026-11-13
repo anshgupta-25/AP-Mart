@@ -11,6 +11,7 @@ import { signInWithGoogle } from "@/lib/googleAuth";
 import { toast } from "sonner";
 import { describeAuthError } from "@/lib/authErrors";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { errorMessage } from "@/lib/utils";
 
 export const Route = createFileRoute("/signup")({
   validateSearch: (search: Record<string, unknown>): { next?: string } =>
@@ -84,9 +85,9 @@ function SignupPage() {
       }
       // App: the sign-in browser has closed (deep link handles success).
       if (!result.redirected) setGoogleLoading(false);
-    } catch (err: any) {
+    } catch (err) {
       setGoogleLoading(false);
-      toast.error(err?.message || "Google sign-in failed");
+      toast.error(errorMessage(err, "Google sign-in failed"));
     }
   }
 

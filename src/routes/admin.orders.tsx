@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { DeliveryTypeBadge } from "@/components/FastDeliveryBadge";
 import { ImageOff, MapPin, Phone, Search, Store, Truck, User } from "lucide-react";
 import { StorageImg } from "@/components/StorageImg";
+import { asAddress } from "@/lib/address";
 
 export const Route = createFileRoute("/admin/orders")({
   head: () => ({
@@ -59,7 +60,7 @@ function useAdminOrders() {
         .select("*")
         .order("placed_at", { ascending: false })
         .limit(200);
-      const list = (orders ?? []) as any[];
+      const list = orders ?? [];
       const ids = list.map((o) => o.id);
 
       const [itemsRes, shopsRes, partnersRes] = await Promise.all([
@@ -70,19 +71,19 @@ function useAdminOrders() {
                 "id, order_id, child_order_id, name, image_url, unit, variant_label, quantity, price, shop_id",
               )
               .in("order_id", ids)
-          : Promise.resolve({ data: [] as any[] }),
+          : Promise.resolve({ data: [] }),
         supabase.rpc("admin_list_shops"),
         supabase.from("delivery_partners").select("id, name, phone, vehicle"),
       ]);
 
       const itemsByOrder = new Map<string, any[]>();
-      for (const it of ((itemsRes as any).data ?? []) as any[]) {
+      for (const it of itemsRes.data ?? []) {
         const arr = itemsByOrder.get(it.order_id) ?? [];
         arr.push(it);
         itemsByOrder.set(it.order_id, arr);
       }
-      const shopMap = new Map(((shopsRes.data as any[]) ?? []).map((s: any) => [s.id, s]));
-      const partnerMap = new Map(((partnersRes.data as any[]) ?? []).map((p: any) => [p.id, p]));
+      const shopMap = new Map((shopsRes.data ?? []).map((s) => [s.id, s]));
+      const partnerMap = new Map((partnersRes.data ?? []).map((p) => [p.id, p]));
 
       return list.map((o) => ({
         ...o,
@@ -157,19 +158,19 @@ function Page() {
 
   const shopOptions = useMemo(() => {
     const m = new Map<string, string>();
-    rows.forEach((o: any) => o.shop && m.set(o.shop.id, o.shop.name));
+    rows.forEach((o) => o.shop && m.set(o.shop.id, o.shop.name));
     return [...m.entries()];
   }, [rows]);
   const partnerOptions = useMemo(() => {
     const m = new Map<string, string>();
-    rows.forEach((o: any) => o.partner && m.set(o.partner.id, o.partner.name));
+    rows.forEach((o) => o.partner && m.set(o.partner.id, o.partner.name));
     return [...m.entries()];
   }, [rows]);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return rows.filter((o: any) => {
-      const a = (o.address ?? {}) as any;
+    return rows.filter((o) => {
+      const a = asAddress(o.address);
       if (status !== "all" && o.status !== status) return false;
       if (shopId !== "all" && o.shop_id !== shopId) return false;
       if (partnerId !== "all" && o.partner_id !== partnerId) return false;
@@ -189,7 +190,7 @@ function Page() {
         o.shop?.owner_name,
         o.partner?.name,
         o.partner?.phone,
-        ...(o.items ?? []).map((i: any) => i.name),
+        ...(o.items ?? []).map((i) => i.name),
       ]
         .filter(Boolean)
         .join(" ")
@@ -318,8 +319,8 @@ function Page() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((o: any) => {
-            const a = (o.address ?? {}) as any;
+          {filtered.map((o) => {
+            const a = asAddress(o.address);
             const b = statusBadge(o.status);
             return (
               <Link

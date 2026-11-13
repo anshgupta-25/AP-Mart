@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useDeliveryContext } from "./useDeliveryContext";
 import type { ProductCardData } from "@/components/ProductCard";
+import { rpcArgs } from "@/integrations/supabase/rpc";
 
 export interface CustomerProductsArgs {
   categoryId?: string | null;
@@ -58,16 +59,19 @@ export function useCustomerProducts(args: CustomerProductsArgs = {}) {
     // Keep the previous page of products on screen while a new key loads.
     placeholderData: (prev) => prev,
     queryFn: async (): Promise<ProductCardData[]> => {
-      const { data, error } = await (supabase as any).rpc("list_customer_products", {
-        _pincode: pincode,
-        _category_id: categoryId,
-        _search: search,
-        _only_featured: onlyFeatured,
-        _only_bestseller: onlyBestseller,
-        _sort: sort,
-        _limit: limit,
-        _ids: ids,
-      });
+      const { data, error } = await supabase.rpc(
+        "list_customer_products",
+        rpcArgs("list_customer_products", {
+          _pincode: pincode,
+          _category_id: categoryId,
+          _search: search,
+          _only_featured: onlyFeatured,
+          _only_bestseller: onlyBestseller,
+          _sort: sort,
+          _limit: limit,
+          _ids: ids,
+        }),
+      );
       if (error) throw error;
       return (data ?? []) as ProductCardData[];
     },

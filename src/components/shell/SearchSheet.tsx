@@ -78,7 +78,7 @@ export function SearchSheet({
     if (!v) return;
     writeRecent([v, ...readRecent().filter((x) => x.toLowerCase() !== v.toLowerCase())]);
     onOpenChange(false);
-    navigate({ to: "/products", search: { q: v } as any });
+    navigate({ to: "/products", search: { q: v } });
   };
 
   const showResults = debounced.length >= 2;

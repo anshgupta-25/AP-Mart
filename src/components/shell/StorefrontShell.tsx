@@ -67,7 +67,7 @@ export function StorefrontShell({
               return (
                 <Link
                   key={t.label}
-                  to={t.to as any}
+                  to={t.to}
                   className={cn(
                     "press relative flex flex-col items-center justify-center gap-0.5 pb-1.5 pt-2 text-micro font-semibold transition-colors",
                     on ? "text-foreground" : "text-muted-foreground",

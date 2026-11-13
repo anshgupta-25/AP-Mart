@@ -337,8 +337,8 @@ function Page() {
   }, [orders]);
 
   const prevNet = (prevQuery.data ?? [])
-    .filter((o: any) => DELIVERED.has(o.status))
-    .reduce((s: number, o: any) => s + Number(o.total), 0);
+    .filter((o) => DELIVERED.has(o.status))
+    .reduce((s: number, o) => s + Number(o.total), 0);
   const changePct =
     prevNet === 0
       ? kpis.netRevenue > 0
@@ -757,7 +757,7 @@ function Page() {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis dataKey="label" fontSize={11} />
                   <YAxis fontSize={11} />
-                  <Tooltip formatter={(v: any) => rupees(Number(v))} />
+                  <Tooltip formatter={(v) => rupees(Number(v))} />
                   <Legend />
                   <Line
                     type="monotone"

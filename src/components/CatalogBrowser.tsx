@@ -26,6 +26,8 @@ import { DateRangeFields, dateRangeError } from "@/components/DateRangeFields";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { rupees } from "@/lib/format";
 import { StorageImg } from "@/components/StorageImg";
+import { rpcArgs } from "@/integrations/supabase/rpc";
+import { errorMessage } from "@/lib/utils";
 
 export type CatalogRow = {
   id: string;
@@ -57,14 +59,17 @@ export function useMasterCatalog(opts: {
     staleTime: 60_000,
     placeholderData: keepPreviousData,
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("search_master_catalog", {
-        _shop_id: shopId,
-        _q: q || null,
-        _category_id: categoryId === "all" ? null : categoryId,
-        _brand: brand === "all" ? null : brand,
-        _limit: PAGE_SIZE,
-        _offset: page * PAGE_SIZE,
-      });
+      const { data, error } = await supabase.rpc(
+        "search_master_catalog",
+        rpcArgs("search_master_catalog", {
+          _shop_id: shopId,
+          _q: q || null,
+          _category_id: categoryId === "all" ? null : categoryId,
+          _brand: brand === "all" ? null : brand,
+          _limit: PAGE_SIZE,
+          _offset: page * PAGE_SIZE,
+        }),
+      );
       if (error) throw error;
       return (data ?? []) as CatalogRow[];
     },
@@ -94,7 +99,7 @@ export function CatalogDialogContent({
     queryKey: ["master-catalog-brands"],
     staleTime: 10 * 60_000,
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("master_catalog_brands");
+      const { data, error } = await supabase.rpc("master_catalog_brands");
       if (error) throw error;
       return ((data ?? []) as { brand: string }[]).map((b) => b.brand);
     },
@@ -309,7 +314,7 @@ function AddToShopForm({
 
     setSaving(true);
     try {
-      const { error } = await (supabase as any).from("shop_products").insert({
+      const { error } = await supabase.from("shop_products").insert({
         shop_id: shopId,
         product_id: product.id,
         price,
@@ -325,7 +330,7 @@ function AddToShopForm({
         expiry_date: expDate || null,
       });
       if (error) {
-        if ((error as any).code === "23505") {
+        if (error.code === "23505") {
           toast.error(`${product.name} has already been added to your shop.`);
           return;
         }
@@ -335,8 +340,8 @@ function AddToShopForm({
       if (active.length > 0) await saveVariants(product.id, variants);
       toast.success(`${product.name} added to your shop`);
       onDone();
-    } catch (e: any) {
-      toast.error(e.message ?? "Failed to add product");
+    } catch (e) {
+      toast.error(errorMessage(e, "Failed to add product"));
     } finally {
       setSaving(false);
     }

@@ -20,7 +20,7 @@ function Page() {
   const stats = useQuery({
     queryKey: ["admin-support-stats"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("admin_support_stats");
+      const { data, error } = await supabase.rpc("admin_support_stats");
       if (error) throw error;
       return data as any;
     },
@@ -30,7 +30,7 @@ function Page() {
   const addAgent = async () => {
     if (!email.trim()) return;
     setBusy(true);
-    const { error } = await (supabase as any).rpc("admin_set_support_agent", {
+    const { error } = await supabase.rpc("admin_set_support_agent", {
       _user_email: email.trim(),
       _is_active: true,
     });
@@ -45,7 +45,7 @@ function Page() {
 
   const remove = async (userId: string) => {
     if (!confirm("Remove this support executive?")) return;
-    const { error } = await (supabase as any).rpc("admin_remove_support_agent", {
+    const { error } = await supabase.rpc("admin_remove_support_agent", {
       _user_id: userId,
     });
     if (error) toast.error(error.message);

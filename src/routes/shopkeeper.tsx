@@ -20,7 +20,7 @@ export const Route = createFileRoute("/shopkeeper")({
 
 function ShopkeeperShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { user, loading, rolesLoading, roles } = useAuth() as any;
+  const { user, loading, rolesLoading, roles } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {

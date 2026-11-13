@@ -18,7 +18,7 @@ export const Route = createFileRoute("/customer")({
 
 function CustomerShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { user, loading, roles } = useAuth() as any;
+  const { user, loading, roles } = useAuth();
   const navigate = useNavigate();
   const { hasAddress, ready: addressReady } = useDeliveryContext();
   useCustomerCatalogRealtime();

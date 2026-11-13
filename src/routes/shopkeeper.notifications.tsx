@@ -47,7 +47,7 @@ function ShopkeeperNotifications() {
 
   // Mark all as read on view
   useEffect(() => {
-    if (!user?.id || !items.some((n: any) => !n.read)) return;
+    if (!user?.id || !items.some((n) => !n.read)) return;
     supabase
       .from("notifications")
       .update({ read: true })
@@ -99,7 +99,7 @@ function ShopkeeperNotifications() {
                   </div>
                 </div>
               );
-              return <li key={n.id}>{url ? <Link to={url as any}>{Inner}</Link> : Inner}</li>;
+              return <li key={n.id}>{url ? <Link to={url}>{Inner}</Link> : Inner}</li>;
             })}
           </ul>
         )}

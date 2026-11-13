@@ -51,9 +51,9 @@ function Page() {
   const data = useQuery({
     queryKey: ["support-dash-complaints", user?.id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("support_list_complaints");
+      const { data, error } = await supabase.rpc("support_list_complaints");
       if (error) throw error;
-      const rows: any[] = data ?? [];
+      const rows = data ?? [];
       return {
         total: rows.length,
         open: rows.filter((r) => ["open", "assigned", "in_progress"].includes(r.status)).length,
@@ -242,7 +242,7 @@ function ResolveButton({ ticketId, onDone }: { ticketId: string; onDone: () => v
 
   const resolve = async () => {
     setBusy(true);
-    const { error } = await (supabase as any).rpc("update_ticket_status", {
+    const { error } = await supabase.rpc("update_ticket_status", {
       _ticket_id: ticketId,
       _status: "resolved",
       _notes: notes.trim() || null,

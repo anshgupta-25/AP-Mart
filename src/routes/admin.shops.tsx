@@ -357,7 +357,7 @@ function Page() {
             <FilterSelect
               label="Open/Closed"
               value={fOpen}
-              onChange={(v) => setFOpen(v as any)}
+              onChange={(v) => setFOpen(v as typeof fOpen)}
               options={[
                 ["all", "All"],
                 ["open", "Open"],
@@ -367,7 +367,7 @@ function Page() {
             <FilterSelect
               label="Status"
               value={fStatus}
-              onChange={(v) => setFStatus(v as any)}
+              onChange={(v) => setFStatus(v as typeof fStatus)}
               options={[
                 ["all", "All"],
                 ["active", "Active"],
@@ -377,7 +377,7 @@ function Page() {
             <FilterSelect
               label="Owner"
               value={fAssign}
-              onChange={(v) => setFAssign(v as any)}
+              onChange={(v) => setFAssign(v as typeof fAssign)}
               options={[
                 ["all", "All"],
                 ["assigned", "Assigned"],
@@ -693,13 +693,13 @@ function ShopCard({
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/admin/orders" search={{ shop: shop.id } as any}>
+              <Link to="/admin/orders" search={{ shop: shop.id }}>
                 <Package className="h-4 w-4 mr-2" />
                 View orders
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/admin/earnings" search={{ shop: shop.id } as any}>
+              <Link to="/admin/earnings" search={{ shop: shop.id }}>
                 <IndianRupee className="h-4 w-4 mr-2" />
                 Earnings
               </Link>

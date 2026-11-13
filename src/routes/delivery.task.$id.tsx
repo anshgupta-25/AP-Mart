@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { ArrowLeft, MapPin, Package, Phone, Store } from "lucide-react";
 import { MultiShopPickupPanel } from "@/components/MultiShopPickupPanel";
 import { DeliveryTypeBadge } from "@/components/FastDeliveryBadge";
+import { asAddress } from "@/lib/address";
+import { rpcArgs } from "@/integrations/supabase/rpc";
 
 export const Route = createFileRoute("/delivery/task/$id")({
   head: () => ({ meta: [{ title: "Delivery Task — AP Mart" }] }),
@@ -30,12 +32,15 @@ function Page() {
     message?: string,
   ) => {
     setSending(true);
-    const { error } = await supabase.rpc("partner_send_eta_update" as any, {
-      _order_id: id,
-      _kind: kind,
-      _eta_minutes: minutes ?? null,
-      _custom_message: message ?? null,
-    });
+    const { error } = await supabase.rpc(
+      "partner_send_eta_update",
+      rpcArgs("partner_send_eta_update", {
+        _order_id: id,
+        _kind: kind,
+        _eta_minutes: minutes ?? null,
+        _custom_message: message ?? null,
+      }),
+    );
     setSending(false);
     if (error) return toast.error(error.message);
     toast.success("Customer notified");
@@ -71,7 +76,7 @@ function Page() {
   };
 
   const stepIdx = data?.status === "delivered" ? 2 : data?.status === "out_for_delivery" ? 1 : 0;
-  const addr = (data?.address ?? {}) as Record<string, any>;
+  const addr = asAddress(data?.address);
   const addrLine = [addr.line1, addr.line2, addr.city, addr.pincode].filter(Boolean).join(", ");
 
   const DeliverTo = data ? (
@@ -224,7 +229,7 @@ function Page() {
                 <Package className="h-3.5 w-3.5" /> Items ({data.order_items?.length || 0})
               </p>
               <ul className="divide-y divide-border/60 px-4 pb-1">
-                {(data.order_items || []).map((it: any) => (
+                {(data.order_items || []).map((it) => (
                   <li
                     key={it.id}
                     className="flex min-h-11 items-center justify-between gap-3 py-2 text-small"
@@ -256,11 +261,14 @@ function Page() {
                     disabled={sending}
                     onClick={async () => {
                       setSending(true);
-                      const { error } = await supabase.rpc("partner_update_status" as any, {
-                        _status: st.k,
-                        _order_id: id,
-                        _eta_minutes: Number(etaMin) > 0 ? Math.min(240, Number(etaMin)) : null,
-                      });
+                      const { error } = await supabase.rpc(
+                        "partner_update_status",
+                        rpcArgs("partner_update_status", {
+                          _status: st.k,
+                          _order_id: id,
+                          _eta_minutes: Number(etaMin) > 0 ? Math.min(240, Number(etaMin)) : null,
+                        }),
+                      );
                       setSending(false);
                       if (error) return toast.error(error.message);
                       toast.success(`Status: ${st.label}`);

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { rupees } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
+import { rpcArgs } from "@/integrations/supabase/rpc";
 
 export type EligibleShop = {
   shop_id: string;
@@ -41,13 +42,17 @@ export function useEligibleShops(params: {
     ],
     enabled: !!productId && enabled,
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("list_eligible_shops_for_product", {
-        _product_id: productId,
-        _variant_id: variantId ?? null,
-        _pincode: pincode ?? null,
-        _lat: lat ?? null,
-        _lng: lng ?? null,
-      });
+      if (!productId) return [];
+      const { data, error } = await supabase.rpc(
+        "list_eligible_shops_for_product",
+        rpcArgs("list_eligible_shops_for_product", {
+          _product_id: productId,
+          _variant_id: variantId ?? null,
+          _pincode: pincode ?? null,
+          _lat: lat ?? null,
+          _lng: lng ?? null,
+        }),
+      );
       if (error) throw error;
       return (data ?? []) as EligibleShop[];
     },

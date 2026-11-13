@@ -50,9 +50,9 @@ function ProductsPage() {
             ([, v]) => v !== undefined && v !== false && v !== "relevance" && v !== 1000,
           ),
         ),
-      } as any,
+      },
     });
-  const { user, loading, roles } = useAuth() as any;
+  const { user, loading, roles } = useAuth();
   const navigate = useNavigate();
   const headerH = useHeaderOffset();
   const [term, setTerm] = useState(q ?? "");
@@ -82,7 +82,7 @@ function ProductsPage() {
     gcTime: 30 * 60 * 1000,
   });
 
-  const catRow = categories.data?.find((c: any) => c.slug === cat) ?? null;
+  const catRow = categories.data?.find((c) => c.slug === cat) ?? null;
   const catalogMode = isCatalogMode(params);
   const sortKey = toRpcSort(sort);
   const rpcProducts = useCustomerProducts({
@@ -127,7 +127,7 @@ function ProductsPage() {
               <Link
                 key={c.id}
                 to="/products"
-                search={{ cat: c.slug } as any}
+                search={{ cat: c.slug }}
                 className={`block rounded-lg px-3 py-2 text-meta ${cat === c.slug ? "bg-primary-soft font-semibold text-primary-ink" : "hover:bg-secondary"}`}
               >
                 <span className="mr-2">{c.icon}</span>
@@ -145,7 +145,7 @@ function ProductsPage() {
             onSubmit={(e) => {
               e.preventDefault();
               const v = term.trim();
-              navigate({ to: "/products", search: (v ? { q: v } : {}) as any });
+              navigate({ to: "/products", search: v ? { q: v } : {} });
             }}
           >
             <div className="flex h-10 items-center gap-2 rounded-xl bg-card px-3 shadow-soft">
@@ -167,7 +167,7 @@ function ProductsPage() {
               <Link
                 key={c.id}
                 to="/products"
-                search={{ cat: c.slug } as any}
+                search={{ cat: c.slug }}
                 className={chip(cat === c.slug)}
               >
                 {c.name}

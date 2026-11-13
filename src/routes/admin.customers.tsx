@@ -11,6 +11,7 @@ import {
   Ban,
   Check,
   Tag,
+  type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,7 +24,7 @@ export const Route = createFileRoute("/admin/customers")({
 type AppRole = "super_admin" | "admin" | "customer" | "shopkeeper" | "delivery" | "support";
 /** Roles an admin may assign from this screen (super_admin is intentionally excluded). */
 const ROLES: AppRole[] = ["admin", "shopkeeper", "delivery", "support", "customer"];
-const ICONS: Partial<Record<AppRole, any>> = {
+const ICONS: Partial<Record<AppRole, LucideIcon>> = {
   super_admin: ShieldCheck,
   admin: Shield,
   shopkeeper: StoreIcon,
@@ -43,8 +44,8 @@ function CustomersPage() {
       // Defence in depth: the RPC already hides Super Admin accounts/roles from
       // non-Super-Admins, but never render the protected role even if it leaks.
       return (data ?? [])
-        .filter((u: any) => !(u.roles ?? []).includes("super_admin"))
-        .map((u: any) => ({
+        .filter((u) => !(u.roles ?? []).includes("super_admin"))
+        .map((u) => ({
           ...u,
           roles: (u.roles ?? []).filter((r: string) => r !== "super_admin"),
         }));
@@ -61,7 +62,7 @@ function CustomersPage() {
       toast.success("Role added");
       qc.invalidateQueries({ queryKey: ["admin-users"] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e) => toast.error(e.message),
   });
 
   const remove = useMutation({
@@ -74,7 +75,7 @@ function CustomersPage() {
       toast.success("Role removed");
       qc.invalidateQueries({ queryKey: ["admin-users"] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e) => toast.error(e.message),
   });
 
   const setStatus = useMutation({
@@ -89,7 +90,7 @@ function CustomersPage() {
       toast.success(v.status === "disabled" ? "User disabled" : "User enabled");
       qc.invalidateQueries({ queryKey: ["admin-users"] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e) => toast.error(e.message),
   });
 
   return (
@@ -122,7 +123,7 @@ function CustomersPage() {
                 </tr>
               </thead>
               <tbody>
-                {(users.data ?? []).map((u: any) => (
+                {(users.data ?? []).map((u) => (
                   <tr
                     key={u.id}
                     className="border-b border-border/70 align-top transition-colors last:border-0 hover:bg-secondary/50"
@@ -214,7 +215,7 @@ function CustomersPage() {
           </div>
 
           <div className="space-y-3 md:hidden">
-            {(users.data ?? []).map((u: any) => (
+            {(users.data ?? []).map((u) => (
               <div key={u.id} className="space-y-4 rounded-xl border border-border/70 bg-card p-4">
                 <div className="flex items-start justify-between">
                   <div>

@@ -16,6 +16,8 @@ import {
 } from "@/components/order/OrderPanels";
 import { useQueryClient } from "@tanstack/react-query";
 import { runOptimistic, patchOrderDetail } from "@/lib/optimistic";
+import { rpcArgs } from "@/integrations/supabase/rpc";
+import { asAddress } from "@/lib/address";
 
 export const Route = createFileRoute("/shopkeeper/orders/$id")({
   head: () => ({ meta: [{ title: "Order — Shopkeeper" }] }),
@@ -34,9 +36,9 @@ function Page() {
       </div>
     );
 
-  const { order: o, items, totalQuantity, productCount } = q.data as any;
+  const { order: o, items, totalQuantity, productCount } = q.data;
   const isChild = !!o.parent_order_id;
-  const phone = (o.address as any)?.phone as string | undefined;
+  const phone = asAddress(o.address).phone ?? undefined;
 
   const accept = async () => {
     await runOptimistic({
@@ -44,7 +46,7 @@ function Page() {
       keys: [["order-details", id], ["shop-orders"]],
       updater: patchOrderDetail({ status: "accepted_by_shop" }),
       request: () =>
-        (supabase.rpc as any)(
+        supabase.rpc(
           isChild ? "shop_accept_child" : "shop_accept_order",
           isChild ? { _child_id: o.id, _prep_minutes: 15 } : { _order_id: o.id },
         ),
@@ -58,10 +60,15 @@ function Page() {
       keys: [["order-details", id], ["shop-orders"]],
       updater: patchOrderDetail({ status: "awaiting_shop" }),
       request: () =>
-        (supabase.rpc as any)(
-          isChild ? "shop_reject_child" : "shop_reject_order",
-          isChild ? { _child_id: o.id, _reason: reason } : { _order_id: o.id, _reason: reason },
-        ),
+        isChild
+          ? supabase.rpc(
+              "shop_reject_child",
+              rpcArgs("shop_reject_child", { _child_id: o.id, _reason: reason }),
+            )
+          : supabase.rpc(
+              "shop_reject_order",
+              rpcArgs("shop_reject_order", { _order_id: o.id, _reason: reason }),
+            ),
       success: "Order rejected — searching replacement shop",
     });
   };
@@ -71,7 +78,7 @@ function Page() {
       keys: [["order-details", id], ["shop-orders"]],
       updater: patchOrderDetail({ status: isChild ? "packed" : "packed" }),
       request: () =>
-        (supabase.rpc as any)(
+        supabase.rpc(
           isChild ? "shop_mark_child_ready" : "shop_mark_packed",
           isChild ? { _child_id: o.id } : { _order_id: o.id },
         ),

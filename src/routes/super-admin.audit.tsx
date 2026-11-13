@@ -56,7 +56,7 @@ function AuditPage() {
 
       {error ? (
         <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-small text-destructive">
-          {(error as any)?.message ?? "Could not load the audit log"}
+          {error?.message ?? "Could not load the audit log"}
         </div>
       ) : isLoading ? (
         <div className="grid place-items-center py-12">

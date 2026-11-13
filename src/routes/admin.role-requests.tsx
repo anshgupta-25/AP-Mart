@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Store, Truck, Check, X, Clock } from "lucide-react";
+import { Store, Truck, Check, X, Clock, type LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,18 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import type { Database } from "@/integrations/supabase/types";
+type Fns = Database["public"]["Functions"];
+type RoleRequest = Fns["admin_list_role_requests"]["Returns"][number];
+/** Free-form application details stored in role_requests.data (JSON). */
+type RequestData = {
+  shop_name?: string;
+  shop_address?: string;
+  shop_phone?: string;
+  vehicle_type?: string;
+  phone?: string;
+};
+type DialogProps = { request: RoleRequest; onClose: () => void; onDone: () => void };
 
 export const Route = createFileRoute("/admin/role-requests")({
   head: () => ({ meta: [{ title: "Role requests — AP Mart Admin" }] }),
@@ -32,15 +44,15 @@ export const Route = createFileRoute("/admin/role-requests")({
 function RoleRequestsPage() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<string>("pending");
-  const [approve, setApprove] = useState<any | null>(null);
-  const [reject, setReject] = useState<any | null>(null);
+  const [approve, setApprove] = useState<RoleRequest | null>(null);
+  const [reject, setReject] = useState<RoleRequest | null>(null);
 
   const reqs = useQuery({
     queryKey: ["admin-role-requests", filter],
     queryFn: async () => {
       const { data, error } = await supabase.rpc(
         "admin_list_role_requests",
-        filter === "all" ? ({} as any) : { _status: filter },
+        filter === "all" ? {} : { _status: filter },
       );
       if (error) throw error;
       return data ?? [];
@@ -87,7 +99,7 @@ function RoleRequestsPage() {
         </div>
       ) : (
         <div className="grid gap-3 md:gap-4">
-          {(reqs.data ?? []).map((r: any) => (
+          {(reqs.data ?? []).map((r) => (
             <div key={r.id} className="rounded-xl border border-border/70 bg-card p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -160,7 +172,7 @@ function RoleRequestsPage() {
 }
 
 function StatusPill({ status }: { status: string }) {
-  const map: Record<string, { c: string; Icon: any }> = {
+  const map: Record<string, { c: string; Icon: LucideIcon }> = {
     pending: { c: "bg-tint-sun text-[oklch(0.45_0.1_75)]", Icon: Clock },
     approved: { c: "bg-primary-soft text-primary-ink", Icon: Check },
     rejected: { c: "bg-tint-rose text-[oklch(0.45_0.12_15)]", Icon: X },
@@ -176,7 +188,11 @@ function StatusPill({ status }: { status: string }) {
   );
 }
 
-function ApproveDialog({ request, onClose, onDone }: any) {
+function ApproveDialog({
+  request,
+  onClose,
+  onDone,
+}: Omit<DialogProps, "request"> & { request: RoleRequest | null }) {
   if (!request) return null;
   return request.requested_role === "shopkeeper" ? (
     <ApproveShopkeeper request={request} onClose={onClose} onDone={onDone} />
@@ -185,10 +201,10 @@ function ApproveDialog({ request, onClose, onDone }: any) {
   );
 }
 
-function ApproveShopkeeper({ request, onClose, onDone }: any) {
+function ApproveShopkeeper({ request, onClose, onDone }: DialogProps) {
   const [mode, setMode] = useState<"new" | "existing">("new");
   const [shopId, setShopId] = useState<string>("");
-  const d = request.data ?? {};
+  const d = (request.data ?? {}) as RequestData;
   const [form, setForm] = useState({
     name: d.shop_name ?? "",
     address: d.shop_address ?? "",
@@ -208,7 +224,7 @@ function ApproveShopkeeper({ request, onClose, onDone }: any) {
 
   const m = useMutation({
     mutationFn: async () => {
-      const args: any = { _request_id: request.id };
+      const args: Fns["admin_approve_shopkeeper_request"]["Args"] = { _request_id: request.id };
       if (mode === "existing") {
         if (!shopId) throw new Error("Pick a shop");
         args._shop_id = shopId;
@@ -234,7 +250,7 @@ function ApproveShopkeeper({ request, onClose, onDone }: any) {
       onDone();
       onClose();
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e) => toast.error(e.message),
   });
 
   return (
@@ -322,7 +338,7 @@ function ApproveShopkeeper({ request, onClose, onDone }: any) {
                   <SelectValue placeholder="Choose a shop to assign…" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(shops.data ?? []).map((s: any) => (
+                  {(shops.data ?? []).map((s) => (
                     <SelectItem key={s.id} value={s.id}>
                       {s.name} {s.owner_id ? "(reassign)" : ""}
                     </SelectItem>
@@ -352,9 +368,9 @@ function ApproveShopkeeper({ request, onClose, onDone }: any) {
   );
 }
 
-function ApproveDelivery({ request, onClose, onDone }: any) {
+function ApproveDelivery({ request, onClose, onDone }: DialogProps) {
   const [shopId, setShopId] = useState<string>("");
-  const d = request.data ?? {};
+  const d = (request.data ?? {}) as RequestData;
   const [vehicle, setVehicle] = useState(d.vehicle_type ?? "");
   const [phone, setPhone] = useState(d.phone ?? "");
 
@@ -380,7 +396,7 @@ function ApproveDelivery({ request, onClose, onDone }: any) {
       onDone();
       onClose();
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e) => toast.error(e.message),
   });
 
   return (
@@ -397,7 +413,7 @@ function ApproveDelivery({ request, onClose, onDone }: any) {
                 <SelectValue placeholder="Choose a shop…" />
               </SelectTrigger>
               <SelectContent>
-                {(shops.data ?? []).map((s: any) => (
+                {(shops.data ?? []).map((s) => (
                   <SelectItem key={s.id} value={s.id}>
                     {s.name}
                   </SelectItem>
@@ -428,11 +444,16 @@ function ApproveDelivery({ request, onClose, onDone }: any) {
   );
 }
 
-function RejectDialog({ request, onClose, onDone }: any) {
+function RejectDialog({
+  request,
+  onClose,
+  onDone,
+}: Omit<DialogProps, "request"> & { request: RoleRequest | null }) {
   const [reason, setReason] = useState("");
   const m = useMutation({
     mutationFn: async () => {
-      const args: any = { _request_id: request.id };
+      if (!request) return;
+      const args: Fns["admin_reject_role_request"]["Args"] = { _request_id: request.id };
       if (reason) args._reason = reason;
       const { error } = await supabase.rpc("admin_reject_role_request", args);
       if (error) throw error;
@@ -442,7 +463,7 @@ function RejectDialog({ request, onClose, onDone }: any) {
       onDone();
       onClose();
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e) => toast.error(e.message),
   });
   if (!request) return null;
   return (

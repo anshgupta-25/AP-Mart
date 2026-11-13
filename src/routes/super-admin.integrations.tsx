@@ -48,7 +48,7 @@ function IntegrationsPage() {
   const fetchStatus = useServerFn(getIntegrationStatus);
   const { data, isLoading, error } = useQuery({
     queryKey: ["super-admin", "integration-status"],
-    queryFn: () => fetchStatus({ data: undefined as any }),
+    queryFn: () => fetchStatus({ data: undefined }),
   });
 
   return (

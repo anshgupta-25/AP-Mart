@@ -19,7 +19,7 @@ export const Route = createFileRoute("/admin")({
 
 function AdminShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { user, loading, rolesLoading, isAdmin } = useAuth() as any;
+  const { user, loading, rolesLoading, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {

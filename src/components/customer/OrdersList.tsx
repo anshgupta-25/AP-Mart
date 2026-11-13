@@ -181,7 +181,7 @@ export function OrdersList({ detail, next }: { detail: "public" | "customer"; ne
         </div>
       ) : (
         <div className="space-y-2.5">
-          {orders.data?.map((o: any) => (
+          {orders.data?.map((o) => (
             <Row key={o.id} o={o} />
           ))}
         </div>

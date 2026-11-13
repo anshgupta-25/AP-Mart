@@ -3,9 +3,15 @@
  * Includes the operation, error code, hint/details and the failed payload,
  * and logs the raw error to the console for deeper inspection.
  */
-export function describeError(error: any, operation: string, payload?: unknown): Error {
+type ErrorLike =
+  | { message?: unknown; code?: unknown; details?: unknown; hint?: unknown }
+  | null
+  | undefined;
+
+export function describeError(err: unknown, operation: string, payload?: unknown): Error {
+  const error = (typeof err === "object" ? err : { message: err }) as ErrorLike;
   // eslint-disable-next-line no-console
-  console.error(`[${operation}] failed`, { error, payload });
+  console.error(`[${operation}] failed`, { error: err, payload });
 
   const parts: string[] = [];
   const raw = String(error?.message ?? "Unknown error");

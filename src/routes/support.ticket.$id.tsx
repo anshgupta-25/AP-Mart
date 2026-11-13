@@ -48,7 +48,7 @@ function Page() {
   const ticket = useQuery({
     queryKey: ["my-ticket", id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("support_tickets")
         .select(
           "id, ticket_number, title, description, category, status, created_at, user_id, resolved_at, resolution_notes, resolved_by",
@@ -56,37 +56,37 @@ function Page() {
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
-      return data as any;
+      return data;
     },
   });
 
   const messages = useQuery({
     queryKey: ["my-ticket-msgs", id],
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("support_messages")
         .select("id, body, sender_role, created_at, is_internal_note")
         .eq("ticket_id", id)
         .order("created_at", { ascending: true });
-      return (data ?? []) as any[];
+      return data ?? [];
     },
   });
 
   const attachments = useQuery({
     queryKey: ["my-ticket-att", id],
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("ticket_attachments")
         .select("id, file_url, file_name")
         .eq("ticket_id", id);
-      return (data ?? []) as any[];
+      return data ?? [];
     },
   });
 
   const send = async () => {
     if (!reply.trim()) return;
     setBusy(true);
-    const { error } = await (supabase as any).rpc("post_ticket_message", {
+    const { error } = await supabase.rpc("post_ticket_message", {
       _ticket_id: id,
       _body: reply.trim(),
       _is_internal: false,

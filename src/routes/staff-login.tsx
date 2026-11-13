@@ -14,6 +14,7 @@ import {
   Headphones,
   Loader2,
   ArrowLeft,
+  type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,7 +34,7 @@ const ROLES: Array<{
   key: RoleKey;
   title: string;
   subtitle: string;
-  icon: any;
+  icon: LucideIcon;
   iconBg: string;
   iconColor: string;
   dashboard: string;
@@ -115,7 +116,7 @@ function StaffLoginPage() {
     let actualRoles: string[] = [];
     if (user) {
       const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
-      actualRoles = (data ?? []).map((r: any) => r.role);
+      actualRoles = (data ?? []).map((r) => r.role);
     }
 
     // Hidden platform-owner path: the tier is never advertised in the UI, it is
@@ -128,7 +129,7 @@ function StaffLoginPage() {
         // Best effort: storage may be unavailable or the step is optional.
       }
       toast.success("Welcome back");
-      navigate({ to: "/super-admin/dashboard" as any, replace: true });
+      navigate({ to: "/super-admin/dashboard", replace: true });
       return;
     }
 
@@ -155,7 +156,7 @@ function StaffLoginPage() {
 
     const target = ROLES.find((r) => r.key === role)!.dashboard;
     toast.success("Welcome back");
-    navigate({ to: target as any });
+    navigate({ to: target });
   }
 
   async function handleForgot() {

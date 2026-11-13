@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { rpcArgs } from "@/integrations/supabase/rpc";
 
 export type DeliveryContext = {
   pincode: string | null;
@@ -65,7 +66,7 @@ export function useDeliveryContext(): DeliveryContext & {
     queryKey: ["profile-location", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("profiles")
         .select("state, city, pincode")
         .eq("id", user!.id)
@@ -79,8 +80,8 @@ export function useDeliveryContext(): DeliveryContext & {
     (profile.data?.pincode as string | undefined) ??
     null;
 
-  const addrLat = (addr.data as any)?.lat as number | null | undefined;
-  const addrLng = (addr.data as any)?.lng as number | null | undefined;
+  const addrLat = addr.data?.lat as number | null | undefined;
+  const addrLng = addr.data?.lng as number | null | undefined;
 
   const addressLabel = addr.data
     ? `${addr.data.line1}, ${addr.data.city}`
@@ -128,11 +129,14 @@ export function useEligibleShopCount() {
     staleTime: 2 * 60_000,
     placeholderData: (prev) => prev,
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("count_eligible_shops", {
-        _pincode: pincode,
-        _lat: lat,
-        _lng: lng,
-      });
+      const { data, error } = await supabase.rpc(
+        "count_eligible_shops",
+        rpcArgs("count_eligible_shops", {
+          _pincode: pincode,
+          _lat: lat,
+          _lng: lng,
+        }),
+      );
       if (error) throw error;
       return Number(data ?? 0);
     },

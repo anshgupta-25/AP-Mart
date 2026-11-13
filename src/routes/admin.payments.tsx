@@ -52,7 +52,7 @@ function Page() {
       qc.invalidateQueries({ queryKey: ["admin-payments-summary"] });
       qc.invalidateQueries({ queryKey: ["admin-payments-list"] });
     },
-    onError: (e: any) => toast.error(e.message ?? "Refund failed"),
+    onError: (e) => toast.error(e.message ?? "Refund failed"),
   });
 
   const s = summary.data ?? {};
@@ -103,7 +103,7 @@ function Page() {
       <Section title="Recent transactions">
         <Panel>
           <div className="md:hidden">
-            {(txns.data ?? []).map((p: any) => (
+            {(txns.data ?? []).map((p) => (
               <div
                 key={p.id}
                 className="space-y-2 border-b border-border/70 px-4 py-3 last:border-0"
@@ -154,7 +154,7 @@ function Page() {
               </tr>
             </thead>
             <tbody>
-              {(txns.data ?? []).map((p: any) => (
+              {(txns.data ?? []).map((p) => (
                 <tr
                   key={p.id}
                   className="border-b border-border/70 transition-colors last:border-0 hover:bg-secondary/50"

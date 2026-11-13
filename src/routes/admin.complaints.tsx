@@ -38,9 +38,9 @@ function Page() {
   const { data, isLoading } = useQuery({
     queryKey: ["admin-complaints"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("admin_list_complaints");
+      const { data, error } = await supabase.rpc("admin_list_complaints");
       if (error) throw error;
-      return (data ?? []) as any[];
+      return data ?? [];
     },
     refetchInterval: 30000,
   });
@@ -163,7 +163,7 @@ function ResolveButton({ ticketId, onDone }: { ticketId: string; onDone: () => v
 
   const resolve = async () => {
     setBusy(true);
-    const { error } = await (supabase as any).rpc("update_ticket_status", {
+    const { error } = await supabase.rpc("update_ticket_status", {
       _ticket_id: ticketId,
       _status: "resolved",
       _notes: notes.trim() || null,

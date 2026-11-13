@@ -222,8 +222,9 @@ function extensionFor(file: File): string {
 const sessionUploads = new Map<string, StoredObject>(); // dedupe identical files in this session
 const ownedThisSession = new Set<string>();
 
-function isTransient(err: any): boolean {
-  const status = Number(err?.statusCode ?? err?.status);
+function isTransient(err: unknown): boolean {
+  const e = (err ?? {}) as { statusCode?: unknown; status?: unknown };
+  const status = Number(e.statusCode ?? e.status);
   if (Number.isFinite(status) && status >= 400 && status < 500) return false;
   return true;
 }
@@ -259,7 +260,7 @@ export async function uploadFile(opts: UploadOptions): Promise<StoredObject> {
   }
 
   const path = `${folder}/${crypto.randomUUID()}.${extensionFor(file)}`;
-  let lastError: any = null;
+  let lastError = null;
   for (let attempt = 0; attempt <= retries; attempt++) {
     const { error } = await supabase.storage.from(bucket).upload(path, file, {
       cacheControl: "31536000",

@@ -16,8 +16,9 @@ import {
 import { Ban, Printer, RefreshCcw, Store, Truck, User, Undo2 } from "lucide-react";
 import { rupees } from "@/lib/format";
 import { optimisticPatch, patchOrderDetail } from "@/lib/optimistic";
+import type { OrderRow } from "./useOrderDetails";
 
-type Props = { order: any };
+type Props = { order: OrderRow };
 
 export function AdminOrderActions({ order }: Props) {
   const qc = useQueryClient();
@@ -25,13 +26,12 @@ export function AdminOrderActions({ order }: Props) {
 
   const shops = useQuery({
     queryKey: ["admin-shops-mini"],
-    queryFn: async () => ((await supabase.rpc("admin_list_shops")).data as any[]) ?? [],
+    queryFn: async () => (await supabase.rpc("admin_list_shops")).data ?? [],
   });
   const partners = useQuery({
     queryKey: ["admin-partners-mini"],
     queryFn: async () =>
-      ((await supabase.from("delivery_partners").select("id, name, phone, is_online"))
-        .data as any[]) ?? [],
+      (await supabase.from("delivery_partners").select("id, name, phone, is_online")).data ?? [],
   });
   const payment = useQuery({
     queryKey: ["admin-order-payment", order.id],
@@ -44,7 +44,7 @@ export function AdminOrderActions({ order }: Props) {
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle()
-      ).data as any,
+      ).data,
   });
 
   const [shopId, setShopId] = useState("");
@@ -63,7 +63,7 @@ export function AdminOrderActions({ order }: Props) {
   };
 
   const run = async (
-    fn: () => Promise<{ error: any }>,
+    fn: () => PromiseLike<{ error: { message: string } | null }>,
     msg: string,
     after?: () => void,
     patch?: Record<string, unknown>,
@@ -137,7 +137,7 @@ export function AdminOrderActions({ order }: Props) {
               onChange={(e) => setShopId(e.target.value)}
             >
               <option value="">Select a shop…</option>
-              {(shops.data ?? []).map((s: any) => (
+              {(shops.data ?? []).map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name} — {s.pincode} {s.owner_name ? `(${s.owner_name})` : "(no owner)"}
                 </option>
@@ -152,7 +152,7 @@ export function AdminOrderActions({ order }: Props) {
                       supabase.rpc("admin_reassign_shop", {
                         _order_id: order.id,
                         _shop_id: shopId,
-                      }) as any,
+                      }),
                     "Shop reassigned",
                     () => setOpenShop(false),
                     { shop_id: shopId, status: "awaiting_shop" },
@@ -183,7 +183,7 @@ export function AdminOrderActions({ order }: Props) {
               onChange={(e) => setPartnerId(e.target.value)}
             >
               <option value="">Select a rider…</option>
-              {(partners.data ?? []).map((p: any) => (
+              {(partners.data ?? []).map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name} {p.phone ? `· ${p.phone}` : ""} {p.is_online ? "· online" : ""}
                 </option>
@@ -198,7 +198,7 @@ export function AdminOrderActions({ order }: Props) {
                       supabase.rpc("admin_reassign_partner", {
                         _order_id: order.id,
                         _partner_id: partnerId,
-                      }) as any,
+                      }),
                     "Rider reassigned",
                     () => setOpenRider(false),
                     { partner_id: partnerId },
@@ -224,7 +224,7 @@ export function AdminOrderActions({ order }: Props) {
                 supabase.rpc("admin_update_order_status", {
                   _order_id: order.id,
                   _status: "cancelled",
-                }) as any,
+                }),
               "Order cancelled",
               undefined,
               { status: "cancelled" },
@@ -275,11 +275,13 @@ export function AdminOrderActions({ order }: Props) {
                 onClick={() =>
                   run(
                     () =>
-                      supabase.rpc("admin_record_refund", {
-                        _payment_id: payment.data.id,
-                        _refund_id: refundRef || `manual-${Date.now()}`,
-                        _amount: Number(refundAmount),
-                      }) as any,
+                      !payment.data
+                        ? Promise.resolve({ error: { message: "No payment found for this order" } })
+                        : supabase.rpc("admin_record_refund", {
+                            _payment_id: payment.data.id,
+                            _refund_id: refundRef || `manual-${Date.now()}`,
+                            _amount: Number(refundAmount),
+                          }),
                     "Refund recorded",
                     () => setOpenRefund(false),
                   )

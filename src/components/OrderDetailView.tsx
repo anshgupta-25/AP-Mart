@@ -32,6 +32,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { StorageImg } from "@/components/StorageImg";
+import { asAddress } from "@/lib/address";
 
 const CANCEL_STATUSES = new Set([
   "placed",
@@ -89,23 +90,23 @@ export function OrderDetailView({ id }: { id: string }) {
         .from("orders")
         .select("*, shops(id,name,address,latitude,longitude)")
         .eq("parent_order_id", id);
-      const kids = (children ?? []) as any[];
+      const kids = children ?? [];
       const itemOrderIds = kids.length > 0 ? kids.map((c) => c.id) : [id];
       const { data: it } = await supabase
         .from("order_items")
         .select("*")
         .in("order_id", itemOrderIds);
-      let shop: any = null,
-        partner: any = null;
-      if ((o as any).shop_id) {
+      let shop = null,
+        partner = null;
+      if (o.shop_id) {
         const { data } = await supabase
           .from("shops")
           .select("id,name,latitude,longitude,address,city")
-          .eq("id", (o as any).shop_id)
+          .eq("id", o.shop_id)
           .maybeSingle();
         shop = data;
       }
-      if ((o as any).partner_id) {
+      if (o.partner_id) {
         const { data } = await supabase.rpc("get_order_partner_tracking", { _order_id: id });
         partner = Array.isArray(data) ? (data[0] ?? null) : data;
       }
@@ -128,8 +129,8 @@ export function OrderDetailView({ id }: { id: string }) {
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${id}` },
         (payload) => {
-          const prev = (payload.old as any)?.status;
-          const next = (payload.new as any)?.status;
+          const prev = payload.old?.status;
+          const next = payload.new?.status;
           qc.invalidateQueries({ queryKey: ["order", id] });
           if (prev !== next) {
             const step = STEPS.find((s) => s.key === next);
@@ -346,15 +347,14 @@ export function OrderDetailView({ id }: { id: string }) {
         </div>
       )}
 
-      {(o as any).children && (o as any).children.length > 1 && (
+      {o.children && o.children.length > 1 && (
         <section className={card}>
           <h2 className="section-title mb-3 flex items-center gap-2">
-            <Store className="h-4 w-4 text-primary" /> Delivering from {(o as any).children.length}{" "}
-            shops
+            <Store className="h-4 w-4 text-primary" /> Delivering from {o.children.length} shops
           </h2>
           <div className="divide-y divide-border/60">
-            {(o as any).children.map((c: any) => {
-              const childItems = o.items.filter((it: any) => it.order_id === c.id);
+            {o.children.map((c) => {
+              const childItems = o.items.filter((it) => it.order_id === c.id);
               return (
                 <div
                   key={c.id}
@@ -378,7 +378,7 @@ export function OrderDetailView({ id }: { id: string }) {
       <section className={card}>
         <h2 className="section-title mb-3">Items ({o.items.length})</h2>
         <div className="divide-y divide-border/60">
-          {o.items.map((it: any) => (
+          {o.items.map((it) => (
             <div key={it.id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
               {it.image_url ? (
                 <StorageImg
@@ -423,12 +423,12 @@ export function OrderDetailView({ id }: { id: string }) {
         <div className={card}>
           <h3 className="section-title mb-3">Delivered to</h3>
           <div className="text-meta">
-            <div className="font-medium">{(o.address as any)?.name}</div>
+            <div className="font-medium">{asAddress(o.address).name}</div>
             <div className="mt-0.5 text-muted-foreground">
-              {(o.address as any)?.line1}, {(o.address as any)?.city}, {(o.address as any)?.state} -{" "}
-              {(o.address as any)?.pincode}
+              {asAddress(o.address).line1}, {asAddress(o.address).city},{" "}
+              {asAddress(o.address).state} - {asAddress(o.address).pincode}
             </div>
-            <div className="mt-1 text-muted-foreground">{(o.address as any)?.phone}</div>
+            <div className="mt-1 text-muted-foreground">{asAddress(o.address).phone}</div>
           </div>
         </div>
       </section>

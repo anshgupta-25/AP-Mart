@@ -7,7 +7,7 @@ export async function loadProductCategories(
   productId: string,
   fallbackCategoryId?: string | null,
 ): Promise<string[]> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("product_categories")
     .select("category_id")
     .eq("product_id", productId);
@@ -28,7 +28,7 @@ export async function loadProductCategoriesMap(
   for (let i = 0; i < productIds.length; i += CHUNK) chunks.push(productIds.slice(i, i + CHUNK));
   const results = await Promise.all(
     chunks.map(async (ids) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("product_categories")
         .select("product_id, category_id")
         .in("product_id", ids);
@@ -46,7 +46,7 @@ export async function loadProductCategoriesMap(
 /** Replace a product's category links with `categoryIds` (deduped). */
 export async function saveProductCategories(productId: string, categoryIds: string[]) {
   const ids = Array.from(new Set(categoryIds.filter(Boolean)));
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("product_categories")
     .select("id, category_id")
     .eq("product_id", productId);
@@ -60,14 +60,11 @@ export async function saveProductCategories(productId: string, categoryIds: stri
     .map((cid) => ({ product_id: productId, category_id: cid }));
 
   if (toDelete.length > 0) {
-    const { error: dErr } = await (supabase as any)
-      .from("product_categories")
-      .delete()
-      .in("id", toDelete);
+    const { error: dErr } = await supabase.from("product_categories").delete().in("id", toDelete);
     if (dErr) throw dErr;
   }
   if (toInsert.length > 0) {
-    const { error: iErr } = await (supabase as any).from("product_categories").insert(toInsert);
+    const { error: iErr } = await supabase.from("product_categories").insert(toInsert);
     if (iErr) throw iErr;
   }
 }
