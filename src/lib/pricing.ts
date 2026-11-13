@@ -57,7 +57,10 @@ export function resolvePricing(args: {
   } else if (variant) {
     price = Number(variant.selling_price);
     mrpRaw = Number(variant.mrp || productMrp || price);
-    stock = shop?.stock != null ? Math.min(Number(variant.stock), Number(shop.stock)) : Number(variant.stock);
+    stock =
+      shop?.stock != null
+        ? Math.min(Number(variant.stock), Number(shop.stock))
+        : Number(variant.stock);
   } else {
     price = Number(productPrice);
     mrpRaw = Number(productMrp || price);

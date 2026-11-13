@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useDeliveryContext } from "./useDeliveryContext";
 import type { ProductCardData } from "@/components/ProductCard";
+import { rpcArgs } from "@/integrations/supabase/rpc";
 
 export interface CustomerProductsArgs {
   categoryId?: string | null;
@@ -58,9 +59,9 @@ export function useCustomerProducts(args: CustomerProductsArgs = {}) {
     // Keep the previous page of products on screen while a new key loads.
     placeholderData: (prev) => prev,
     queryFn: async (): Promise<ProductCardData[]> => {
-      const { data, error } = await (supabase as any).rpc(
+      const { data, error } = await supabase.rpc(
         "list_customer_products",
-        {
+        rpcArgs("list_customer_products", {
           _pincode: pincode,
           _category_id: categoryId,
           _search: search,
@@ -69,7 +70,7 @@ export function useCustomerProducts(args: CustomerProductsArgs = {}) {
           _sort: sort,
           _limit: limit,
           _ids: ids,
-        },
+        }),
       );
       if (error) throw error;
       return (data ?? []) as ProductCardData[];
@@ -107,7 +108,11 @@ export function useCustomerCatalogRealtime() {
     if (!channel) {
       channel = supabase
         .channel("customer-catalog")
-        .on("postgres_changes", { event: "*", schema: "public", table: "shop_products" }, invalidate)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "shop_products" },
+          invalidate,
+        )
         .on("postgres_changes", { event: "*", schema: "public", table: "products" }, invalidate)
         .on("postgres_changes", { event: "*", schema: "public", table: "shops" }, invalidate)
         .subscribe();

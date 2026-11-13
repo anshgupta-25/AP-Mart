@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Capacitor } from "@capacitor/core";
 import { createClient, type User } from "@supabase/supabase-js";
+import type { TablesUpdate } from "@/integrations/supabase/types";
 
 // Deep link the Android app registers (AndroidManifest.xml). Must also be in
 // Supabase > Authentication > URL Configuration > Redirect URLs.
@@ -85,7 +86,7 @@ export async function signInWithGoogle(redirectPath = "/auth/callback"): Promise
     }
 
     return { error: null, redirected: true };
-  } catch (err: any) {
+  } catch (err) {
     return {
       error:
         err instanceof Error
@@ -116,7 +117,7 @@ export async function syncUserProfile(user: User): Promise<{ error: Error | null
     const now = new Date().toISOString();
 
     // Check if profile exists for this authenticated user
-    const { data: existing, error: fetchError } = await (supabase as any)
+    const { data: existing, error: fetchError } = await supabase
       .from("profiles")
       .select("id, full_name, avatar_url, email")
       .eq("id", user.id)
@@ -127,7 +128,7 @@ export async function syncUserProfile(user: User): Promise<{ error: Error | null
     }
 
     if (existing) {
-      const updates: Record<string, any> = {
+      const updates: TablesUpdate<"profiles"> = {
         updated_at: now,
       };
 
@@ -141,7 +142,7 @@ export async function syncUserProfile(user: User): Promise<{ error: Error | null
         updates.email = email;
       }
 
-      const { error: updateError } = await (supabase as any)
+      const { error: updateError } = await supabase
         .from("profiles")
         .update(updates)
         .eq("id", user.id);
@@ -151,7 +152,7 @@ export async function syncUserProfile(user: User): Promise<{ error: Error | null
         return { error: updateError };
       }
     } else {
-      const { error: insertError } = await (supabase as any).from("profiles").insert({
+      const { error: insertError } = await supabase.from("profiles").insert({
         id: user.id,
         full_name: fullName,
         avatar_url: avatarUrl || null,
@@ -167,7 +168,7 @@ export async function syncUserProfile(user: User): Promise<{ error: Error | null
     }
 
     return { error: null };
-  } catch (err: any) {
+  } catch (err) {
     console.error("[ProfileSync] Unexpected error syncing profile:", err);
     return {
       error: err instanceof Error ? err : new Error(String(err) || "Failed to sync profile"),

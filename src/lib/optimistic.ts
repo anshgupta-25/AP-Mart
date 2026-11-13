@@ -11,10 +11,14 @@ import { toast } from "sonner";
 type Updater = (prev: unknown) => unknown;
 
 /** Apply an updater to every cached query matching the given key prefixes. Returns a rollback fn. */
-export function optimisticPatch(qc: QueryClient, keys: readonly unknown[][], updater: Updater): () => void {
+export function optimisticPatch(
+  qc: QueryClient,
+  keys: readonly unknown[][],
+  updater: Updater,
+): () => void {
   const snapshots: Array<[readonly unknown[], unknown]> = [];
   for (const key of keys) {
-    for (const [k, data] of qc.getQueriesData({ queryKey: key as any })) {
+    for (const [k, data] of qc.getQueriesData({ queryKey: key })) {
       snapshots.push([k, data]);
       qc.setQueryData(k, (prev: unknown) => updater(prev));
     }
@@ -28,25 +32,27 @@ export function optimisticPatch(qc: QueryClient, keys: readonly unknown[][], upd
 export const patchRow =
   (id: string, patch: Record<string, unknown>): Updater =>
   (prev) =>
-    Array.isArray(prev) ? prev.map((r: any) => (r && r.id === id ? { ...r, ...patch } : r)) : prev;
+    Array.isArray(prev) ? prev.map((r) => (r && r.id === id ? { ...r, ...patch } : r)) : prev;
 
 /** Remove a row (matched by any of the given id fields) from cached arrays. */
 export const removeRow =
   (id: string, fields: string[] = ["id"]): Updater =>
   (prev) =>
-    Array.isArray(prev) ? prev.filter((r: any) => !r || !fields.some((f) => r[f] === id)) : prev;
+    Array.isArray(prev) ? prev.filter((r) => !r || !fields.some((f) => r[f] === id)) : prev;
 
 /** Shallow-merge a patch into a cached object (e.g. a single order detail). */
 export const patchObject =
   (patch: Record<string, unknown>): Updater =>
   (prev) =>
-    prev && typeof prev === "object" && !Array.isArray(prev) ? { ...(prev as object), ...patch } : prev;
+    prev && typeof prev === "object" && !Array.isArray(prev)
+      ? { ...(prev as object), ...patch }
+      : prev;
 
 /** Patch a nested object under `order` (shape used by useOrderDetails). */
 export const patchOrderDetail =
   (patch: Record<string, unknown>): Updater =>
   (prev) => {
-    const p = prev as any;
+    const p = prev as { order?: Record<string, unknown> } | null | undefined;
     if (!p || typeof p !== "object" || !p.order) return prev;
     return { ...p, order: { ...p.order, ...patch } };
   };
@@ -80,7 +86,7 @@ export async function runOptimistic({
     return false;
   }
   if (success) toast.success(success);
-  for (const key of keys) qc.invalidateQueries({ queryKey: key as any });
+  for (const key of keys) qc.invalidateQueries({ queryKey: key });
   onSuccess?.();
   return true;
 }

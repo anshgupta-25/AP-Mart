@@ -29,7 +29,13 @@ function writeRecent(list: string[]) {
 }
 
 /** Full-screen product search. Uses the existing catalog RPC (`list_customer_products` with `_search`). */
-export function SearchSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+export function SearchSheet({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const [term, setTerm] = useState("");
@@ -50,26 +56,39 @@ export function SearchSheet({ open, onOpenChange }: { open: boolean; onOpenChang
     staleTime: 5 * 60_000,
     enabled: open,
     queryFn: async () => {
-      const { data } = await supabase.from("categories").select("id, slug, name, icon").eq("is_active", true).order("display_order").limit(12);
+      const { data } = await supabase
+        .from("categories")
+        .select("id, slug, name, icon")
+        .eq("is_active", true)
+        .order("display_order")
+        .limit(12);
       return (data ?? []) as { id: string; slug: string; name: string; icon: string | null }[];
     },
   });
 
-  const results = useCustomerProducts({ search: debounced || null, limit: 12, enabled: open && debounced.length >= 2, key: "search-sheet" });
+  const results = useCustomerProducts({
+    search: debounced || null,
+    limit: 12,
+    enabled: open && debounced.length >= 2,
+    key: "search-sheet",
+  });
 
   const submit = (q: string) => {
     const v = q.trim();
     if (!v) return;
     writeRecent([v, ...readRecent().filter((x) => x.toLowerCase() !== v.toLowerCase())]);
     onOpenChange(false);
-    navigate({ to: "/products", search: { q: v } as any });
+    navigate({ to: "/products", search: { q: v } });
   };
 
   const showResults = debounced.length >= 2;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="top" className="h-dvh max-w-none gap-0 rounded-none border-0 p-0 [&>button]:hidden">
+      <SheetContent
+        side="top"
+        className="h-dvh max-w-none gap-0 rounded-none border-0 p-0 [&>button]:hidden"
+      >
         <SheetTitle className="sr-only">Search products</SheetTitle>
         <div className="hairline-b bg-tint-mint pt-safe">
           <form
@@ -79,7 +98,12 @@ export function SearchSheet({ open, onOpenChange }: { open: boolean; onOpenChang
               submit(term);
             }}
           >
-            <button type="button" aria-label="Close search" onClick={() => onOpenChange(false)} className="press grid h-10 w-10 shrink-0 place-items-center rounded-full">
+            <button
+              type="button"
+              aria-label="Close search"
+              onClick={() => onOpenChange(false)}
+              className="press grid h-10 w-10 shrink-0 place-items-center rounded-full"
+            >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl bg-card px-3 shadow-soft">
@@ -93,7 +117,12 @@ export function SearchSheet({ open, onOpenChange }: { open: boolean; onOpenChang
                 className="min-w-0 flex-1 bg-transparent text-body outline-none placeholder:text-muted-foreground"
               />
               {term && (
-                <button type="button" aria-label="Clear" onClick={() => setTerm("")} className="grid h-6 w-6 place-items-center rounded-full bg-secondary">
+                <button
+                  type="button"
+                  aria-label="Clear"
+                  onClick={() => setTerm("")}
+                  className="grid h-6 w-6 place-items-center rounded-full bg-secondary"
+                >
                   <X className="h-3.5 w-3.5" />
                 </button>
               )}
@@ -121,7 +150,12 @@ export function SearchSheet({ open, onOpenChange }: { open: boolean; onOpenChang
                   </div>
                   <div className="divide-y divide-border/60 rounded-xl border border-border/70 bg-card">
                     {recent.map((r) => (
-                      <button key={r} type="button" onClick={() => submit(r)} className="flex w-full items-center gap-3 px-3.5 py-3 text-left text-body">
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => submit(r)}
+                        className="flex w-full items-center gap-3 px-3.5 py-3 text-left text-body"
+                      >
                         <Clock className="h-4 w-4 text-muted-foreground" />
                         {r}
                       </button>
@@ -153,11 +187,19 @@ export function SearchSheet({ open, onOpenChange }: { open: boolean; onOpenChang
 
           {showResults && (
             <div>
-              {results.isLoading && <div className="space-y-2">{[0, 1, 2, 3].map((i) => <div key={i} className="h-16 rounded-xl shimmer" />)}</div>}
+              {results.isLoading && (
+                <div className="space-y-2">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="h-16 rounded-xl shimmer" />
+                  ))}
+                </div>
+              )}
               {!results.isLoading && (results.data?.length ?? 0) === 0 && (
                 <div className="py-12 text-center">
                   <div className="text-subtitle font-semibold">No matches for "{debounced}"</div>
-                  <p className="mt-1 text-meta text-muted-foreground">Try a different word or browse a category.</p>
+                  <p className="mt-1 text-meta text-muted-foreground">
+                    Try a different word or browse a category.
+                  </p>
                 </div>
               )}
               {(results.data?.length ?? 0) > 0 && (
@@ -169,12 +211,22 @@ export function SearchSheet({ open, onOpenChange }: { open: boolean; onOpenChang
                         to="/product/$slug"
                         params={{ slug: p.slug }}
                         onClick={() => {
-                          writeRecent([debounced, ...readRecent().filter((x) => x.toLowerCase() !== debounced.toLowerCase())]);
+                          writeRecent([
+                            debounced,
+                            ...readRecent().filter(
+                              (x) => x.toLowerCase() !== debounced.toLowerCase(),
+                            ),
+                          ]);
                           onOpenChange(false);
                         }}
                         className="flex items-center gap-3 px-3 py-2.5"
                       >
-                        <ProductImage src={p.image_url} alt={p.name} fit="contain" className="h-12 w-12 shrink-0 rounded-lg bg-secondary/60" />
+                        <ProductImage
+                          src={p.image_url}
+                          alt={p.name}
+                          fit="contain"
+                          className="h-12 w-12 shrink-0 rounded-lg bg-secondary/60"
+                        />
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-body font-medium">{p.name}</div>
                           <div className="text-small text-muted-foreground">{p.unit}</div>
@@ -186,7 +238,9 @@ export function SearchSheet({ open, onOpenChange }: { open: boolean; onOpenChang
                   <button
                     type="button"
                     onClick={() => submit(debounced)}
-                    className={cn("press mt-3 flex h-11 w-full items-center justify-center rounded-xl bg-primary text-body font-semibold text-primary-foreground")}
+                    className={cn(
+                      "press mt-3 flex h-11 w-full items-center justify-center rounded-xl bg-primary text-body font-semibold text-primary-foreground",
+                    )}
                   >
                     See all results for "{debounced}"
                   </button>
@@ -209,7 +263,10 @@ export function SearchButton({ className }: { className?: string }) {
         type="button"
         aria-label="Search"
         onClick={() => setOpen(true)}
-        className={cn("press grid h-9 w-9 place-items-center rounded-full bg-card shadow-soft", className)}
+        className={cn(
+          "press grid h-9 w-9 place-items-center rounded-full bg-card shadow-soft",
+          className,
+        )}
       >
         <Search className="h-4 w-4" />
       </button>

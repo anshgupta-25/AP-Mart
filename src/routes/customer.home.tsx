@@ -15,7 +15,10 @@ export const Route = createFileRoute("/customer/home")({
   head: () => ({
     meta: [
       { title: "AP Mart — Groceries from shops near you" },
-      { name: "description", content: "Order groceries, snacks and daily essentials from trusted local shops near you." },
+      {
+        name: "description",
+        content: "Order groceries, snacks and daily essentials from trusted local shops near you.",
+      },
     ],
   }),
   component: CustomerHome,
@@ -28,7 +31,11 @@ function CustomerHome() {
   const categories = useQuery({
     queryKey: ["app-categories"],
     queryFn: async () => {
-      const { data } = await supabase.from("categories").select("id, slug, name, icon, color, image_url").eq("is_active", true).order("display_order");
+      const { data } = await supabase
+        .from("categories")
+        .select("id, slug, name, icon, color, image_url")
+        .eq("is_active", true)
+        .order("display_order");
       return (data ?? []) as CategoryLite[];
     },
   });
@@ -48,25 +55,16 @@ function CustomerHome() {
     );
   }
 
-
   return (
     <div className="space-y-6 pt-4">
       <HeroBannerCarousel />
       <CollectionChips />
 
-      <ProductRail
-        title="Featured this week"
-        loading={!featured.data}
-        products={featured.data}
-      />
+      <ProductRail title="Featured this week" loading={!featured.data} products={featured.data} />
 
       <CategoryGroups categories={categories.data} from={0} count={2} />
 
-      <ProductRail
-        title="Great prices"
-        loading={!deals.data}
-        products={deals.data}
-      />
+      <ProductRail title="Great prices" loading={!deals.data} products={deals.data} />
 
       <CategoryGroups categories={categories.data} from={2} count={3} />
 

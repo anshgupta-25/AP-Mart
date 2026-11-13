@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 import { resolvePricing } from "@/lib/pricing";
+import { rpcArgs } from "@/integrations/supabase/rpc";
 
 export interface CartLine {
   id: string;
@@ -44,7 +45,6 @@ export interface CartLine {
   shopMrp?: number | null;
 }
 
-
 export class CartShopConflictError extends Error {
   constructor(
     public currentShopId: string,
@@ -65,32 +65,35 @@ export function useCart() {
     queryKey: ["cart", user?.id],
     queryFn: async (): Promise<CartLine[]> => {
       if (!user) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("cart_items")
         .select(
-          "id, product_id, variant_id, shop_id, quantity, products(id, name, slug, price, mrp, image_url, unit, stock), product_variants:variant_id(id, name, size, unit, selling_price, mrp, stock, images, is_default), shops:shop_id(id, name, address, pincode, latitude, longitude)"
+          "id, product_id, variant_id, shop_id, quantity, products(id, name, slug, price, mrp, image_url, unit, stock), product_variants:variant_id(id, name, size, unit, selling_price, mrp, stock, images, is_default), shops:shop_id(id, name, address, pincode, latitude, longitude)",
         )
         .eq("user_id", user.id);
       if (error) throw error;
-      const rows = (data ?? []).filter((row: any) => row.products);
+      const rows = (data ?? []).filter((row) => row.products);
 
       // Pull the shop-specific inventory pricing so cart/checkout show exactly
       // the price the listing and detail page showed.
-      const shopIds = [...new Set(rows.map((r: any) => r.shop_id).filter(Boolean))] as string[];
-      const productIds = [...new Set(rows.map((r: any) => r.product_id))] as string[];
+      const shopIds = [...new Set(rows.map((r) => r.shop_id).filter(Boolean))] as string[];
+      const productIds = [...new Set(rows.map((r) => r.product_id))] as string[];
       let invMap = new Map<string, { price: number; mrp: number | null }>();
       if (shopIds.length && productIds.length) {
-        const { data: inv } = await (supabase as any)
+        const { data: inv } = await supabase
           .from("shop_products")
           .select("shop_id, product_id, price, mrp")
           .in("shop_id", shopIds)
           .in("product_id", productIds);
         invMap = new Map(
-          (inv ?? []).map((r: any) => [`${r.shop_id}:${r.product_id}`, { price: Number(r.price), mrp: r.mrp == null ? null : Number(r.mrp) }]),
+          (inv ?? []).map((r) => [
+            `${r.shop_id}:${r.product_id}`,
+            { price: Number(r.price), mrp: r.mrp == null ? null : Number(r.mrp) },
+          ]),
         );
       }
 
-      return rows.map((row: any) => {
+      return rows.map((row) => {
         const inv = row.shop_id ? invMap.get(`${row.shop_id}:${row.product_id}`) : undefined;
         return {
           id: row.id,
@@ -150,13 +153,9 @@ export function useCart() {
 
       // Detect shop conflict
       if (shopId && currentShopId && currentShopId !== shopId && !force) {
-        const newShop = (await supabase.from("shops").select("name").eq("id", shopId).maybeSingle()).data;
-        throw new CartShopConflictError(
-          currentShopId,
-          shopId,
-          currentShop?.name,
-          newShop?.name,
-        );
+        const newShop = (await supabase.from("shops").select("name").eq("id", shopId).maybeSingle())
+          .data;
+        throw new CartShopConflictError(currentShopId, shopId, currentShop?.name, newShop?.name);
       }
 
       // If forcing, clear existing cart first (different shop)
@@ -169,12 +168,15 @@ export function useCart() {
       // Atomic server-side upsert: one row per (user, product). Concurrent
       // clicks or a stale local cache can never produce duplicate rows or
       // lost increments — the database resolves the conflict itself.
-      const { error } = await (supabase as any).rpc("add_to_cart", {
-        p_product_id: productId,
-        p_qty: qty,
-        p_variant_id: variantId ?? null,
-        p_shop_id: effectiveShopId ?? null,
-      });
+      const { error } = await supabase.rpc(
+        "add_to_cart",
+        rpcArgs("add_to_cart", {
+          p_product_id: productId,
+          p_qty: qty,
+          p_variant_id: variantId ?? null,
+          p_shop_id: effectiveShopId ?? null,
+        }),
+      );
       if (error) throw error;
     },
     // Optimistic: bump the quantity of an existing line right away so the
@@ -210,7 +212,10 @@ export function useCart() {
         const { error } = await supabase.from("cart_items").delete().eq("id", lineId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("cart_items").update({ quantity: qty }).eq("id", lineId);
+        const { error } = await supabase
+          .from("cart_items")
+          .update({ quantity: qty })
+          .eq("id", lineId);
         if (error) throw error;
       }
     },
@@ -234,7 +239,13 @@ export function useCart() {
     if (!user) return;
     const previous = snapshot();
     // Instant UI: repoint every line at the new shop (single batched update below).
-    setLines(previous.map((l) => ({ ...l, shop_id: newShopId, shop: l.shop ? { ...l.shop, id: newShopId } : l.shop })));
+    setLines(
+      previous.map((l) => ({
+        ...l,
+        shop_id: newShopId,
+        shop: l.shop ? { ...l.shop, id: newShopId } : l.shop,
+      })),
+    );
     const { error } = await supabase
       .from("cart_items")
       .update({ shop_id: newShopId })
@@ -272,13 +283,20 @@ export function useCart() {
     mrpOf,
     loading: cartQuery.isLoading,
 
-    add: (productId: string, qty = 1, variantId: string | null = null, shopId: string | null = null) =>
-      addMutation.mutateAsync({ productId, variantId, shopId, qty }),
-    addForce: (productId: string, qty = 1, variantId: string | null = null, shopId: string | null = null) =>
-      addMutation.mutateAsync({ productId, variantId, shopId, qty, force: true }),
+    add: (
+      productId: string,
+      qty = 1,
+      variantId: string | null = null,
+      shopId: string | null = null,
+    ) => addMutation.mutateAsync({ productId, variantId, shopId, qty }),
+    addForce: (
+      productId: string,
+      qty = 1,
+      variantId: string | null = null,
+      shopId: string | null = null,
+    ) => addMutation.mutateAsync({ productId, variantId, shopId, qty, force: true }),
     setQty: (lineId: string, qty: number) => updateMutation.mutate({ lineId, qty }),
     changeShop,
     clear,
   };
 }
-

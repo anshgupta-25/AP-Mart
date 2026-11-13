@@ -97,7 +97,10 @@ interface CacheEntry {
 }
 const urlCache = new Map<string, CacheEntry>();
 const inflight = new Map<string, Promise<string | null>>();
-const pending = new Map<string, Array<{ path: string; ref: string; resolve: (u: string | null) => void }>>();
+const pending = new Map<
+  string,
+  Array<{ path: string; ref: string; resolve: (u: string | null) => void }>
+>();
 let flushScheduled = false;
 
 function flushPending() {
@@ -219,8 +222,9 @@ function extensionFor(file: File): string {
 const sessionUploads = new Map<string, StoredObject>(); // dedupe identical files in this session
 const ownedThisSession = new Set<string>();
 
-function isTransient(err: any): boolean {
-  const status = Number(err?.statusCode ?? err?.status);
+function isTransient(err: unknown): boolean {
+  const e = (err ?? {}) as { statusCode?: unknown; status?: unknown };
+  const status = Number(e.statusCode ?? e.status);
   if (Number.isFinite(status) && status >= 400 && status < 500) return false;
   return true;
 }
@@ -256,7 +260,7 @@ export async function uploadFile(opts: UploadOptions): Promise<StoredObject> {
   }
 
   const path = `${folder}/${crypto.randomUUID()}.${extensionFor(file)}`;
-  let lastError: any = null;
+  let lastError = null;
   for (let attempt = 0; attempt <= retries; attempt++) {
     const { error } = await supabase.storage.from(bucket).upload(path, file, {
       cacheControl: "31536000",
@@ -323,7 +327,9 @@ async function prepareImage(file: File, maxEdge: number): Promise<File> {
 // Banners are shown full-width (sharp on wide / retina screens); product photos are small cards.
 const BANNER_BUCKETS: readonly string[] = ["offers", "categories", "shop-collections"];
 
-export async function uploadImage(opts: UploadOptions & { maxEdge?: number }): Promise<StoredObject> {
+export async function uploadImage(
+  opts: UploadOptions & { maxEdge?: number },
+): Promise<StoredObject> {
   const maxEdge = opts.maxEdge ?? (BANNER_BUCKETS.includes(opts.bucket) ? 2400 : 1200);
   const file = await prepareImage(opts.file, maxEdge);
   return uploadFile({ ...opts, file, allowedTypes: opts.allowedTypes ?? IMAGE_TYPES });

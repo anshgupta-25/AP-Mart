@@ -1,7 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Save, Wrench, Flag, Truck, Bell, Sparkles, CreditCard } from "lucide-react";
+import {
+  Loader2,
+  Save,
+  Wrench,
+  Flag,
+  Truck,
+  Bell,
+  Sparkles,
+  CreditCard,
+  type LucideIcon,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -13,7 +23,11 @@ export const Route = createFileRoute("/super-admin/settings")({
   head: () => ({
     meta: [
       { title: "Platform Settings — AP Mart" },
-      { name: "description", content: "Global platform, payment, delivery, AI, notification settings, feature flags and maintenance mode." },
+      {
+        name: "description",
+        content:
+          "Global platform, payment, delivery, AI, notification settings, feature flags and maintenance mode.",
+      },
       { property: "og:title", content: "Platform Settings — AP Mart" },
       { property: "og:description", content: "Global platform configuration and feature flags." },
       { property: "og:type", content: "website" },
@@ -25,14 +39,23 @@ export const Route = createFileRoute("/super-admin/settings")({
 
 /** Only non-sensitive config keys are ever surfaced here. Credential-bearing
  *  keys live in encrypted backend secrets and are never readable from the app. */
-type Group = { title: string; icon: any; items: Array<{ key: string; label: string; hint?: string; kind: "bool" | "text" }> };
+type Group = {
+  title: string;
+  icon: LucideIcon;
+  items: Array<{ key: string; label: string; hint?: string; kind: "bool" | "text" }>;
+};
 
 const GROUPS: Group[] = [
   {
     title: "Maintenance",
     icon: Wrench,
     items: [
-      { key: "maintenance_mode", label: "Maintenance mode", hint: "Blocks customer ordering and shows a maintenance notice.", kind: "bool" },
+      {
+        key: "maintenance_mode",
+        label: "Maintenance mode",
+        hint: "Blocks customer ordering and shows a maintenance notice.",
+        kind: "bool",
+      },
       { key: "maintenance_message", label: "Maintenance message", kind: "text" },
     ],
   },
@@ -63,7 +86,11 @@ const GROUPS: Group[] = [
     items: [
       { key: "delivery_max_radius_km", label: "Max delivery radius (km)", kind: "text" },
       { key: "delivery_auto_assign", label: "Auto-assign riders", kind: "bool" },
-      { key: "delivery_assignment_window_min", label: "Shop acceptance window (min)", kind: "text" },
+      {
+        key: "delivery_assignment_window_min",
+        label: "Shop acceptance window (min)",
+        kind: "text",
+      },
     ],
   },
   {
@@ -97,7 +124,7 @@ function PlatformSettings() {
       const { data, error } = await supabase.from("app_config").select("key, value");
       if (error) throw error;
       const map: Record<string, string> = {};
-      for (const row of data ?? []) map[(row as any).key] = (row as any).value;
+      for (const row of data ?? []) map[row.key] = row.value;
       return map;
     },
   });
@@ -130,7 +157,11 @@ function PlatformSettings() {
   }
 
   if (isLoading) {
-    return <div className="grid place-items-center py-16"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
+    return (
+      <div className="grid place-items-center py-16">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   return (
@@ -138,7 +169,9 @@ function PlatformSettings() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="large-title">Platform settings</h1>
-          <p className="mt-0.5 text-small text-muted-foreground">Global switches that apply to every shop, rider and customer.</p>
+          <p className="mt-0.5 text-small text-muted-foreground">
+            Global switches that apply to every shop, rider and customer.
+          </p>
         </div>
         <Button onClick={save} disabled={saving} className="shrink-0">
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
@@ -161,7 +194,9 @@ function PlatformSettings() {
                   <div key={i.key} className="flex items-start justify-between gap-3">
                     <div>
                       <div className="text-body font-medium">{i.label}</div>
-                      {i.hint && <div className="mt-0.5 text-small text-muted-foreground">{i.hint}</div>}
+                      {i.hint && (
+                        <div className="mt-0.5 text-small text-muted-foreground">{i.hint}</div>
+                      )}
                     </div>
                     <Switch
                       checked={get(i.key) === "true"}
@@ -170,7 +205,9 @@ function PlatformSettings() {
                   </div>
                 ) : (
                   <div key={i.key}>
-                    <label className="text-small font-medium text-muted-foreground">{i.label}</label>
+                    <label className="text-small font-medium text-muted-foreground">
+                      {i.label}
+                    </label>
                     <Input
                       value={get(i.key)}
                       onChange={(e) => set(i.key, e.target.value)}

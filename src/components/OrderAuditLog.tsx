@@ -13,15 +13,17 @@ type Row = {
 };
 
 const labelFor = (e: string) =>
-  ({
-    created: "Order created",
-    status_change: "Status changed",
-    partner_assigned: "Delivery partner assigned",
-    partner_unassigned: "Delivery partner removed",
-    partner_reassigned: "Delivery partner reassigned",
-    shop_change: "Shop changed",
-    payment_status: "Payment status",
-  } as Record<string, string>)[e] ?? e;
+  (
+    ({
+      created: "Order created",
+      status_change: "Status changed",
+      partner_assigned: "Delivery partner assigned",
+      partner_unassigned: "Delivery partner removed",
+      partner_reassigned: "Delivery partner reassigned",
+      shop_change: "Shop changed",
+      payment_status: "Payment status",
+    }) as Record<string, string>
+  )[e] ?? e;
 
 export function OrderAuditLog({ orderId }: { orderId: string }) {
   const { data = [], isLoading } = useQuery({

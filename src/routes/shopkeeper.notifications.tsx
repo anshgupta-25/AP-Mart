@@ -40,15 +40,22 @@ function ShopkeeperNotifications() {
         () => qc.invalidateQueries({ queryKey: ["shopkeeper-notifications", user.id] }),
       )
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, [user?.id, qc]);
 
   // Mark all as read on view
   useEffect(() => {
-    if (!user?.id || !items.some((n: any) => !n.read)) return;
-    supabase.from("notifications").update({ read: true }).eq("user_id", user.id).eq("read", false).then(() => {
-      qc.invalidateQueries({ queryKey: ["shopkeeper-notification-unread", user.id] });
-    });
+    if (!user?.id || !items.some((n) => !n.read)) return;
+    supabase
+      .from("notifications")
+      .update({ read: true })
+      .eq("user_id", user.id)
+      .eq("read", false)
+      .then(() => {
+        qc.invalidateQueries({ queryKey: ["shopkeeper-notification-unread", user.id] });
+      });
   }, [items, user?.id, qc]);
 
   return (
@@ -59,7 +66,9 @@ function ShopkeeperNotifications() {
           <div className="h-32 rounded-xl shimmer" />
         ) : items.length === 0 ? (
           <div className="rounded-xl bg-card px-6 py-12 text-center border border-border/70">
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary-soft text-primary-ink"><Bell className="h-6 w-6" /></div>
+            <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary-soft text-primary-ink">
+              <Bell className="h-6 w-6" />
+            </div>
             <div className="mt-4 text-body font-semibold">You're all caught up</div>
             <p className="mt-1 text-body text-muted-foreground">New alerts will appear here.</p>
           </div>
@@ -68,25 +77,29 @@ function ShopkeeperNotifications() {
             {items.map((n: any) => {
               const url = n.data?.url as string | undefined;
               const Inner = (
-                <div className={cn(
-                  "press flex gap-3 p-4 transition-colors",
-                  !n.read && "bg-primary-soft/50",
-                )}>
+                <div
+                  className={cn(
+                    "press flex gap-3 p-4 transition-colors",
+                    !n.read && "bg-primary-soft/50",
+                  )}
+                >
                   <div className="grid h-10 w-10 place-items-center rounded-full bg-primary-soft text-primary-ink shrink-0">
-                    {n.category === "order" ? <Package className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
+                    {n.category === "order" ? (
+                      <Package className="h-5 w-5" />
+                    ) : (
+                      <CheckCircle2 className="h-5 w-5" />
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="text-body font-semibold">{n.title}</div>
                     <div className="mt-0.5 text-body text-muted-foreground">{n.body}</div>
-                    <div className="mt-1.5 text-small text-muted-foreground">{formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}</div>
+                    <div className="mt-1.5 text-small text-muted-foreground">
+                      {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                    </div>
                   </div>
                 </div>
               );
-              return (
-                <li key={n.id}>
-                  {url ? <Link to={url as any}>{Inner}</Link> : Inner}
-                </li>
-              );
+              return <li key={n.id}>{url ? <Link to={url}>{Inner}</Link> : Inner}</li>;
             })}
           </ul>
         )}

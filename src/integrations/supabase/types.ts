@@ -3037,6 +3037,7 @@ export type Database = {
             Args: {
               _brands?: string[]
               _category_id?: string
+              _delivery?: string[]
               _limit?: number
               _max_price?: number
               _min_discount?: number

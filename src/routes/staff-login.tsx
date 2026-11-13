@@ -3,7 +3,19 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, Lock, Mail, Shield, Store, Bike, Headphones, Loader2, ArrowLeft } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  Shield,
+  Store,
+  Bike,
+  Headphones,
+  Loader2,
+  ArrowLeft,
+  type LucideIcon,
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -22,15 +34,47 @@ const ROLES: Array<{
   key: RoleKey;
   title: string;
   subtitle: string;
-  icon: any;
+  icon: LucideIcon;
   iconBg: string;
   iconColor: string;
   dashboard: string;
 }> = [
-  { key: "admin", title: "Admin", subtitle: "Platform Administrator", icon: Shield, iconBg: "bg-tint-mint", iconColor: "text-primary-ink", dashboard: "/admin/dashboard" },
-  { key: "shopkeeper", title: "Shopkeeper", subtitle: "Manage your Shop", icon: Store, iconBg: "bg-tint-sky", iconColor: "text-primary-ink", dashboard: "/shopkeeper/dashboard" },
-  { key: "delivery", title: "Delivery", subtitle: "Deliver Orders", icon: Bike, iconBg: "bg-tint-peach", iconColor: "text-primary-ink", dashboard: "/delivery/dashboard" },
-  { key: "support", title: "Support", subtitle: "Handle Tickets", icon: Headphones, iconBg: "bg-tint-violet", iconColor: "text-primary-ink", dashboard: "/support/dashboard" },
+  {
+    key: "admin",
+    title: "Admin",
+    subtitle: "Platform Administrator",
+    icon: Shield,
+    iconBg: "bg-tint-mint",
+    iconColor: "text-primary-ink",
+    dashboard: "/admin/dashboard",
+  },
+  {
+    key: "shopkeeper",
+    title: "Shopkeeper",
+    subtitle: "Manage your Shop",
+    icon: Store,
+    iconBg: "bg-tint-sky",
+    iconColor: "text-primary-ink",
+    dashboard: "/shopkeeper/dashboard",
+  },
+  {
+    key: "delivery",
+    title: "Delivery",
+    subtitle: "Deliver Orders",
+    icon: Bike,
+    iconBg: "bg-tint-peach",
+    iconColor: "text-primary-ink",
+    dashboard: "/delivery/dashboard",
+  },
+  {
+    key: "support",
+    title: "Support",
+    subtitle: "Handle Tickets",
+    icon: Headphones,
+    iconBg: "bg-tint-violet",
+    iconColor: "text-primary-ink",
+    dashboard: "/support/dashboard",
+  },
 ];
 
 function StaffLoginPage() {
@@ -51,7 +95,9 @@ function StaffLoginPage() {
         if (parsed?.email) setEmail(parsed.email);
         if (parsed?.role) setRole(parsed.role);
       }
-    } catch {}
+    } catch {
+      // Best effort: storage may be unavailable or the step is optional.
+    }
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -64,11 +110,13 @@ function StaffLoginPage() {
       return;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     let actualRoles: string[] = [];
     if (user) {
       const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
-      actualRoles = (data ?? []).map((r: any) => r.role);
+      actualRoles = (data ?? []).map((r) => r.role);
     }
 
     // Hidden platform-owner path: the tier is never advertised in the UI, it is
@@ -77,9 +125,11 @@ function StaffLoginPage() {
       try {
         if (remember) localStorage.setItem("flashbasket.staff", JSON.stringify({ email }));
         else localStorage.removeItem("flashbasket.staff");
-      } catch {}
+      } catch {
+        // Best effort: storage may be unavailable or the step is optional.
+      }
       toast.success("Welcome back");
-      navigate({ to: "/super-admin/dashboard" as any, replace: true });
+      navigate({ to: "/super-admin/dashboard", replace: true });
       return;
     }
 
@@ -100,11 +150,13 @@ function StaffLoginPage() {
     try {
       if (remember) localStorage.setItem("flashbasket.staff", JSON.stringify({ email, role }));
       else localStorage.removeItem("flashbasket.staff");
-    } catch {}
+    } catch {
+      // Best effort: storage may be unavailable or the step is optional.
+    }
 
     const target = ROLES.find((r) => r.key === role)!.dashboard;
     toast.success("Welcome back");
-    navigate({ to: target as any });
+    navigate({ to: target });
   }
 
   async function handleForgot() {
@@ -121,7 +173,10 @@ function StaffLoginPage() {
     <div className="flex min-h-screen items-start justify-center bg-background px-4 pb-10 pt-safe md:items-center">
       <div className="w-full max-w-md">
         <div className="flex items-center justify-between pt-4">
-          <Link to="/login" className="press inline-flex h-9 items-center gap-1 rounded-full bg-secondary px-3.5 text-meta font-medium text-muted-foreground">
+          <Link
+            to="/login"
+            className="press inline-flex h-9 items-center gap-1 rounded-full bg-secondary px-3.5 text-meta font-medium text-muted-foreground"
+          >
             <ArrowLeft className="h-3.5 w-3.5" /> Back to app
           </Link>
         </div>
@@ -150,12 +205,19 @@ function StaffLoginPage() {
                     active ? "bg-primary-soft ring-2 ring-primary" : "bg-secondary",
                   )}
                 >
-                  <span className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-xl", r.iconBg)}>
+                  <span
+                    className={cn(
+                      "grid h-10 w-10 shrink-0 place-items-center rounded-xl",
+                      r.iconBg,
+                    )}
+                  >
                     <Icon className={cn("h-5 w-5", r.iconColor)} />
                   </span>
                   <span className="min-w-0">
                     <span className="block text-meta font-semibold leading-tight">{r.title}</span>
-                    <span className="block truncate text-caption leading-tight text-muted-foreground">{r.subtitle}</span>
+                    <span className="block truncate text-caption leading-tight text-muted-foreground">
+                      {r.subtitle}
+                    </span>
                   </span>
                 </button>
               );
@@ -199,14 +261,20 @@ function StaffLoginPage() {
                 <Checkbox checked={remember} onCheckedChange={(v) => setRemember(!!v)} />
                 Remember me
               </label>
-              <button type="button" onClick={handleForgot} className="text-meta font-semibold text-primary">
+              <button
+                type="button"
+                onClick={handleForgot}
+                className="text-meta font-semibold text-primary"
+              >
                 Forgot password?
               </button>
             </div>
 
             <Button type="submit" disabled={submitting} className="h-11 w-full rounded-xl">
               {submitting ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Signing in…</>
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Signing in…
+                </>
               ) : (
                 "Log in"
               )}
@@ -216,7 +284,9 @@ function StaffLoginPage() {
 
         <p className="mt-5 text-center text-meta text-muted-foreground">
           Customer?{" "}
-          <Link to="/login" className="font-semibold text-primary">Use the main app</Link>
+          <Link to="/login" className="font-semibold text-primary">
+            Use the main app
+          </Link>
         </p>
       </div>
     </div>

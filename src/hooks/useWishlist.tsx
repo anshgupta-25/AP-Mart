@@ -7,7 +7,11 @@ const FAV_KEY = "fb_favourites_v1";
 
 function readLocal(): string[] {
   if (typeof window === "undefined") return [];
-  try { return JSON.parse(localStorage.getItem(FAV_KEY) ?? "[]"); } catch { return []; }
+  try {
+    return JSON.parse(localStorage.getItem(FAV_KEY) ?? "[]");
+  } catch {
+    return [];
+  }
 }
 function writeLocal(ids: string[]) {
   if (typeof window === "undefined") return;
@@ -45,12 +49,13 @@ export function useWishlist() {
     const local = readLocal();
     if (local.length === 0) return;
     (async () => {
-      await supabase
-        .from("wishlist_items")
-        .upsert(local.map((pid) => ({ user_id: user.id, product_id: pid })), {
+      await supabase.from("wishlist_items").upsert(
+        local.map((pid) => ({ user_id: user.id, product_id: pid })),
+        {
           onConflict: "user_id,product_id",
           ignoreDuplicates: true,
-        });
+        },
+      );
       writeLocal([]);
       setLocalIds([]);
       qc.invalidateQueries({ queryKey: ["wishlist", user.id] });
@@ -61,35 +66,46 @@ export function useWishlist() {
 
   const isFav = useCallback((productId: string) => ids.includes(productId), [ids]);
 
-  const toggle = useCallback(async (productId: string) => {
-    if (!user) {
-      const cur = readLocal();
-      const next = cur.includes(productId) ? cur.filter((i) => i !== productId) : [...cur, productId];
-      writeLocal(next);
-      setLocalIds(next);
-      return;
-    }
-    const has = ids.includes(productId);
-    const previous = qc.getQueryData<string[]>(["wishlist", user.id]);
-    // Optimistic update
-    qc.setQueryData<string[]>(["wishlist", user.id], (prev) => {
-      const cur = prev ?? [];
-      return has ? cur.filter((i) => i !== productId) : [...cur, productId];
-    });
-    const { error } = has
-      ? await supabase.from("wishlist_items").delete().eq("user_id", user.id).eq("product_id", productId)
-      : await supabase
-          .from("wishlist_items")
-          .upsert({ user_id: user.id, product_id: productId }, { onConflict: "user_id,product_id" });
-    if (error) {
-      qc.setQueryData<string[]>(["wishlist", user.id], previous);
-      const { toast } = await import("sonner");
-      toast.error(error.message);
-      return;
-    }
-    qc.invalidateQueries({ queryKey: ["wishlist", user.id] });
-  }, [user, ids, qc]);
-
+  const toggle = useCallback(
+    async (productId: string) => {
+      if (!user) {
+        const cur = readLocal();
+        const next = cur.includes(productId)
+          ? cur.filter((i) => i !== productId)
+          : [...cur, productId];
+        writeLocal(next);
+        setLocalIds(next);
+        return;
+      }
+      const has = ids.includes(productId);
+      const previous = qc.getQueryData<string[]>(["wishlist", user.id]);
+      // Optimistic update
+      qc.setQueryData<string[]>(["wishlist", user.id], (prev) => {
+        const cur = prev ?? [];
+        return has ? cur.filter((i) => i !== productId) : [...cur, productId];
+      });
+      const { error } = has
+        ? await supabase
+            .from("wishlist_items")
+            .delete()
+            .eq("user_id", user.id)
+            .eq("product_id", productId)
+        : await supabase
+            .from("wishlist_items")
+            .upsert(
+              { user_id: user.id, product_id: productId },
+              { onConflict: "user_id,product_id" },
+            );
+      if (error) {
+        qc.setQueryData<string[]>(["wishlist", user.id], previous);
+        const { toast } = await import("sonner");
+        toast.error(error.message);
+        return;
+      }
+      qc.invalidateQueries({ queryKey: ["wishlist", user.id] });
+    },
+    [user, ids, qc],
+  );
 
   return { ids, isFav, toggle, loading: !!user && remoteQuery.isLoading };
 }

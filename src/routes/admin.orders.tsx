@@ -8,14 +8,22 @@ import { Button } from "@/components/ui/button";
 import { DeliveryTypeBadge } from "@/components/FastDeliveryBadge";
 import { ImageOff, MapPin, Phone, Search, Store, Truck, User } from "lucide-react";
 import { StorageImg } from "@/components/StorageImg";
+import { asAddress } from "@/lib/address";
 
 export const Route = createFileRoute("/admin/orders")({
   head: () => ({
     meta: [
       { title: "All orders — AP Mart Admin" },
-      { name: "description", content: "Complete marketplace order visibility: customers, shops, riders, products and payments." },
+      {
+        name: "description",
+        content:
+          "Complete marketplace order visibility: customers, shops, riders, products and payments.",
+      },
       { property: "og:title", content: "All orders — AP Mart Admin" },
-      { property: "og:description", content: "Complete marketplace order visibility for AP Mart admins." },
+      {
+        property: "og:description",
+        content: "Complete marketplace order visibility for AP Mart admins.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -36,7 +44,11 @@ const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   no_shop_available: { label: "No shop available", cls: "bg-tint-rose text-[oklch(0.45_0.12_15)]" },
 };
 
-const statusBadge = (s: string) => STATUS_BADGE[s] ?? { label: String(s).replace(/_/g, " "), cls: "bg-secondary text-muted-foreground" };
+const statusBadge = (s: string) =>
+  STATUS_BADGE[s] ?? {
+    label: String(s).replace(/_/g, " "),
+    cls: "bg-secondary text-muted-foreground",
+  };
 
 function useAdminOrders() {
   return useQuery({
@@ -48,38 +60,47 @@ function useAdminOrders() {
         .select("*")
         .order("placed_at", { ascending: false })
         .limit(200);
-      const list = (orders ?? []) as any[];
+      const list = orders ?? [];
       const ids = list.map((o) => o.id);
 
       const [itemsRes, shopsRes, partnersRes] = await Promise.all([
         ids.length
-          ? supabase.from("order_items").select("id, order_id, child_order_id, name, image_url, unit, variant_label, quantity, price, shop_id").in("order_id", ids)
-          : Promise.resolve({ data: [] as any[] }),
+          ? supabase
+              .from("order_items")
+              .select(
+                "id, order_id, child_order_id, name, image_url, unit, variant_label, quantity, price, shop_id",
+              )
+              .in("order_id", ids)
+          : Promise.resolve({ data: [] }),
         supabase.rpc("admin_list_shops"),
         supabase.from("delivery_partners").select("id, name, phone, vehicle"),
       ]);
 
       const itemsByOrder = new Map<string, any[]>();
-      for (const it of ((itemsRes as any).data ?? []) as any[]) {
+      for (const it of itemsRes.data ?? []) {
         const arr = itemsByOrder.get(it.order_id) ?? [];
         arr.push(it);
         itemsByOrder.set(it.order_id, arr);
       }
-      const shopMap = new Map(((shopsRes.data as any[]) ?? []).map((s: any) => [s.id, s]));
-      const partnerMap = new Map(((partnersRes.data as any[]) ?? []).map((p: any) => [p.id, p]));
+      const shopMap = new Map((shopsRes.data ?? []).map((s) => [s.id, s]));
+      const partnerMap = new Map((partnersRes.data ?? []).map((p) => [p.id, p]));
 
       return list.map((o) => ({
         ...o,
         items: itemsByOrder.get(o.id) ?? [],
-        shop: o.shop_id ? shopMap.get(o.shop_id) ?? null : null,
-        partner: o.partner_id ? partnerMap.get(o.partner_id) ?? null : null,
+        shop: o.shop_id ? (shopMap.get(o.shop_id) ?? null) : null,
+        partner: o.partner_id ? (partnerMap.get(o.partner_id) ?? null) : null,
       }));
     },
   });
 }
 
 function Chip({ children }: { children: React.ReactNode }) {
-  return <span className="rounded-full bg-secondary px-2.5 py-1 text-caption font-medium text-muted-foreground">{children}</span>;
+  return (
+    <span className="rounded-full bg-secondary px-2.5 py-1 text-caption font-medium text-muted-foreground">
+      {children}
+    </span>
+  );
 }
 
 function ProductPreview({ items }: { items: any[] }) {
@@ -89,20 +110,35 @@ function ProductPreview({ items }: { items: any[] }) {
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2">
       {shown.map((it) => (
-        <span key={it.id} className="inline-flex items-center gap-2 rounded-xl bg-secondary/70 py-1 pl-1 pr-2.5 text-small">
+        <span
+          key={it.id}
+          className="inline-flex items-center gap-2 rounded-xl bg-secondary/70 py-1 pl-1 pr-2.5 text-small"
+        >
           <span className="h-7 w-7 rounded-lg overflow-hidden bg-muted flex items-center justify-center shrink-0">
             {it.image_url ? (
-              <StorageImg src={it.image_url} alt={it.name} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+              <StorageImg
+                src={it.image_url}
+                alt={it.name}
+                loading="lazy"
+                decoding="async"
+                className="h-full w-full object-cover"
+              />
             ) : (
               <ImageOff className="h-3 w-3 text-muted-foreground" />
             )}
           </span>
           <span className="max-w-[9rem] truncate font-medium">{it.name}</span>
-          {(it.variant_label || it.unit) && <span className="text-muted-foreground">({[it.variant_label, it.unit].filter(Boolean).join(" ")})</span>}
+          {(it.variant_label || it.unit) && (
+            <span className="text-muted-foreground">
+              ({[it.variant_label, it.unit].filter(Boolean).join(" ")})
+            </span>
+          )}
           <span className="font-semibold">×{it.quantity}</span>
         </span>
       ))}
-      {rest > 0 && <span className="text-xs font-semibold text-muted-foreground">+{rest} more products</span>}
+      {rest > 0 && (
+        <span className="text-xs font-semibold text-muted-foreground">+{rest} more products</span>
+      )}
     </div>
   );
 }
@@ -122,25 +158,26 @@ function Page() {
 
   const shopOptions = useMemo(() => {
     const m = new Map<string, string>();
-    rows.forEach((o: any) => o.shop && m.set(o.shop.id, o.shop.name));
+    rows.forEach((o) => o.shop && m.set(o.shop.id, o.shop.name));
     return [...m.entries()];
   }, [rows]);
   const partnerOptions = useMemo(() => {
     const m = new Map<string, string>();
-    rows.forEach((o: any) => o.partner && m.set(o.partner.id, o.partner.name));
+    rows.forEach((o) => o.partner && m.set(o.partner.id, o.partner.name));
     return [...m.entries()];
   }, [rows]);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return rows.filter((o: any) => {
-      const a = (o.address ?? {}) as any;
+    return rows.filter((o) => {
+      const a = asAddress(o.address);
       if (status !== "all" && o.status !== status) return false;
       if (shopId !== "all" && o.shop_id !== shopId) return false;
       if (partnerId !== "all" && o.partner_id !== partnerId) return false;
       if (payStatus !== "all" && o.payment_status !== payStatus) return false;
       if (delType !== "all" && (o.delivery_type ?? "standard") !== delType) return false;
-      if (pincode && !String(o.delivery_pincode ?? a.pincode ?? "").includes(pincode.trim())) return false;
+      if (pincode && !String(o.delivery_pincode ?? a.pincode ?? "").includes(pincode.trim()))
+        return false;
       if (date && !(o.placed_at ?? "").startsWith(date)) return false;
       if (!term) return true;
       const hay = [
@@ -153,7 +190,7 @@ function Page() {
         o.shop?.owner_name,
         o.partner?.name,
         o.partner?.phone,
-        ...(o.items ?? []).map((i: any) => i.name),
+        ...(o.items ?? []).map((i) => i.name),
       ]
         .filter(Boolean)
         .join(" ")
@@ -163,8 +200,14 @@ function Page() {
   }, [rows, search, status, shopId, partnerId, payStatus, delType, pincode, date]);
 
   const reset = () => {
-    setSearch(""); setStatus("all"); setShopId("all"); setPartnerId("all");
-    setPayStatus("all"); setDelType("all"); setPincode(""); setDate("");
+    setSearch("");
+    setStatus("all");
+    setShopId("all");
+    setPartnerId("all");
+    setPayStatus("all");
+    setDelType("all");
+    setPincode("");
+    setDate("");
   };
 
   const selectCls = "h-10 rounded-xl border-0 bg-secondary px-3 text-meta font-medium";
@@ -193,42 +236,91 @@ function Page() {
           <select className={selectCls} value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="all">All statuses</option>
             {Object.keys(STATUS_BADGE).map((s) => (
-              <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
+              <option key={s} value={s}>
+                {s.replace(/_/g, " ")}
+              </option>
             ))}
           </select>
           <select className={selectCls} value={shopId} onChange={(e) => setShopId(e.target.value)}>
             <option value="all">All shops</option>
-            {shopOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-          </select>
-          <select className={selectCls} value={partnerId} onChange={(e) => setPartnerId(e.target.value)}>
-            <option value="all">All riders</option>
-            {partnerOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-          </select>
-          <select className={selectCls} value={payStatus} onChange={(e) => setPayStatus(e.target.value)}>
-            <option value="all">All payments</option>
-            {["pending", "paid", "failed", "refund_initiated", "refunded", "cod"].map((s) => (
-              <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
+            {shopOptions.map(([id, name]) => (
+              <option key={id} value={id}>
+                {name}
+              </option>
             ))}
           </select>
-          <select className={selectCls} value={delType} onChange={(e) => setDelType(e.target.value)}>
-            <option value="all">All delivery types</option>
-            {["standard", "fast", "express", "pickup"].map((s) => <option key={s} value={s}>{s}</option>)}
+          <select
+            className={selectCls}
+            value={partnerId}
+            onChange={(e) => setPartnerId(e.target.value)}
+          >
+            <option value="all">All riders</option>
+            {partnerOptions.map(([id, name]) => (
+              <option key={id} value={id}>
+                {name}
+              </option>
+            ))}
           </select>
-          <Input value={pincode} onChange={(e) => setPincode(e.target.value)} placeholder="PIN code" className="h-10 w-28" />
-          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-10 w-40" />
-          <Button variant="secondary" size="sm" className="h-10" onClick={reset}>Reset</Button>
+          <select
+            className={selectCls}
+            value={payStatus}
+            onChange={(e) => setPayStatus(e.target.value)}
+          >
+            <option value="all">All payments</option>
+            {["pending", "paid", "failed", "refund_initiated", "refunded", "cod"].map((s) => (
+              <option key={s} value={s}>
+                {s.replace(/_/g, " ")}
+              </option>
+            ))}
+          </select>
+          <select
+            className={selectCls}
+            value={delType}
+            onChange={(e) => setDelType(e.target.value)}
+          >
+            <option value="all">All delivery types</option>
+            {["standard", "fast", "express", "pickup"].map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+          <Input
+            value={pincode}
+            onChange={(e) => setPincode(e.target.value)}
+            placeholder="PIN code"
+            className="h-10 w-28"
+          />
+          <Input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="h-10 w-40"
+          />
+          <Button variant="secondary" size="sm" className="h-10" onClick={reset}>
+            Reset
+          </Button>
         </div>
       </div>
 
       {/* Orders */}
       {q.isLoading ? (
-        <div className="space-y-3">{[0, 1, 2].map((i) => <div key={i} className="h-40 rounded-xl shimmer" />)}</div>
+        <div className="space-y-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-40 rounded-xl shimmer" />
+          ))}
+        </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-border/70 bg-card px-6 py-10 text-center"><div className="text-subtitle font-semibold">No orders found</div><p className="mt-0.5 text-meta text-muted-foreground">Try changing or resetting the filters.</p></div>
+        <div className="rounded-xl border border-border/70 bg-card px-6 py-10 text-center">
+          <div className="text-subtitle font-semibold">No orders found</div>
+          <p className="mt-0.5 text-meta text-muted-foreground">
+            Try changing or resetting the filters.
+          </p>
+        </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((o: any) => {
-            const a = (o.address ?? {}) as any;
+          {filtered.map((o) => {
+            const a = asAddress(o.address);
             const b = statusBadge(o.status);
             return (
               <Link
@@ -241,7 +333,11 @@ function Page() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-subtitle font-semibold">{o.order_number}</span>
-                      <span className={`rounded-full px-2.5 py-0.5 text-caption font-semibold ${b.cls}`}>{b.label}</span>
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-caption font-semibold ${b.cls}`}
+                      >
+                        {b.label}
+                      </span>
                       <DeliveryTypeBadge type={o.delivery_type} size="sm" />
                       {o.is_parent && <Chip>Multi-shop · {o.shop_count ?? 0} shops</Chip>}
                     </div>
@@ -252,7 +348,8 @@ function Page() {
                   <div className="text-right">
                     <div className="text-lg font-semibold tracking-tight">{rupees(o.total)}</div>
                     <div className="text-small text-muted-foreground">
-                      {String(o.payment_method ?? "")} · {String(o.payment_status ?? "").replace(/_/g, " ")}
+                      {String(o.payment_method ?? "")} ·{" "}
+                      {String(o.payment_status ?? "").replace(/_/g, " ")}
                     </div>
                   </div>
                 </div>
@@ -260,22 +357,39 @@ function Page() {
                 <div className="mt-4 grid gap-4 border-t border-border/70 pt-4 text-meta sm:grid-cols-3">
                   <div className="space-y-1">
                     <div className="eyebrow">Customer</div>
-                    <div className="flex items-center gap-1.5"><User className="h-3.5 w-3.5 text-muted-foreground" />{a.name ?? "—"}</div>
-                    <div className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-muted-foreground" />{a.phone ?? "—"}</div>
+                    <div className="flex items-center gap-1.5">
+                      <User className="h-3.5 w-3.5 text-muted-foreground" />
+                      {a.name ?? "—"}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                      {a.phone ?? "—"}
+                    </div>
                     <div className="flex items-start gap-1.5 text-muted-foreground">
                       <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                      <span>{[a.line1, a.line2, a.city].filter(Boolean).join(", ") || "—"} — {o.delivery_pincode ?? a.pincode ?? "—"}</span>
+                      <span>
+                        {[a.line1, a.line2, a.city].filter(Boolean).join(", ") || "—"} —{" "}
+                        {o.delivery_pincode ?? a.pincode ?? "—"}
+                      </span>
                     </div>
                   </div>
                   <div className="space-y-1">
                     <div className="eyebrow">Shop</div>
-                    <div className="flex items-center gap-1.5"><Store className="h-3.5 w-3.5 text-muted-foreground" />{o.shop?.name ?? (o.is_parent ? "Multiple shops" : "Not assigned")}</div>
+                    <div className="flex items-center gap-1.5">
+                      <Store className="h-3.5 w-3.5 text-muted-foreground" />
+                      {o.shop?.name ?? (o.is_parent ? "Multiple shops" : "Not assigned")}
+                    </div>
                     <div className="text-muted-foreground">Owner: {o.shop?.owner_name ?? "—"}</div>
-                    <div className="truncate font-mono text-micro text-muted-foreground">ID: {o.shop_id ?? "—"}</div>
+                    <div className="truncate font-mono text-micro text-muted-foreground">
+                      ID: {o.shop_id ?? "—"}
+                    </div>
                   </div>
                   <div className="space-y-1">
                     <div className="eyebrow">Delivery partner</div>
-                    <div className="flex items-center gap-1.5"><Truck className="h-3.5 w-3.5 text-muted-foreground" />{o.partner?.name ?? "Not assigned"}</div>
+                    <div className="flex items-center gap-1.5">
+                      <Truck className="h-3.5 w-3.5 text-muted-foreground" />
+                      {o.partner?.name ?? "Not assigned"}
+                    </div>
                     <div className="text-muted-foreground">{o.partner?.phone ?? "—"}</div>
                   </div>
                 </div>

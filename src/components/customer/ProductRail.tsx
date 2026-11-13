@@ -21,9 +21,11 @@ export function ProductRail({
       <div className="flex items-end justify-between gap-3 px-4">
         <div className="min-w-0">
           <h2 className="section-title truncate">{title}</h2>
-          {subtitle && <p className="mt-0.5 truncate text-small text-muted-foreground">{subtitle}</p>}
+          {subtitle && (
+            <p className="mt-0.5 truncate text-small text-muted-foreground">{subtitle}</p>
+          )}
         </div>
-        <Link to={to as any} className="press shrink-0 text-meta font-semibold text-primary">
+        <Link to={to} className="press shrink-0 text-meta font-semibold text-primary">
           See all
         </Link>
       </div>

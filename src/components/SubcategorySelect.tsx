@@ -36,15 +36,15 @@ export function SubcategorySelect({
   const [query, setQuery] = useState("");
   const { data = [], isLoading } = useSubcategoriesForCategories(categoryIds, true);
 
-  const catName = useMemo(
-    () => new Map(categories.map((c) => [c.id, c.name])),
-    [categories],
-  );
+  const catName = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
 
   // Drop picks whose parent category is no longer selected / no longer valid.
   useEffect(() => {
     if (value.length === 0) return;
-    if (categoryIds.length === 0) { onChange([]); return; }
+    if (categoryIds.length === 0) {
+      onChange([]);
+      return;
+    }
     if (isLoading || data.length === 0) return;
     const valid = value.filter((id) => data.some((s) => s.id === id));
     if (valid.length !== value.length) onChange(valid);
@@ -162,7 +162,11 @@ export function SubcategorySelect({
               {value.length} subcategor{value.length === 1 ? "y" : "ies"} selected
             </span>
             {value.length > 0 && (
-              <button type="button" className="font-semibold hover:underline" onClick={() => onChange([])}>
+              <button
+                type="button"
+                className="font-semibold hover:underline"
+                onClick={() => onChange([])}
+              >
                 Clear all
               </button>
             )}

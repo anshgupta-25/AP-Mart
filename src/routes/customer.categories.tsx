@@ -9,6 +9,7 @@ import { CategoryGroups } from "@/components/customer/CategoryGroups";
 import { loadProductCategoriesMap } from "@/lib/productCategories";
 import { useDeliveryContext } from "@/hooks/useDeliveryContext";
 import { useHeaderOffset } from "@/hooks/useHeaderOffset";
+import { rpcArgs } from "@/integrations/supabase/rpc";
 
 const search = z.object({ q: z.string().optional(), chip: z.string().optional() });
 
@@ -30,7 +31,14 @@ const CHIPS = [
   { key: "imported", label: "Imported" },
 ];
 
-const TINTS = ["bg-tint-mint", "bg-tint-sun", "bg-tint-sky", "bg-tint-rose", "bg-tint-violet", "bg-tint-peach"];
+const TINTS = [
+  "bg-tint-mint",
+  "bg-tint-sun",
+  "bg-tint-sky",
+  "bg-tint-rose",
+  "bg-tint-violet",
+  "bg-tint-peach",
+];
 
 function CategoriesBrowse() {
   const { q: qParam, chip } = Route.useSearch();
@@ -61,20 +69,23 @@ function CategoriesBrowse() {
     gcTime: 30 * 60 * 1000,
     placeholderData: (prev) => prev,
     queryFn: async () => {
-      const { data } = await (supabase as any).rpc("list_customer_products", {
-        _pincode: pincode,
-        _category_id: null,
-        _search: null,
-        _only_featured: false,
-        _only_bestseller: false,
-        _sort: "relevance",
-        _limit: 1000,
-        _ids: null,
-      });
-      const rows = (data ?? []) as any[];
+      const { data } = await supabase.rpc(
+        "list_customer_products",
+        rpcArgs("list_customer_products", {
+          _pincode: pincode,
+          _category_id: null,
+          _search: null,
+          _only_featured: false,
+          _only_bestseller: false,
+          _sort: "relevance",
+          _limit: 1000,
+          _ids: null,
+        }),
+      );
+      const rows = data ?? [];
       const linkMap = await loadProductCategoriesMap(rows.map((r) => r.id));
       const map: Record<string, number> = {};
-      rows.forEach((r: any) => {
+      rows.forEach((r) => {
         const cats = linkMap[r.id]?.length ? linkMap[r.id] : r.category_id ? [r.category_id] : [];
         new Set(cats).forEach((cid) => {
           map[cid] = (map[cid] ?? 0) + 1;
@@ -110,7 +121,7 @@ function CategoriesBrowse() {
 
   const onSubmitSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) navigate({ to: "/products", search: { q: query.trim() } as any });
+    if (query.trim()) navigate({ to: "/products", search: { q: query.trim() } });
   };
 
   return (
@@ -118,7 +129,10 @@ function CategoriesBrowse() {
       {/* Pin below the storefront header (same approach as /products and /category/$slug). */}
       <div style={{ top: headerH }} className="hairline-b sticky z-30 bg-tint-mint px-4 pb-3 pt-4">
         <h1 className="large-title">Categories</h1>
-        <form onSubmit={onSubmitSearch} className="mt-3 flex h-11 items-center gap-2.5 rounded-xl bg-card px-3.5 shadow-soft">
+        <form
+          onSubmit={onSubmitSearch}
+          className="mt-3 flex h-11 items-center gap-2.5 rounded-xl bg-card px-3.5 shadow-soft"
+        >
           <Search className="h-[18px] w-[18px] shrink-0 text-foreground" />
           <input
             value={query}
@@ -168,7 +182,11 @@ function CategoriesBrowse() {
         ) : (
           <>
             <CategoryGroups categories={categories.data} from={0} count={99} />
-            <CategoryTiles items={categories.data ?? []} title="All categories" counts={counts.data} />
+            <CategoryTiles
+              items={categories.data ?? []}
+              title="All categories"
+              counts={counts.data}
+            />
           </>
         )}
 
@@ -181,20 +199,29 @@ function CategoriesBrowse() {
               </Link>
             </div>
             <div className="scrollbar-hide flex gap-2.5 overflow-x-auto px-4">
-              {collections.data.map((col: any) => (
+              {collections.data.map((col) => (
                 <Link
                   key={col.id}
                   to="/products"
-                  search={{ coll: col.id } as any}
+                  search={{ coll: col.id }}
                   className="press relative block h-[104px] w-[200px] shrink-0 overflow-hidden rounded-xl bg-foreground/80"
                 >
                   {col.image_url && (
-                    <StorageImg src={col.image_url} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+                    <StorageImg
+                      src={col.image_url}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover"
+                      loading="lazy"
+                    />
                   )}
                   <div className="absolute inset-0 bg-black/35" />
                   <div className="relative flex h-full flex-col justify-end p-3 text-white">
                     <div className="text-body font-semibold leading-tight">{col.name}</div>
-                    {col.description && <div className="mt-0.5 line-clamp-1 text-caption opacity-90">{col.description}</div>}
+                    {col.description && (
+                      <div className="mt-0.5 line-clamp-1 text-caption opacity-90">
+                        {col.description}
+                      </div>
+                    )}
                   </div>
                 </Link>
               ))}
@@ -226,13 +253,19 @@ function CategoryTiles({
             params={{ slug: c.slug }}
             className="press flex flex-col items-center gap-1.5"
           >
-            <div className={`${TINTS[i % TINTS.length]} relative grid aspect-square w-full place-items-center rounded-xl text-[28px]`}>
+            <div
+              className={`${TINTS[i % TINTS.length]} relative grid aspect-square w-full place-items-center rounded-xl text-[28px]`}
+            >
               {c.icon ?? "🛍️"}
               {(counts?.[c.id] ?? 0) > 0 && (
-                <span className="absolute right-1 top-1 rounded-full bg-card/90 px-1.5 text-micro font-semibold text-foreground/70">{counts![c.id]}</span>
+                <span className="absolute right-1 top-1 rounded-full bg-card/90 px-1.5 text-micro font-semibold text-foreground/70">
+                  {counts![c.id]}
+                </span>
               )}
             </div>
-            <span className="line-clamp-2 text-center text-caption font-medium leading-[14px]">{c.name}</span>
+            <span className="line-clamp-2 text-center text-caption font-medium leading-[14px]">
+              {c.name}
+            </span>
           </Link>
         ))}
       </div>
@@ -247,7 +280,9 @@ function EmptyState({ onReset }: { onReset: () => void }) {
         <Search className="h-5 w-5" strokeWidth={1.8} />
       </div>
       <div className="section-title mt-3">No categories match</div>
-      <div className="mt-1 text-meta text-muted-foreground">Try another keyword, or search all products.</div>
+      <div className="mt-1 text-meta text-muted-foreground">
+        Try another keyword, or search all products.
+      </div>
       <button
         onClick={onReset}
         className="press mt-4 h-10 rounded-xl bg-primary px-6 text-meta font-semibold text-primary-foreground"

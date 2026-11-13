@@ -7,7 +7,11 @@ export const Route = createFileRoute("/admin/reports")({
     <PageContainer>
       <PageHeader title="Reports" subtitle="Sales and operations reports" />
       <Panel>
-        <EmptyState icon={<BarChart3 />} title="Coming soon" description="Detailed reports are on the way." />
+        <EmptyState
+          icon={<BarChart3 />}
+          title="Coming soon"
+          description="Detailed reports are on the way."
+        />
       </Panel>
     </PageContainer>
   ),

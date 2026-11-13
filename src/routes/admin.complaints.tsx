@@ -26,21 +26,21 @@ function Page() {
   useEffect(() => {
     const ch = supabase
       .channel("admin-complaints")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "support_tickets" },
-        () => qc.invalidateQueries({ queryKey: ["admin-complaints"] }),
+      .on("postgres_changes", { event: "*", schema: "public", table: "support_tickets" }, () =>
+        qc.invalidateQueries({ queryKey: ["admin-complaints"] }),
       )
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, [qc]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-complaints"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("admin_list_complaints");
+      const { data, error } = await supabase.rpc("admin_list_complaints");
       if (error) throw error;
-      return (data ?? []) as any[];
+      return data ?? [];
     },
     refetchInterval: 30000,
   });
@@ -55,11 +55,17 @@ function Page() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-3">{[0, 1].map((i) => <div key={i} className="h-40 rounded-xl shimmer" />)}</div>
+        <div className="space-y-3">
+          {[0, 1].map((i) => (
+            <div key={i} className="h-40 rounded-xl shimmer" />
+          ))}
+        </div>
       ) : (data ?? []).length === 0 ? (
         <div className="rounded-xl border border-border/70 bg-card px-6 py-10 text-center">
           <div className="text-subtitle font-semibold">No complaints</div>
-          <p className="mt-0.5 text-meta text-muted-foreground">Tickets raised by customers and shopkeepers will appear here.</p>
+          <p className="mt-0.5 text-meta text-muted-foreground">
+            Tickets raised by customers and shopkeepers will appear here.
+          </p>
         </div>
       ) : (
         <div className="grid gap-3 md:gap-4">
@@ -72,7 +78,9 @@ function Page() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="truncate text-subtitle font-semibold">{t.title}</span>
-                    <span className={`rounded-full px-2.5 py-0.5 text-caption font-semibold capitalize ${STATUS_TONE[t.status] ?? "bg-secondary"}`}>
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-caption font-semibold capitalize ${STATUS_TONE[t.status] ?? "bg-secondary"}`}
+                    >
                       {t.status.replace(/_/g, " ")}
                     </span>
                     <span className="rounded-full bg-secondary px-2.5 py-0.5 text-caption font-medium capitalize text-muted-foreground">
@@ -80,14 +88,16 @@ function Page() {
                     </span>
                   </div>
                   <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-small text-muted-foreground">
-                    <span>{t.ticket_number}</span>·
-                    <span>{t.category.replace(/_/g, " ")}</span>·
+                    <span>{t.ticket_number}</span>·<span>{t.category.replace(/_/g, " ")}</span>·
                     <span>{new Date(t.created_at).toLocaleString()}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {t.status !== "resolved" && t.status !== "closed" && (
-                    <ResolveButton ticketId={t.id} onDone={() => qc.invalidateQueries({ queryKey: ["admin-complaints"] })} />
+                    <ResolveButton
+                      ticketId={t.id}
+                      onDone={() => qc.invalidateQueries({ queryKey: ["admin-complaints"] })}
+                    />
                   )}
                 </div>
               </header>
@@ -110,9 +120,7 @@ function Page() {
                   {(t.address_line || t.city || t.pincode) && (
                     <div className="flex items-start gap-1 text-muted-foreground">
                       <MapPin className="h-3 w-3 mt-0.5 shrink-0" />
-                      <span>
-                        {[t.address_line, t.city, t.pincode].filter(Boolean).join(", ")}
-                      </span>
+                      <span>{[t.address_line, t.city, t.pincode].filter(Boolean).join(", ")}</span>
                     </div>
                   )}
                 </div>
@@ -124,7 +132,10 @@ function Page() {
                     </div>
                     <div className="font-medium">{t.shop_name || "—"}</div>
                     {t.shop_phone && (
-                      <a href={`tel:${t.shop_phone}`} className="flex items-center gap-1 text-primary">
+                      <a
+                        href={`tel:${t.shop_phone}`}
+                        className="flex items-center gap-1 text-primary"
+                      >
                         <Phone className="h-3 w-3" /> {t.shop_phone}
                       </a>
                     )}
@@ -152,15 +163,19 @@ function ResolveButton({ ticketId, onDone }: { ticketId: string; onDone: () => v
 
   const resolve = async () => {
     setBusy(true);
-    const { error } = await (supabase as any).rpc("update_ticket_status", {
+    const { error } = await supabase.rpc("update_ticket_status", {
       _ticket_id: ticketId,
       _status: "resolved",
       _notes: notes.trim() || null,
     });
     setBusy(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Ticket resolved. User notified.");
-    setOpen(false); setNotes("");
+    setOpen(false);
+    setNotes("");
     onDone();
   };
 
@@ -173,12 +188,29 @@ function ResolveButton({ ticketId, onDone }: { ticketId: string; onDone: () => v
   }
   return (
     <div className="mt-2 w-full space-y-2 rounded-xl bg-primary-soft p-3">
-      <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)}
-        placeholder="Resolution notes (optional) — sent to user" />
+      <Textarea
+        rows={2}
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="Resolution notes (optional) — sent to user"
+      />
       <div className="flex justify-end gap-2">
-        <Button size="sm" variant="ghost" onClick={() => { setOpen(false); setNotes(""); }}>Cancel</Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            setOpen(false);
+            setNotes("");
+          }}
+        >
+          Cancel
+        </Button>
         <Button size="sm" onClick={resolve} disabled={busy} className="gap-1">
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+          {busy ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <CheckCircle2 className="h-3.5 w-3.5" />
+          )}
           Mark resolved
         </Button>
       </div>

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { checkAccountDeletion, deleteMyAccount } from "@/lib/account.functions";
+import { errorMessage } from "@/lib/utils";
 
 /**
  * Self-service account deletion — available to every role.
@@ -42,7 +43,8 @@ export function DeleteAccountSection({ className = "" }: { className?: string })
     setOpen(true);
     try {
       const verdict = await check({ data: undefined as never });
-      if (!verdict.allowed) setBlocked(verdict.reason ?? "Your account cannot be deleted right now.");
+      if (!verdict.allowed)
+        setBlocked(verdict.reason ?? "Your account cannot be deleted right now.");
     } catch {
       // Non-fatal: the delete attempt itself re-validates server-side.
     }
@@ -56,29 +58,33 @@ export function DeleteAccountSection({ className = "" }: { className?: string })
       try {
         localStorage.clear();
         sessionStorage.clear();
-      } catch {}
+      } catch {
+        // Best effort: storage may be unavailable or the step is optional.
+      }
       await signOut();
       toast.success("Your account has been permanently deleted.");
       navigate({ to: "/login", replace: true });
-    } catch (e: any) {
-      setBlocked(e?.message ?? "Could not delete your account. Please try again.");
-      toast.error(e?.message ?? "Could not delete your account.");
+    } catch (e) {
+      setBlocked(errorMessage(e, "Could not delete your account. Please try again."));
+      toast.error(errorMessage(e, "Could not delete your account."));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <section
-      className={`rounded-xl border border-border/70 bg-card p-4 ${className}`}
-    >
+    <section className={`rounded-xl border border-border/70 bg-card p-4 ${className}`}>
       <h2 className="section-title flex items-center gap-2 text-destructive">
         <AlertTriangle className="h-4 w-4" /> Danger zone
       </h2>
       <p className="mt-1 text-small text-muted-foreground">
         Permanently delete your AP Mart account and personal data. This cannot be undone.
       </p>
-      <Button variant="secondary" className="mt-3 h-10 w-full rounded-xl text-destructive" onClick={openDialog}>
+      <Button
+        variant="secondary"
+        className="mt-3 h-10 w-full rounded-xl text-destructive"
+        onClick={openDialog}
+      >
         <Trash2 className="h-4 w-4 mr-2" /> Delete account
       </Button>
 
@@ -87,8 +93,8 @@ export function DeleteAccountSection({ className = "" }: { className?: string })
           <DialogHeader>
             <DialogTitle>Delete your account?</DialogTitle>
             <DialogDescription>
-              This action is permanent. Your account and associated personal data will be deleted and
-              cannot be recovered.
+              This action is permanent. Your account and associated personal data will be deleted
+              and cannot be recovered.
             </DialogDescription>
           </DialogHeader>
 
@@ -107,7 +113,7 @@ export function DeleteAccountSection({ className = "" }: { className?: string })
                 onChange={(e) => setConfirm(e.target.value)}
                 placeholder="DELETE"
                 autoComplete="off"
-                />
+              />
             </div>
           )}
 

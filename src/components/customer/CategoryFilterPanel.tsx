@@ -28,9 +28,7 @@ function toggle<T>(list: T[], v: T): T[] {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="border-b border-border/60 py-4 last:border-0">
-      <h4 className="eyebrow mb-3">
-        {title}
-      </h4>
+      <h4 className="eyebrow mb-3">{title}</h4>
       {children}
     </div>
   );
@@ -159,7 +157,10 @@ export function CategoryFilterBody({ facets, loading, filters, onChange }: Props
               count={d.count}
               checked={filters.minDiscount === d.value}
               onToggle={() =>
-                onChange({ ...filters, minDiscount: filters.minDiscount === d.value ? null : d.value })
+                onChange({
+                  ...filters,
+                  minDiscount: filters.minDiscount === d.value ? null : d.value,
+                })
               }
             />
           ))}
@@ -195,7 +196,6 @@ export function CategoryFilterBody({ facets, loading, filters, onChange }: Props
           ))}
         </Section>
       )}
-
     </div>
   );
 }

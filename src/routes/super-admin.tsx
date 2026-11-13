@@ -1,4 +1,11 @@
-import { createFileRoute, Link, Navigate, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Navigate,
+  Outlet,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,7 +24,10 @@ function SuperAdminShell() {
 
   useEffect(() => {
     if (loading || rolesLoading) return;
-    if (!user) { navigate({ to: "/staff-login", replace: true }); return; }
+    if (!user) {
+      navigate({ to: "/staff-login", replace: true });
+      return;
+    }
     if (!isSuperAdmin) navigate({ to: "/dashboard", replace: true });
   }, [user, loading, rolesLoading, isSuperAdmin, navigate]);
 
@@ -38,7 +48,10 @@ function SuperAdminShell() {
       nav={SUPER_ADMIN_NAV}
       title="Super Admin"
       trailing={
-        <Link to="/admin/dashboard" className="press flex h-8 items-center rounded-full bg-card px-3.5 text-small font-medium">
+        <Link
+          to="/admin/dashboard"
+          className="press flex h-8 items-center rounded-full bg-card px-3.5 text-small font-medium"
+        >
           Admin view
         </Link>
       }

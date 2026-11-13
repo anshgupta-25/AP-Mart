@@ -16,7 +16,8 @@ export const Route = createFileRoute("/")({
       { title: "AP Mart — Groceries from shops near you" },
       {
         name: "description",
-        content: "Order groceries, snacks, fruits and household essentials from trusted local shops near you.",
+        content:
+          "Order groceries, snacks, fruits and household essentials from trusted local shops near you.",
       },
     ],
   }),
@@ -68,11 +69,19 @@ function HomePage() {
     <div className="mx-auto max-w-6xl space-y-6 pb-8 pt-3">
       <HeroBannerCarousel />
       <CollectionChips />
-      <ProductRail title="Featured this week" loading={featured.isLoading} products={featured.data} />
+      <ProductRail
+        title="Featured this week"
+        loading={featured.isLoading}
+        products={featured.data}
+      />
       <CategoryGroups categories={categories.data} from={0} count={2} />
       <ProductRail title="Great prices" loading={deals.isLoading} products={deals.data} />
       <CategoryGroups categories={categories.data} from={2} count={3} />
-      <ProductRail title="Popular near you" loading={bestsellers.isLoading} products={bestsellers.data} />
+      <ProductRail
+        title="Popular near you"
+        loading={bestsellers.isLoading}
+        products={bestsellers.data}
+      />
       <BackToTop />
     </div>
   );

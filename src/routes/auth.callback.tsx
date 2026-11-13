@@ -7,6 +7,7 @@ import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { LogoMark } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/utils";
 
 export const Route = createFileRoute("/auth/callback")({
   head: () => ({ meta: [{ title: "Authenticating — AP Mart" }] }),
@@ -82,13 +83,16 @@ function AuthCallbackPage() {
 
         // 3. Retrieve and verify the active session
         setMessage("Verifying user session…");
-        let { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        let session = sessionData.session;
 
         if (sessionError || !session?.user) {
           // If session is still propagating from hash or storage, wait briefly for auth event
           session = await new Promise((resolve) => {
             const timer = setTimeout(() => resolve(null), 3000);
-            const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+            const {
+              data: { subscription },
+            } = supabase.auth.onAuthStateChange((event, s) => {
               if (s?.user) {
                 clearTimeout(timer);
                 subscription.unsubscribe();
@@ -113,7 +117,7 @@ function AuthCallbackPage() {
         const user = session.user;
 
         // 4. Verify account active status (Requirement 8 - blocked accounts)
-        const { data: profileCheck } = await (supabase as any)
+        const { data: profileCheck } = await supabase
           .from("profiles")
           .select("status, is_active")
           .eq("id", user.id)
@@ -145,13 +149,11 @@ function AuthCallbackPage() {
           .from("user_roles")
           .select("role")
           .eq("user_id", user.id);
-        const roles = (rolesData ?? []).map((r: any) => r.role as string);
+        const roles = (rolesData ?? []).map((r) => r.role as string);
 
         // Check if there was a saved return route
         const savedNext =
-          sessionStorage.getItem("flashbasket.auth.next") ||
-          searchParams.get("next") ||
-          null;
+          sessionStorage.getItem("flashbasket.auth.next") || searchParams.get("next") || null;
         sessionStorage.removeItem("flashbasket.auth.next");
 
         if (isMounted) {
@@ -166,19 +168,19 @@ function AuthCallbackPage() {
         setTimeout(() => {
           if (!isMounted) return;
           if (isStaff) {
-            const destination = homeForRoles(roles as any);
-            navigate({ to: destination as any, replace: true });
+            const destination = homeForRoles(roles);
+            navigate({ to: destination, replace: true });
           } else {
             const destination =
               savedNext && savedNext.startsWith("/") ? savedNext : "/customer/dashboard";
-            navigate({ to: destination as any, replace: true });
+            navigate({ to: destination, replace: true });
           }
         }, 600);
-      } catch (err: any) {
+      } catch (err) {
         console.error("[OAuth Callback] Unexpected error:", err);
         if (isMounted) {
           setStatus("error");
-          setMessage(err?.message || "An unexpected error occurred during Google sign-in.");
+          setMessage(errorMessage(err, "An unexpected error occurred during Google sign-in."));
         }
         toast.error("Google sign-in error");
         setTimeout(() => {
@@ -203,9 +205,7 @@ function AuthCallbackPage() {
 
         {status === "loading" && (
           <div className="space-y-3">
-            <h1 className="text-subtitle font-semibold text-foreground">
-              Signing you in…
-            </h1>
+            <h1 className="text-subtitle font-semibold text-foreground">Signing you in…</h1>
             <p className="text-meta text-muted-foreground">{message}</p>
             <div className="flex justify-center py-4">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -218,9 +218,7 @@ function AuthCallbackPage() {
             <div className="flex justify-center text-primary">
               <CheckCircle2 className="h-8 w-8" />
             </div>
-            <h1 className="text-subtitle font-semibold text-foreground">
-              Welcome back!
-            </h1>
+            <h1 className="text-subtitle font-semibold text-foreground">Welcome back!</h1>
             <p className="text-meta text-muted-foreground">{message}</p>
           </div>
         )}
@@ -230,9 +228,7 @@ function AuthCallbackPage() {
             <div className="flex justify-center text-destructive">
               <AlertCircle className="h-8 w-8" />
             </div>
-            <h1 className="text-subtitle font-semibold text-foreground">
-              Sign-in error
-            </h1>
+            <h1 className="text-subtitle font-semibold text-foreground">Sign-in error</h1>
             <p className="text-meta text-muted-foreground">{message}</p>
             <Button
               type="button"

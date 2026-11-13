@@ -50,9 +50,14 @@ function NotificationsPage() {
       ) : (
         <div className="overflow-hidden rounded-xl border border-border/70 bg-card">
           {notifications.data?.map((n) => (
-            <div key={n.id} className={`border-b border-border/60 p-3 last:border-b-0 ${n.read ? "opacity-70" : ""}`}>
+            <div
+              key={n.id}
+              className={`border-b border-border/60 p-3 last:border-b-0 ${n.read ? "opacity-70" : ""}`}
+            >
               <div className="flex items-start gap-3">
-                <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-primary"}`} />
+                <span
+                  className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-primary"}`}
+                />
                 <div className="min-w-0 flex-1">
                   <h3 className="text-meta font-semibold">{n.title}</h3>
                   {n.body && <p className="mt-0.5 text-small text-muted-foreground">{n.body}</p>}

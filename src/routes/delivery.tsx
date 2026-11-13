@@ -1,4 +1,10 @@
-import { createFileRoute, Link, Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Navigate,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Bell } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,12 +18,15 @@ export const Route = createFileRoute("/delivery")({
 
 function DeliveryShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { user, loading, rolesLoading, roles } = useAuth() as any;
+  const { user, loading, rolesLoading, roles } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (loading || rolesLoading) return;
-    if (!user) { navigate({ to: "/login", replace: true }); return; }
+    if (!user) {
+      navigate({ to: "/login", replace: true });
+      return;
+    }
     const r: string[] = roles ?? [];
     if (!r.includes("delivery") && !r.includes("admin")) {
       if (r.includes("shopkeeper")) navigate({ to: "/shopkeeper/dashboard", replace: true });
@@ -32,7 +41,11 @@ function DeliveryShell() {
       nav={DELIVERY_NAV}
       maxWidth="max-w-3xl"
       trailing={
-        <Link to="/delivery/notifications" aria-label="Notifications" className="press grid h-9 w-9 place-items-center rounded-full bg-card">
+        <Link
+          to="/delivery/notifications"
+          aria-label="Notifications"
+          className="press grid h-9 w-9 place-items-center rounded-full bg-card"
+        >
           <Bell className="h-[18px] w-[18px]" />
         </Link>
       }

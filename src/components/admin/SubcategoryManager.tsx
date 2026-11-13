@@ -41,9 +41,11 @@ export function SubcategoryManager({
     queryKey: ["admin-subcategories", categoryId],
     enabled: open && !!categoryId,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("subcategories")
-        .select("id, category_id, name, slug, image_url, icon, display_order, is_active, is_featured")
+        .select(
+          "id, category_id, name, slug, image_url, icon, display_order, is_active, is_featured",
+        )
         .eq("category_id", categoryId)
         .order("display_order")
         .order("name");
@@ -60,9 +62,11 @@ export function SubcategoryManager({
 
   const save = useMutation({
     mutationFn: async (s: Partial<Subcategory>) => {
+      const name = s.name?.trim();
+      if (!name) throw new Error("Subcategory name is required");
       const payload = {
         category_id: categoryId,
-        name: s.name,
+        name,
         slug: s.slug || slugifySubcategory(s.name ?? ""),
         image_url: s.image_url || null,
         icon: s.icon || null,
@@ -71,13 +75,10 @@ export function SubcategoryManager({
         is_featured: s.is_featured ?? false,
       };
       if (editing?.id) {
-        const { error } = await (supabase as any)
-          .from("subcategories")
-          .update(payload)
-          .eq("id", editing.id);
+        const { error } = await supabase.from("subcategories").update(payload).eq("id", editing.id);
         if (error) throw error;
       } else {
-        const { error } = await (supabase as any).from("subcategories").insert(payload);
+        const { error } = await supabase.from("subcategories").insert(payload);
         if (error) throw error;
       }
     },
@@ -87,28 +88,28 @@ export function SubcategoryManager({
       setFormOpen(false);
       setEditing(null);
     },
-    onError: (e: any) => toast.error(e?.message ?? "Something went wrong"),
+    onError: (e) => toast.error(e?.message ?? "Something went wrong"),
   });
 
   const patch = useMutation({
     mutationFn: async ({ id, values }: { id: string; values: Partial<Subcategory> }) => {
-      const { error } = await (supabase as any).from("subcategories").update(values).eq("id", id);
+      const { error } = await supabase.from("subcategories").update(values).eq("id", id);
       if (error) throw error;
     },
     onSuccess: invalidate,
-    onError: (e: any) => toast.error(e?.message ?? "Something went wrong"),
+    onError: (e) => toast.error(e?.message ?? "Something went wrong"),
   });
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("subcategories").delete().eq("id", id);
+      const { error } = await supabase.from("subcategories").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Subcategory deleted");
       invalidate();
     },
-    onError: (e: any) => toast.error(e?.message ?? "Something went wrong"),
+    onError: (e) => toast.error(e?.message ?? "Something went wrong"),
   });
 
   return (
@@ -237,7 +238,11 @@ function SubcategoryForm({
         <div className="space-y-3">
           <div>
             <Label className="text-xs font-bold">Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Cooking Oil" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Cooking Oil"
+            />
           </div>
           <div>
             <Label className="text-xs font-bold">Slug</Label>

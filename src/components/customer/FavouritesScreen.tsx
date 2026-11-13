@@ -6,7 +6,11 @@ import { useWishlist } from "@/hooks/useWishlist";
 import { useCustomerProducts } from "@/hooks/useCustomerProducts";
 
 /** Saved items grid. Works for guests (device storage) and signed-in users (useWishlist). */
-export function FavouritesScreen({ browseTo = "/customer/categories" }: { browseTo?: "/customer/categories" | "/products" }) {
+export function FavouritesScreen({
+  browseTo = "/customer/categories",
+}: {
+  browseTo?: "/customer/categories" | "/products";
+}) {
   const { ids, loading: wlLoading } = useWishlist();
 
   const products = useCustomerProducts({ ids, limit: 100, key: "wishlist" });
@@ -24,7 +28,9 @@ export function FavouritesScreen({ browseTo = "/customer/categories" }: { browse
       <div className="hairline-b bg-tint-mint px-4 pb-3 pt-4">
         <h1 className="large-title">Favourites</h1>
         <p className="mt-0.5 text-small text-muted-foreground">
-          {ids.length > 0 ? `${ids.length} saved ${ids.length === 1 ? "item" : "items"}` : "Items you save show up here"}
+          {ids.length > 0
+            ? `${ids.length} saved ${ids.length === 1 ? "item" : "items"}`
+            : "Items you save show up here"}
         </p>
       </div>
 
@@ -37,7 +43,9 @@ export function FavouritesScreen({ browseTo = "/customer/categories" }: { browse
               <Heart className="h-6 w-6" strokeWidth={1.8} />
             </div>
             <h2 className="section-title mt-4">No favourites yet</h2>
-            <p className="mt-1 text-meta text-muted-foreground">Tap the heart on any product to save it here.</p>
+            <p className="mt-1 text-meta text-muted-foreground">
+              Tap the heart on any product to save it here.
+            </p>
             <Link
               to={browseTo}
               className="press mt-5 inline-flex h-11 items-center rounded-xl bg-primary px-6 text-body font-semibold text-primary-foreground"

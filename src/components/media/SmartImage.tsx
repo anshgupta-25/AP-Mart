@@ -23,10 +23,22 @@ export function SmartImage({
   eager?: boolean;
   fallback?: string;
 }) {
-  const ratio = { square: "aspect-square", portrait: "aspect-[4/5]", landscape: "aspect-[4/3]", banner: "aspect-[12/5]" }[aspect];
+  const ratio = {
+    square: "aspect-square",
+    portrait: "aspect-[4/5]",
+    landscape: "aspect-[4/3]",
+    banner: "aspect-[12/5]",
+  }[aspect];
   if (!src) {
     return (
-      <div className={cn("grid place-items-center rounded-xl bg-secondary text-muted-foreground/40", ratio, className)} aria-label={alt}>
+      <div
+        className={cn(
+          "grid place-items-center rounded-xl bg-secondary text-muted-foreground/40",
+          ratio,
+          className,
+        )}
+        aria-label={alt}
+      >
         {fallback ?? <span className="text-[22px]">🛍️</span>}
       </div>
     );
@@ -37,7 +49,12 @@ export function SmartImage({
       alt={alt}
       loading={eager ? "eager" : "lazy"}
       decoding="async"
-      className={cn("h-full w-full", fit === "cover" ? "object-cover" : "object-contain", ratio, className)}
+      className={cn(
+        "h-full w-full",
+        fit === "cover" ? "object-cover" : "object-contain",
+        ratio,
+        className,
+      )}
     />
   ) : (
     <ProductImage src={src} alt={alt} fit={fit} eager={eager} className={cn(ratio, className)} />

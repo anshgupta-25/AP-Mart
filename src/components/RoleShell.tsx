@@ -1,9 +1,14 @@
+import type { LucideIcon } from "lucide-react";
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, type Role } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
-export interface NavItem { to: string; label: string; icon: any }
+export interface NavItem {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+}
 
 export function RoleShell({
   role,
@@ -14,9 +19,9 @@ export function RoleShell({
   role: "shopkeeper" | "delivery" | "admin" | "customer";
   nav: NavItem[];
   children?: ReactNode;
-  requireRoles?: string[];
+  requireRoles?: Role[];
 }) {
-  const { user, loading, rolesLoading, roles } = useAuth() as any;
+  const { user, loading, rolesLoading, roles } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -45,7 +50,9 @@ export function RoleShell({
                     to={n.to}
                     className={cn(
                       "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-body font-medium transition-colors",
-                      active ? "bg-primary-soft text-primary-ink font-semibold" : "text-foreground/75 hover:bg-secondary",
+                      active
+                        ? "bg-primary-soft text-primary-ink font-semibold"
+                        : "text-foreground/75 hover:bg-secondary",
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -67,10 +74,14 @@ export function RoleShell({
               const active = pathname === n.to || pathname.startsWith(n.to + "/");
               const Icon = n.icon;
               return (
-                <Link key={n.to} to={n.to} className={cn(
-                  "press flex flex-col items-center justify-center gap-1 pb-1.5 pt-2.5 text-micro font-semibold",
-                  active ? "text-primary" : "text-muted-foreground",
-                )}>
+                <Link
+                  key={n.to}
+                  to={n.to}
+                  className={cn(
+                    "press flex flex-col items-center justify-center gap-1 pb-1.5 pt-2.5 text-micro font-semibold",
+                    active ? "text-primary" : "text-muted-foreground",
+                  )}
+                >
                   <Icon className={cn("h-6 w-6", active ? "stroke-[2.3]" : "stroke-[1.7]")} />
                   {n.label}
                 </Link>

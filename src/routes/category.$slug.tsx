@@ -7,10 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProductCard } from "@/components/ProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import {
-  CategoryFilterBody,
-  CategoryFilterSheet,
-} from "@/components/customer/CategoryFilterPanel";
+import { CategoryFilterBody, CategoryFilterSheet } from "@/components/customer/CategoryFilterPanel";
 import {
   activeFilterCount,
   emptyFilters,
@@ -118,10 +115,7 @@ function CategoryPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div
-        style={{ top: headerH }}
-        className="hairline-b sticky z-30 bg-tint-mint"
-      >
+      <div style={{ top: headerH }} className="hairline-b sticky z-30 bg-tint-mint">
         <div className="flex items-center gap-2 px-3" style={{ height: BAR_H }}>
           <Link
             to="/"

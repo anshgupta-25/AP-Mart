@@ -12,7 +12,15 @@ import { ImageInput } from "@/components/ImageInput";
 import { StorageImg } from "@/components/StorageImg";
 
 function ImageInputWrapper(props: { value: string; onChange: (v: string) => void }) {
-  return <ImageInput value={props.value} onChange={props.onChange} bucket="offers" label="Offer image" required />;
+  return (
+    <ImageInput
+      value={props.value}
+      onChange={props.onChange}
+      bucket="offers"
+      label="Offer image"
+      required
+    />
+  );
 }
 
 type OfferScope = "global" | "shop";
@@ -64,7 +72,7 @@ export function OffersManager({
   const list = useQuery({
     queryKey: ["offers-manage", lockedScope ?? "all", shopId ?? "*"],
     queryFn: async () => {
-      let q = supabase.from("offers" as any).select("*").order("display_order");
+      let q = supabase.from("offers").select("*").order("display_order");
       if (lockedScope === "shop" && shopId) q = q.eq("shop_id", shopId);
       const { data, error } = await q;
       if (error) throw error;
@@ -74,7 +82,7 @@ export function OffersManager({
 
   const upsert = useMutation({
     mutationFn: async (f: FormState) => {
-      const payload: any = {
+      const payload = {
         title: f.title,
         subtitle: f.subtitle || null,
         image_url: f.image_url,
@@ -86,8 +94,8 @@ export function OffersManager({
         display_order: Number(f.display_order) || 0,
       };
       const { error } = f.id
-        ? await supabase.from("offers" as any).update(payload).eq("id", f.id)
-        : await supabase.from("offers" as any).insert(payload);
+        ? await supabase.from("offers").update(payload).eq("id", f.id)
+        : await supabase.from("offers").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -96,12 +104,12 @@ export function OffersManager({
       qc.invalidateQueries({ queryKey: ["offers-manage"] });
       qc.invalidateQueries({ queryKey: ["offers-public"] });
     },
-    onError: (e: any) => toast.error(e.message ?? "Save failed"),
+    onError: (e) => toast.error(e.message ?? "Save failed"),
   });
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("offers" as any).delete().eq("id", id);
+      const { error } = await supabase.from("offers").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -109,7 +117,7 @@ export function OffersManager({
       qc.invalidateQueries({ queryKey: ["offers-manage"] });
       qc.invalidateQueries({ queryKey: ["offers-public"] });
     },
-    onError: (e: any) => toast.error(e.message ?? "Delete failed"),
+    onError: (e) => toast.error(e.message ?? "Delete failed"),
   });
 
   return (
@@ -128,7 +136,7 @@ export function OffersManager({
             setEditing(
               emptyForm({
                 scope: lockedScope ?? "global",
-                shop_id: lockedScope === "shop" ? shopId ?? null : null,
+                shop_id: lockedScope === "shop" ? (shopId ?? null) : null,
               }),
             )
           }
@@ -173,7 +181,9 @@ export function OffersManager({
                     </span>
                   )}
                 </div>
-                {o.subtitle && <p className="truncate text-meta text-muted-foreground">{o.subtitle}</p>}
+                {o.subtitle && (
+                  <p className="truncate text-meta text-muted-foreground">{o.subtitle}</p>
+                )}
                 <p className="truncate text-small text-muted-foreground">{o.link_url || "—"}</p>
               </div>
               <div className="flex gap-1">
@@ -255,9 +265,7 @@ export function OffersManager({
                         type="button"
                         onClick={() => setEditing({ ...editing, scope: s })}
                         className={`press h-9 rounded-full px-4 text-meta font-semibold ${
-                          editing.scope === s
-                            ? "bg-foreground text-background"
-                            : "bg-secondary"
+                          editing.scope === s ? "bg-foreground text-background" : "bg-secondary"
                         }`}
                       >
                         {s === "global" ? "Global (home page)" : "Per-shop"}
@@ -304,15 +312,30 @@ export function OffersManager({
 
               {editing.image_url && (
                 <div className="overflow-hidden rounded-xl">
-                  <StorageImg loading="lazy" decoding="async" src={editing.image_url} alt="" className="w-full h-32 object-cover" />
+                  <StorageImg
+                    loading="lazy"
+                    decoding="async"
+                    src={editing.image_url}
+                    alt=""
+                    className="w-full h-32 object-cover"
+                  />
                 </div>
               )}
 
               <div className="flex gap-2 pt-2">
-                <Button type="button" variant="secondary" className="h-11 flex-1 rounded-xl" onClick={() => setEditing(null)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="h-11 flex-1 rounded-xl"
+                  onClick={() => setEditing(null)}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" className="h-11 flex-[2] rounded-xl" disabled={upsert.isPending}>
+                <Button
+                  type="submit"
+                  className="h-11 flex-[2] rounded-xl"
+                  disabled={upsert.isPending}
+                >
                   {upsert.isPending ? "Saving…" : "Save offer"}
                 </Button>
               </div>

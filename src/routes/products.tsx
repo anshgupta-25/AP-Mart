@@ -9,7 +9,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useCustomerProducts } from "@/hooks/useCustomerProducts";
 import { useHeaderOffset } from "@/hooks/useHeaderOffset";
-import { CatalogFilterButton, isCatalogMode, toRpcSort, useCatalogProducts, type CatalogParams, type CatalogSort } from "@/components/customer/CatalogFilters";
+import {
+  CatalogFilterButton,
+  isCatalogMode,
+  toRpcSort,
+  useCatalogProducts,
+  type CatalogParams,
+  type CatalogSort,
+} from "@/components/customer/CatalogFilters";
 
 const search = z.object({
   q: z.string().optional(),
@@ -33,8 +40,19 @@ function ProductsPage() {
   const sort: CatalogSort = sortParam ?? "relevance";
   const params: CatalogParams = { coll, pc, sort, max, disc, stock };
   const setParams = (next: CatalogParams) =>
-    navigate({ to: "/products", search: { q, cat, ...Object.fromEntries(Object.entries(next).filter(([, v]) => v !== undefined && v !== false && v !== "relevance" && v !== 1000)) } as any });
-  const { user, loading, roles } = useAuth() as any;
+    navigate({
+      to: "/products",
+      search: {
+        q,
+        cat,
+        ...Object.fromEntries(
+          Object.entries(next).filter(
+            ([, v]) => v !== undefined && v !== false && v !== "relevance" && v !== 1000,
+          ),
+        ),
+      },
+    });
+  const { user, loading, roles } = useAuth();
   const navigate = useNavigate();
   const headerH = useHeaderOffset();
   const [term, setTerm] = useState(q ?? "");
@@ -53,12 +71,18 @@ function ProductsPage() {
   const categories = useQuery({
     queryKey: ["categories"],
     queryFn: async () =>
-      (await supabase.from("categories").select("id, slug, name, icon, color, display_order").eq("is_active", true).order("display_order")).data ?? [],
+      (
+        await supabase
+          .from("categories")
+          .select("id, slug, name, icon, color, display_order")
+          .eq("is_active", true)
+          .order("display_order")
+      ).data ?? [],
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
 
-  const catRow = categories.data?.find((c: any) => c.slug === cat) ?? null;
+  const catRow = categories.data?.find((c) => c.slug === cat) ?? null;
   const catalogMode = isCatalogMode(params);
   const sortKey = toRpcSort(sort);
   const rpcProducts = useCustomerProducts({
@@ -69,10 +93,17 @@ function ProductsPage() {
     enabled: !catalogMode,
     key: `list:${q ?? ""}:${cat ?? ""}:${sort}`,
   });
-  const catalogProducts = useCatalogProducts({ ...params, pc: pc ?? catRow?.id, search: q ?? null }, catalogMode);
+  const catalogProducts = useCatalogProducts(
+    { ...params, pc: pc ?? catRow?.id, search: q ?? null },
+    catalogMode,
+  );
   const products = catalogMode ? catalogProducts : rpcProducts;
 
-  const title = q ? `Results for "${q}"` : cat ? categories.data?.find((c) => c.slug === cat)?.name : "All products";
+  const title = q
+    ? `Results for "${q}"`
+    : cat
+      ? categories.data?.find((c) => c.slug === cat)?.name
+      : "All products";
   const chip = (active: boolean) =>
     `press inline-flex h-8 shrink-0 items-center rounded-full px-3.5 text-meta font-medium ${
       active ? "bg-foreground text-background" : "border border-border/70 bg-card"
@@ -96,7 +127,7 @@ function ProductsPage() {
               <Link
                 key={c.id}
                 to="/products"
-                search={{ cat: c.slug } as any}
+                search={{ cat: c.slug }}
                 className={`block rounded-lg px-3 py-2 text-meta ${cat === c.slug ? "bg-primary-soft font-semibold text-primary-ink" : "hover:bg-secondary"}`}
               >
                 <span className="mr-2">{c.icon}</span>
@@ -114,7 +145,7 @@ function ProductsPage() {
             onSubmit={(e) => {
               e.preventDefault();
               const v = term.trim();
-              navigate({ to: "/products", search: (v ? { q: v } : {}) as any });
+              navigate({ to: "/products", search: v ? { q: v } : {} });
             }}
           >
             <div className="flex h-10 items-center gap-2 rounded-xl bg-card px-3 shadow-soft">
@@ -129,9 +160,16 @@ function ProductsPage() {
             </div>
           </form>
           <div className="scrollbar-hide flex scroll-px-4 gap-2 overflow-x-auto px-4 py-2.5">
-            <Link to="/products" search={{}} className={chip(!cat)}>All</Link>
+            <Link to="/products" search={{}} className={chip(!cat)}>
+              All
+            </Link>
             {categories.data?.map((c) => (
-              <Link key={c.id} to="/products" search={{ cat: c.slug } as any} className={chip(cat === c.slug)}>
+              <Link
+                key={c.id}
+                to="/products"
+                search={{ cat: c.slug }}
+                className={chip(cat === c.slug)}
+              >
                 {c.name}
               </Link>
             ))}
@@ -143,7 +181,9 @@ function ProductsPage() {
             <div className="min-w-0">
               <h1 className="truncate text-subtitle font-bold leading-tight">{title}</h1>
               {products.data && (
-                <p className="mt-0.5 text-small text-muted-foreground">{products.data.length} items</p>
+                <p className="mt-0.5 text-small text-muted-foreground">
+                  {products.data.length} items
+                </p>
               )}
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -165,7 +205,9 @@ function ProductsPage() {
 
           {!products.data ? (
             <div className={grid}>
-              {Array.from({ length: 9 }).map((_, i) => <Skeleton key={i} className="h-[200px] rounded-xl" />)}
+              {Array.from({ length: 9 }).map((_, i) => (
+                <Skeleton key={i} className="h-[200px] rounded-xl" />
+              ))}
             </div>
           ) : products.data.length === 0 ? (
             <div className="rounded-xl border border-border/70 bg-card px-5 py-12 text-center">
@@ -173,7 +215,9 @@ function ProductsPage() {
                 <Search className="h-5 w-5 text-primary" />
               </div>
               <p className="section-title mt-3">No products found</p>
-              <p className="mt-1 text-meta text-muted-foreground">Try a different search or category.</p>
+              <p className="mt-1 text-meta text-muted-foreground">
+                Try a different search or category.
+              </p>
             </div>
           ) : (
             <div className={grid}>

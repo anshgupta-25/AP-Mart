@@ -1,4 +1,17 @@
-import { LayoutDashboard, ClipboardList, Package, Truck, Wallet, Megaphone, Ticket, Bell, BarChart3, Star, Settings, LifeBuoy } from "lucide-react";
+import {
+  LayoutDashboard,
+  ClipboardList,
+  Package,
+  Truck,
+  Wallet,
+  Megaphone,
+  Ticket,
+  Bell,
+  BarChart3,
+  Star,
+  Settings,
+  LifeBuoy,
+} from "lucide-react";
 import type { PortalNav } from "./types";
 
 export const SHOPKEEPER_NAV: PortalNav = {

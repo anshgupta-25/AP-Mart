@@ -10,18 +10,29 @@ import { Switch } from "@/components/ui/switch";
 import { SupportTicketForm } from "@/components/SupportTicketForm";
 import { toast } from "sonner";
 import {
-  User as UserIcon, Mail, ShieldCheck, LogOut, LifeBuoy, MessageCircle, ChevronRight,
-  Bell, Store, Truck, Tag, Settings as SettingsIcon, ShoppingBag,
+  User as UserIcon,
+  Mail,
+  ShieldCheck,
+  LogOut,
+  LifeBuoy,
+  MessageCircle,
+  ChevronRight,
+  Bell,
+  Store,
+  Truck,
+  Tag,
+  Settings as SettingsIcon,
+  ShoppingBag,
 } from "lucide-react";
 import { DeleteAccountSection } from "@/components/DeleteAccountSection";
-
+import type { Tables } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/admin/settings")({ component: Page });
 
 function Page() {
-  const { user, signOut, roles } = useAuth() as any;
+  const { user, signOut, roles } = useAuth();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Partial<Tables<"profiles">> | null>(null);
   const [saving, setSaving] = useState(false);
   const [ticketOpen, setTicketOpen] = useState(false);
   const [shopSelectionEnabled, setShopSelectionEnabled] = useState<boolean>(true);
@@ -29,21 +40,34 @@ function Page() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) =>
-      setProfile(data ?? { id: user.id, full_name: "", phone: "", avatar_url: "" }),
-    );
-    supabase.from("app_config").select("value").eq("key", "enable_customer_shop_selection").maybeSingle().then(({ data }) => {
-      const raw = (data as any)?.value;
-      setShopSelectionEnabled(raw === false || raw === "false" ? false : true);
-    });
+    supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) =>
+        setProfile(data ?? { id: user.id, full_name: "", phone: "", avatar_url: "" }),
+      );
+    supabase
+      .from("app_config")
+      .select("value")
+      .eq("key", "enable_customer_shop_selection")
+      .maybeSingle()
+      .then(({ data }) => {
+        // Stored as text ("true"/"false"); older rows may hold a JSON boolean.
+        const raw: unknown = data?.value;
+        setShopSelectionEnabled(raw === false || raw === "false" ? false : true);
+      });
   }, [user]);
 
   const toggleShopSelection = async (next: boolean) => {
     setSavingShopSel(true);
     setShopSelectionEnabled(next);
-    const { error } = await (supabase as any)
-      .from("app_config")
-      .upsert({ key: "enable_customer_shop_selection", value: next }, { onConflict: "key" });
+    const { error } = await supabase.from("app_config").upsert(
+      // app_config.value is text; readers accept "true" / "false".
+      { key: "enable_customer_shop_selection", value: String(next) },
+      { onConflict: "key" },
+    );
     setSavingShopSel(false);
     if (error) {
       setShopSelectionEnabled(!next);
@@ -53,15 +77,18 @@ function Page() {
     }
   };
 
-
   const saveProfile = async () => {
-    if (!user) return;
+    if (!user || !profile) return;
     setSaving(true);
-    const { error } = await supabase
-      .from("profiles")
-      .upsert({ id: user.id, full_name: profile.full_name ?? "", phone: profile.phone ?? "", avatar_url: profile.avatar_url ?? "" });
+    const { error } = await supabase.from("profiles").upsert({
+      id: user.id,
+      full_name: profile.full_name ?? "",
+      phone: profile.phone ?? "",
+      avatar_url: profile.avatar_url ?? "",
+    });
     setSaving(false);
-    if (error) toast.error(error.message); else toast.success("Profile updated");
+    if (error) toast.error(error.message);
+    else toast.success("Profile updated");
   };
 
   const onSignOut = async () => {
@@ -97,8 +124,12 @@ function Page() {
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-1">
               {(roles ?? []).map((r: string) => (
-                <span key={r} className="inline-flex items-center gap-1 rounded-full bg-card px-2.5 py-0.5 text-caption font-semibold capitalize">
-                  <ShieldCheck className="h-3 w-3" />{r}
+                <span
+                  key={r}
+                  className="inline-flex items-center gap-1 rounded-full bg-card px-2.5 py-0.5 text-caption font-semibold capitalize"
+                >
+                  <ShieldCheck className="h-3 w-3" />
+                  {r}
                 </span>
               ))}
             </div>
@@ -113,18 +144,34 @@ function Page() {
         </h2>
         <div className="grid gap-4 md:grid-cols-2">
           <Field label="Full name">
-            <Input value={profile?.full_name ?? ""} onChange={(e) => setProfile({ ...profile, full_name: e.target.value })} placeholder="Your name" />
+            <Input
+              value={profile?.full_name ?? ""}
+              onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+              placeholder="Your name"
+            />
           </Field>
           <Field label="Phone">
-            <Input value={profile?.phone ?? ""} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} placeholder="+91…" />
+            <Input
+              value={profile?.phone ?? ""}
+              onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+              placeholder="+91…"
+            />
           </Field>
-          <Field label="Email"><Input value={user?.email ?? ""} disabled /></Field>
+          <Field label="Email">
+            <Input value={user?.email ?? ""} disabled />
+          </Field>
           <Field label="Avatar URL">
-            <Input value={profile?.avatar_url ?? ""} onChange={(e) => setProfile({ ...profile, avatar_url: e.target.value })} placeholder="https://…" />
+            <Input
+              value={profile?.avatar_url ?? ""}
+              onChange={(e) => setProfile({ ...profile, avatar_url: e.target.value })}
+              placeholder="https://…"
+            />
           </Field>
         </div>
         <div className="mt-4 flex justify-end">
-          <Button onClick={saveProfile} disabled={saving} >Save profile</Button>
+          <Button onClick={saveProfile} disabled={saving}>
+            Save profile
+          </Button>
         </div>
       </section>
 
@@ -137,9 +184,15 @@ function Page() {
           {quickLinks.map((l) => {
             const Icon = l.icon;
             return (
-              <Link key={l.to} to={l.to} className="press flex items-center justify-between rounded-xl bg-secondary/70 p-3.5 transition hover:bg-secondary">
+              <Link
+                key={l.to}
+                to={l.to}
+                className="press flex items-center justify-between rounded-xl bg-secondary/70 p-3.5 transition hover:bg-secondary"
+              >
                 <div className="flex items-center gap-3">
-                  <span className="grid h-9 w-9 place-items-center rounded-xl bg-tint-mint text-primary-ink"><Icon className="h-4 w-4" /></span>
+                  <span className="grid h-9 w-9 place-items-center rounded-xl bg-tint-mint text-primary-ink">
+                    <Icon className="h-4 w-4" />
+                  </span>
                   <div className="text-body font-semibold">{l.label}</div>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -162,7 +215,11 @@ function Page() {
               When off, the system auto-assigns the best shop.
             </div>
           </div>
-          <Switch checked={shopSelectionEnabled} disabled={savingShopSel} onCheckedChange={toggleShopSelection} />
+          <Switch
+            checked={shopSelectionEnabled}
+            disabled={savingShopSel}
+            onCheckedChange={toggleShopSelection}
+          />
         </div>
       </section>
 
@@ -173,12 +230,19 @@ function Page() {
           <LifeBuoy className="h-5 w-5 text-primary" /> Help & Support
         </h2>
         <div className="grid gap-2">
-          <Link to="/admin/support" className="press flex items-center justify-between rounded-xl bg-secondary/70 p-3.5 transition hover:bg-secondary">
+          <Link
+            to="/admin/support"
+            className="press flex items-center justify-between rounded-xl bg-secondary/70 p-3.5 transition hover:bg-secondary"
+          >
             <div className="flex items-center gap-3">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-tint-mint text-primary-ink"><MessageCircle className="h-4 w-4" /></span>
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-tint-mint text-primary-ink">
+                <MessageCircle className="h-4 w-4" />
+              </span>
               <div>
                 <div className="text-body font-semibold">Support inbox</div>
-                <div className="text-small text-muted-foreground">Manage customer support tickets</div>
+                <div className="text-small text-muted-foreground">
+                  Manage customer support tickets
+                </div>
               </div>
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -189,10 +253,14 @@ function Page() {
             className="press flex w-full items-center justify-between rounded-xl bg-secondary/70 p-3.5 text-left transition hover:bg-secondary"
           >
             <div className="flex items-center gap-3">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-tint-mint text-primary-ink"><LifeBuoy className="h-4 w-4" /></span>
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-tint-mint text-primary-ink">
+                <LifeBuoy className="h-4 w-4" />
+              </span>
               <div>
                 <div className="text-body font-semibold">Raise internal ticket</div>
-                <div className="text-small text-muted-foreground">Report an issue or request help</div>
+                <div className="text-small text-muted-foreground">
+                  Report an issue or request help
+                </div>
               </div>
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -204,7 +272,11 @@ function Page() {
       <Separator />
 
       <div className="flex justify-end">
-        <Button onClick={onSignOut} variant="secondary" className="w-full text-destructive sm:w-auto">
+        <Button
+          onClick={onSignOut}
+          variant="secondary"
+          className="w-full text-destructive sm:w-auto"
+        >
           <LogOut className="h-4 w-4 mr-2" /> Sign out
         </Button>
       </div>
@@ -213,7 +285,15 @@ function Page() {
   );
 }
 
-function Field({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
+function Field({
+  label,
+  children,
+  className = "",
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <div className={className}>
       <label className="text-meta font-medium text-muted-foreground">{label}</label>

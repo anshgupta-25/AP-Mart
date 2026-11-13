@@ -11,7 +11,8 @@ import { toast } from "sonner";
 import { ArrowLeft, MapPin, Package, Phone, Store } from "lucide-react";
 import { MultiShopPickupPanel } from "@/components/MultiShopPickupPanel";
 import { DeliveryTypeBadge } from "@/components/FastDeliveryBadge";
-
+import { asAddress } from "@/lib/address";
+import { rpcArgs } from "@/integrations/supabase/rpc";
 
 export const Route = createFileRoute("/delivery/task/$id")({
   head: () => ({ meta: [{ title: "Delivery Task — AP Mart" }] }),
@@ -25,14 +26,21 @@ function Page() {
   const [customMsg, setCustomMsg] = useState<string>("");
   const [sending, setSending] = useState(false);
 
-  const sendUpdate = async (kind: "eta" | "nearby" | "delay" | "custom", minutes?: number, message?: string) => {
+  const sendUpdate = async (
+    kind: "eta" | "nearby" | "delay" | "custom",
+    minutes?: number,
+    message?: string,
+  ) => {
     setSending(true);
-    const { error } = await supabase.rpc("partner_send_eta_update" as any, {
-      _order_id: id,
-      _kind: kind,
-      _eta_minutes: minutes ?? null,
-      _custom_message: message ?? null,
-    });
+    const { error } = await supabase.rpc(
+      "partner_send_eta_update",
+      rpcArgs("partner_send_eta_update", {
+        _order_id: id,
+        _kind: kind,
+        _eta_minutes: minutes ?? null,
+        _custom_message: message ?? null,
+      }),
+    );
     setSending(false);
     if (error) return toast.error(error.message);
     toast.success("Customer notified");
@@ -44,7 +52,9 @@ function Page() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, order_items!order_items_order_id_fkey(*), shops(name,address,latitude,longitude,phone)")
+        .select(
+          "*, order_items!order_items_order_id_fkey(*), shops(name,address,latitude,longitude,phone)",
+        )
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
@@ -66,21 +76,28 @@ function Page() {
   };
 
   const stepIdx = data?.status === "delivered" ? 2 : data?.status === "out_for_delivery" ? 1 : 0;
-  const addr = ((data?.address ?? {}) as Record<string, any>);
+  const addr = asAddress(data?.address);
   const addrLine = [addr.line1, addr.line2, addr.city, addr.pincode].filter(Boolean).join(", ");
 
   const DeliverTo = data ? (
     <Card className="rounded-xl border-border/70 p-4 shadow-none">
-      <p className="eyebrow flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> Deliver to</p>
+      <p className="eyebrow flex items-center gap-1.5">
+        <MapPin className="h-3.5 w-3.5" /> Deliver to
+      </p>
       <p className="mt-1.5 text-body font-semibold">{addr.full_name || "Customer"}</p>
       <p className="mt-0.5 text-small leading-snug text-muted-foreground">{addrLine}</p>
       {addr.phone && (
-        <a href={`tel:${addr.phone}`} className="press mt-2.5 inline-flex h-8 items-center gap-1.5 rounded-full bg-primary-soft px-4 text-small font-semibold text-primary-ink">
+        <a
+          href={`tel:${addr.phone}`}
+          className="press mt-2.5 inline-flex h-8 items-center gap-1.5 rounded-full bg-primary-soft px-4 text-small font-semibold text-primary-ink"
+        >
           <Phone className="h-3.5 w-3.5" /> {addr.phone}
         </a>
       )}
       {data.delivery_instruction && (
-        <p className="mt-3 rounded-xl bg-secondary px-3 py-2 text-small text-muted-foreground">Note: {data.delivery_instruction}</p>
+        <p className="mt-3 rounded-xl bg-secondary px-3 py-2 text-small text-muted-foreground">
+          Note: {data.delivery_instruction}
+        </p>
       )}
     </Card>
   ) : null;
@@ -88,12 +105,17 @@ function Page() {
   return (
     <>
       <div className="space-y-4 px-4 pb-40 pt-3 md:px-6">
-        <Link to="/delivery/dashboard" className="press inline-flex items-center gap-1 text-small font-medium text-primary">
+        <Link
+          to="/delivery/dashboard"
+          className="press inline-flex items-center gap-1 text-small font-medium text-primary"
+        >
           <ArrowLeft className="h-4 w-4" /> Back
         </Link>
 
         {isLoading && <div className="h-40 rounded-xl shimmer" />}
-        {!isLoading && !data && <p className="py-10 text-center text-body text-muted-foreground">Task not found.</p>}
+        {!isLoading && !data && (
+          <p className="py-10 text-center text-body text-muted-foreground">Task not found.</p>
+        )}
 
         {data && data.is_parent && (
           <>
@@ -112,9 +134,13 @@ function Page() {
             <div className="bar-blur hairline-t pb-safe fixed bottom-[calc(60px+env(safe-area-inset-bottom))] left-0 right-0 z-20 p-4">
               <div className="mx-auto max-w-md">
                 {data.status === "out_for_delivery" ? (
-                  <Button className="h-12 w-full rounded-xl" onClick={deliver}>Mark as delivered</Button>
+                  <Button className="h-12 w-full rounded-xl" onClick={deliver}>
+                    Mark as delivered
+                  </Button>
                 ) : (
-                  <Button className="h-12 w-full rounded-xl" disabled variant="secondary">Complete all pickups to proceed</Button>
+                  <Button className="h-12 w-full rounded-xl" disabled variant="secondary">
+                    Complete all pickups to proceed
+                  </Button>
                 )}
               </div>
             </div>
@@ -136,30 +162,60 @@ function Page() {
             <div className="flex items-center gap-2">
               {["Accepted", "Picked up", "Delivered"].map((label, i) => (
                 <div key={label} className="flex-1">
-                  <div className={"h-1.5 rounded-full " + (i <= stepIdx ? "bg-primary" : "bg-secondary")} />
-                  <div className={"mt-1.5 text-caption font-medium " + (i <= stepIdx ? "text-foreground" : "text-muted-foreground")}>{label}</div>
+                  <div
+                    className={
+                      "h-1.5 rounded-full " + (i <= stepIdx ? "bg-primary" : "bg-secondary")
+                    }
+                  />
+                  <div
+                    className={
+                      "mt-1.5 text-caption font-medium " +
+                      (i <= stepIdx ? "text-foreground" : "text-muted-foreground")
+                    }
+                  >
+                    {label}
+                  </div>
                 </div>
               ))}
             </div>
 
-            {data.shops && Number.isFinite(data.shops.latitude) && Number.isFinite(data.delivery_lat) && (
-              <div className="overflow-hidden rounded-xl border border-border/70">
-                <RouteMap
-                  points={[
-                    { lat: data.shops.latitude as number, lng: data.shops.longitude as number, label: "Shop", color: "#16a34a" },
-                    { lat: data.delivery_lat as number, lng: data.delivery_lng as number, label: "Drop", color: "#dc2626" },
-                  ]}
-                />
-              </div>
-            )}
+            {data.shops &&
+              Number.isFinite(data.shops.latitude) &&
+              Number.isFinite(data.delivery_lat) && (
+                <div className="overflow-hidden rounded-xl border border-border/70">
+                  <RouteMap
+                    points={[
+                      {
+                        lat: data.shops.latitude as number,
+                        lng: data.shops.longitude as number,
+                        label: "Shop",
+                        color: "#16a34a",
+                      },
+                      {
+                        lat: data.delivery_lat as number,
+                        lng: data.delivery_lng as number,
+                        label: "Drop",
+                        color: "#dc2626",
+                      },
+                    ]}
+                  />
+                </div>
+              )}
 
             {data.shops && (
               <Card className="rounded-xl border-border/70 p-4 shadow-none">
-                <p className="eyebrow flex items-center gap-1.5"><Store className="h-3.5 w-3.5" /> Pickup from shop</p>
+                <p className="eyebrow flex items-center gap-1.5">
+                  <Store className="h-3.5 w-3.5" /> Pickup from shop
+                </p>
                 <p className="mt-1.5 text-body font-semibold">{data.shops.name}</p>
-                <p className="mt-0.5 text-small leading-snug text-muted-foreground">{data.shops.address}</p>
+                <p className="mt-0.5 text-small leading-snug text-muted-foreground">
+                  {data.shops.address}
+                </p>
                 {data.shops.phone && (
-                  <a href={`tel:${data.shops.phone}`} className="press mt-2.5 inline-flex h-8 items-center gap-1.5 rounded-full bg-primary-soft px-4 text-small font-semibold text-primary-ink">
+                  <a
+                    href={`tel:${data.shops.phone}`}
+                    className="press mt-2.5 inline-flex h-8 items-center gap-1.5 rounded-full bg-primary-soft px-4 text-small font-semibold text-primary-ink"
+                  >
                     <Phone className="h-3.5 w-3.5" /> {data.shops.phone}
                   </a>
                 )}
@@ -169,11 +225,18 @@ function Page() {
             {DeliverTo}
 
             <Card className="overflow-hidden rounded-xl border-border/70 shadow-none">
-              <p className="eyebrow flex items-center gap-1.5 px-4 pb-1 pt-4"><Package className="h-3.5 w-3.5" /> Items ({data.order_items?.length || 0})</p>
+              <p className="eyebrow flex items-center gap-1.5 px-4 pb-1 pt-4">
+                <Package className="h-3.5 w-3.5" /> Items ({data.order_items?.length || 0})
+              </p>
               <ul className="divide-y divide-border/60 px-4 pb-1">
-                {(data.order_items || []).map((it: any) => (
-                  <li key={it.id} className="flex min-h-11 items-center justify-between gap-3 py-2 text-small">
-                    <span className="min-w-0">{it.name} <span className="text-muted-foreground">× {it.quantity}</span></span>
+                {(data.order_items || []).map((it) => (
+                  <li
+                    key={it.id}
+                    className="flex min-h-11 items-center justify-between gap-3 py-2 text-small"
+                  >
+                    <span className="min-w-0">
+                      {it.name} <span className="text-muted-foreground">× {it.quantity}</span>
+                    </span>
                     <span className="font-medium">{rupees(Number(it.price) * it.quantity)}</span>
                   </li>
                 ))}
@@ -198,11 +261,14 @@ function Page() {
                     disabled={sending}
                     onClick={async () => {
                       setSending(true);
-                      const { error } = await supabase.rpc("partner_update_status" as any, {
-                        _status: st.k,
-                        _order_id: id,
-                        _eta_minutes: Number(etaMin) > 0 ? Math.min(240, Number(etaMin)) : null,
-                      });
+                      const { error } = await supabase.rpc(
+                        "partner_update_status",
+                        rpcArgs("partner_update_status", {
+                          _status: st.k,
+                          _order_id: id,
+                          _eta_minutes: Number(etaMin) > 0 ? Math.min(240, Number(etaMin)) : null,
+                        }),
+                      );
                       setSending(false);
                       if (error) return toast.error(error.message);
                       toast.success(`Status: ${st.label}`);
@@ -214,7 +280,9 @@ function Page() {
                   </Button>
                 ))}
               </div>
-              <p className="text-small text-muted-foreground">Updates the shop, admin and customer for this order in real time.</p>
+              <p className="text-small text-muted-foreground">
+                Updates the shop, admin and customer for this order in real time.
+              </p>
             </Card>
 
             <Card className="space-y-3 rounded-xl border-border/70 p-4 shadow-none">
@@ -229,14 +297,28 @@ function Page() {
                   className="w-20"
                 />
                 <span className="text-small text-muted-foreground">min</span>
-                <Button size="sm" disabled={sending} onClick={() => sendUpdate("eta", Math.max(1, Number(etaMin) || 0))}>
+                <Button
+                  size="sm"
+                  disabled={sending}
+                  onClick={() => sendUpdate("eta", Math.max(1, Number(etaMin) || 0))}
+                >
                   Send ETA
                 </Button>
-                <Button size="sm" variant="secondary" disabled={sending} onClick={() => sendUpdate("delay", Math.max(1, Number(etaMin) || 0))}>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={sending}
+                  onClick={() => sendUpdate("delay", Math.max(1, Number(etaMin) || 0))}
+                >
                   Delay
                 </Button>
               </div>
-              <Button variant="secondary" className="w-full" disabled={sending} onClick={() => sendUpdate("nearby")}>
+              <Button
+                variant="secondary"
+                className="w-full"
+                disabled={sending}
+                onClick={() => sendUpdate("nearby")}
+              >
                 I've reached your area
               </Button>
               <div className="flex items-center gap-2">
@@ -246,21 +328,31 @@ function Page() {
                   onChange={(e) => setCustomMsg(e.target.value)}
                   maxLength={240}
                 />
-                <Button size="sm" disabled={sending || !customMsg.trim()} onClick={() => sendUpdate("custom", undefined, customMsg.trim())}>
+                <Button
+                  size="sm"
+                  disabled={sending || !customMsg.trim()}
+                  onClick={() => sendUpdate("custom", undefined, customMsg.trim())}
+                >
                   Send
                 </Button>
               </div>
-              <p className="text-small text-muted-foreground">Only the customer for this order is notified.</p>
+              <p className="text-small text-muted-foreground">
+                Only the customer for this order is notified.
+              </p>
             </Card>
 
             {(data.status === "packed" || data.status === "out_for_delivery") && (
               <div className="bar-blur hairline-t pb-safe fixed bottom-[calc(60px+env(safe-area-inset-bottom))] left-0 right-0 z-20 p-4">
                 <div className="mx-auto flex max-w-md gap-2">
                   {data.status === "packed" && (
-                    <Button className="h-12 flex-1 rounded-xl" onClick={pickUp}>Mark as picked up</Button>
+                    <Button className="h-12 flex-1 rounded-xl" onClick={pickUp}>
+                      Mark as picked up
+                    </Button>
                   )}
                   {data.status === "out_for_delivery" && (
-                    <Button className="h-12 flex-1 rounded-xl" onClick={deliver}>Mark as delivered</Button>
+                    <Button className="h-12 flex-1 rounded-xl" onClick={deliver}>
+                      Mark as delivered
+                    </Button>
                   )}
                 </div>
               </div>

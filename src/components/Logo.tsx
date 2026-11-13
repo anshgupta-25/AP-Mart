@@ -29,11 +29,7 @@ export function LogoMark({
         const img = e.currentTarget;
         if (!img.src.endsWith("/apmart-logo.png")) img.src = "/apmart-logo.png";
       }}
-      className={cn(
-        MARK_SIZES[size],
-        "shrink-0 rounded-xl object-contain ",
-        className
-      )}
+      className={cn(MARK_SIZES[size], "shrink-0 rounded-xl object-contain ", className)}
     />
   );
 }
@@ -57,4 +53,3 @@ export function Logo({
     </div>
   );
 }
-

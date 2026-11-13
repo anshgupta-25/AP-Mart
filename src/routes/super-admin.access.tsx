@@ -1,19 +1,36 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Search, Crown, ShieldAlert, Store, Bike, Headphones, User, Ban, RotateCcw } from "lucide-react";
+import {
+  Loader2,
+  Search,
+  Crown,
+  ShieldAlert,
+  Store,
+  Bike,
+  Headphones,
+  User,
+  Ban,
+  RotateCcw,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import type { Database } from "@/integrations/supabase/types";
+
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 export const Route = createFileRoute("/super-admin/access")({
   head: () => ({
     meta: [
       { title: "Roles & Access — AP Mart Super Admin" },
-      { name: "description", content: "Promote, demote, suspend and restore any AP Mart account across every role tier." },
+      {
+        name: "description",
+        content: "Promote, demote, suspend and restore any AP Mart account across every role tier.",
+      },
       { property: "og:title", content: "Roles & Access — AP Mart Super Admin" },
       { property: "og:description", content: "Manage every role tier on the AP Mart platform." },
       { property: "og:type", content: "website" },
@@ -70,28 +87,33 @@ function AccessPage() {
 
   const toggleRole = useMutation({
     mutationFn: async ({ userId, role, has }: { userId: string; role: string; has: boolean }) => {
-      const fn = has ? "admin_remove_role" : "admin_assign_role";
-      const { error } = await supabase.rpc(fn as any, { _user_id: userId, _role: role as any });
+      const args = { _user_id: userId, _role: role as AppRole };
+      const { error } = has
+        ? await supabase.rpc("admin_remove_role", args)
+        : await supabase.rpc("admin_assign_role", args);
       if (error) throw error;
     },
     onSuccess: (_d, v) => {
       toast.success(v.has ? "Role removed" : "Role granted");
       qc.invalidateQueries({ queryKey: ["super-admin"] });
     },
-    onError: (e: any) => toast.error(cleanError(e?.message)),
+    onError: (e) => toast.error(cleanError(e?.message)),
     onSettled: () => setPending(null),
   });
 
   const setStatus = useMutation({
     mutationFn: async ({ userId, status }: { userId: string; status: "active" | "suspended" }) => {
-      const { error } = await supabase.rpc("admin_set_user_status", { _user_id: userId, _status: status });
+      const { error } = await supabase.rpc("admin_set_user_status", {
+        _user_id: userId,
+        _status: status,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Account status updated");
       qc.invalidateQueries({ queryKey: ["super-admin"] });
     },
-    onError: (e: any) => toast.error(cleanError(e?.message)),
+    onError: (e) => toast.error(cleanError(e?.message)),
   });
 
   return (
@@ -99,7 +121,8 @@ function AccessPage() {
       <div>
         <h1 className="large-title">Roles &amp; Access</h1>
         <p className="mt-0.5 text-small text-muted-foreground">
-          Tap a role chip to grant or revoke it. Admin and Super Admin tiers can only be changed here.
+          Tap a role chip to grant or revoke it. Admin and Super Admin tiers can only be changed
+          here.
         </p>
       </div>
 
@@ -115,12 +138,16 @@ function AccessPage() {
 
       {error ? (
         <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-small text-destructive">
-          {cleanError((error as any)?.message)}
+          {cleanError(error?.message)}
         </div>
       ) : isLoading ? (
-        <div className="grid place-items-center py-12"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+        <div className="grid place-items-center py-12">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
       ) : rows.length === 0 ? (
-        <p className="py-10 text-center text-small text-muted-foreground">No accounts match that search.</p>
+        <p className="py-10 text-center text-small text-muted-foreground">
+          No accounts match that search.
+        </p>
       ) : (
         <div className="space-y-2.5">
           {rows.map((u) => {
@@ -131,20 +158,42 @@ function AccessPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="truncate text-body font-semibold">{u.full_name || "Unnamed user"}</span>
-                      {isSelf && <span className="rounded-full bg-primary-soft px-2 py-0.5 text-micro font-semibold text-primary-ink">You</span>}
-                      {suspended && <span className="rounded-full bg-tint-rose px-2 py-0.5 text-micro font-semibold text-[oklch(0.45_0.12_15)]">Suspended</span>}
+                      <span className="truncate text-body font-semibold">
+                        {u.full_name || "Unnamed user"}
+                      </span>
+                      {isSelf && (
+                        <span className="rounded-full bg-primary-soft px-2 py-0.5 text-micro font-semibold text-primary-ink">
+                          You
+                        </span>
+                      )}
+                      {suspended && (
+                        <span className="rounded-full bg-tint-rose px-2 py-0.5 text-micro font-semibold text-[oklch(0.45_0.12_15)]">
+                          Suspended
+                        </span>
+                      )}
                     </div>
-                    <div className="truncate text-small text-muted-foreground">{u.email || u.phone || "—"}</div>
+                    <div className="truncate text-small text-muted-foreground">
+                      {u.email || u.phone || "—"}
+                    </div>
                   </div>
                   <Button
                     size="sm"
                     variant={suspended ? "outline" : "ghost"}
                     disabled={isSelf || setStatus.isPending}
-                    onClick={() => setStatus.mutate({ userId: u.id, status: suspended ? "active" : "suspended" })}
+                    onClick={() =>
+                      setStatus.mutate({ userId: u.id, status: suspended ? "active" : "suspended" })
+                    }
                     className="shrink-0"
                   >
-                    {suspended ? (<><RotateCcw className="h-3.5 w-3.5 mr-1" /> Restore</>) : (<><Ban className="h-3.5 w-3.5 mr-1" /> Suspend</>)}
+                    {suspended ? (
+                      <>
+                        <RotateCcw className="h-3.5 w-3.5 mr-1" /> Restore
+                      </>
+                    ) : (
+                      <>
+                        <Ban className="h-3.5 w-3.5 mr-1" /> Suspend
+                      </>
+                    )}
                   </Button>
                 </div>
 
@@ -158,14 +207,23 @@ function AccessPage() {
                         key={r.key}
                         type="button"
                         disabled={busy}
-                        onClick={() => { setPending(key); toggleRole.mutate({ userId: u.id, role: r.key, has }); }}
+                        onClick={() => {
+                          setPending(key);
+                          toggleRole.mutate({ userId: u.id, role: r.key, has });
+                        }}
                         className={cn(
                           "press inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-small font-medium transition-colors",
-                          has ? `${r.tone} border-transparent` : "border-border bg-transparent text-muted-foreground hover:bg-secondary",
+                          has
+                            ? `${r.tone} border-transparent`
+                            : "border-border bg-transparent text-muted-foreground hover:bg-secondary",
                           busy && "opacity-60",
                         )}
                       >
-                        {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <r.icon className="h-3 w-3" />}
+                        {busy ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <r.icon className="h-3 w-3" />
+                        )}
                         {r.label}
                       </button>
                     );

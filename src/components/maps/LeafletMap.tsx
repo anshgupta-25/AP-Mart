@@ -27,22 +27,27 @@ export function LeafletMap({
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const [RL, L] = await Promise.all([
-        import("react-leaflet"),
-        import("leaflet"),
-      ]);
+      const [RL, L] = await Promise.all([import("react-leaflet"), import("leaflet")]);
       const iconUrl = (await import("leaflet/dist/images/marker-icon.png")).default;
       const iconRetinaUrl = (await import("leaflet/dist/images/marker-icon-2x.png")).default;
       const shadowUrl = (await import("leaflet/dist/images/marker-shadow.png")).default;
       L.Icon.Default.mergeOptions({ iconUrl, iconRetinaUrl, shadowUrl });
-      if (mounted) { setLeaflet(L); setMods(RL); }
+      if (mounted) {
+        setLeaflet(L);
+        setMods(RL);
+      }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Stable canvas renderer instance — reused across re-renders so children
   // don't trigger fresh renderer allocation.
-  const renderer = useMemo(() => (leaflet ? leaflet.canvas({ padding: 0.5 }) : undefined), [leaflet]);
+  const renderer = useMemo(
+    () => (leaflet ? leaflet.canvas({ padding: 0.5 }) : undefined),
+    [leaflet],
+  );
 
   if (!mods) {
     return <div className={`${className} bg-secondary animate-pulse`} aria-label="Loading map" />;
@@ -78,6 +83,8 @@ export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: numb
   const R = 6371;
   const dLat = toRad(lat2 - lat1);
   const dLng = toRad(lng2 - lng1);
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(a));
 }

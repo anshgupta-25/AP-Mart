@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
 /**
  * Server-side Super Admin helpers.
@@ -8,7 +10,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  * (never against client-supplied data), so the hidden Super Admin surface
  * cannot be reached by simply knowing the route path.
  */
-async function assertSuperAdmin(context: { supabase: any; userId: string }) {
+async function assertSuperAdmin(context: { supabase: SupabaseClient<Database>; userId: string }) {
   const { data, error } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
     _role: "super_admin",
@@ -25,7 +27,7 @@ async function assertSuperAdmin(context: { supabase: any; userId: string }) {
 export const getIntegrationStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertSuperAdmin(context as any);
+    await assertSuperAdmin(context);
 
     // Client keys are inlined at build time, so also check the built value.
     const buildTimeEnv: Record<string, string | undefined> = {
@@ -37,7 +39,11 @@ export const getIntegrationStatus = createServerFn({ method: "POST" })
     };
 
     return {
-      payments: [present("RAZORPAY_KEY_ID"), present("RAZORPAY_KEY_SECRET"), present("RAZORPAY_WEBHOOK_SECRET")],
+      payments: [
+        present("RAZORPAY_KEY_ID"),
+        present("RAZORPAY_KEY_SECRET"),
+        present("RAZORPAY_WEBHOOK_SECRET"),
+      ],
       maps: [present("GOOGLE_MAPS_API_KEY"), present("VITE_GOOGLE_MAPS_BROWSER_KEY")],
       messaging: [
         present("FIREBASE_SERVICE_ACCOUNT_JSON"),
@@ -61,7 +67,10 @@ export async function bootstrapSuperAdminImpl() {
   const email = process.env.SUPER_ADMIN_EMAIL;
   const password = process.env.SUPER_ADMIN_PASSWORD;
   if (!email || !password) {
-    return { ok: false as const, reason: "SUPER_ADMIN_EMAIL / SUPER_ADMIN_PASSWORD not configured" };
+    return {
+      ok: false as const,
+      reason: "SUPER_ADMIN_EMAIL / SUPER_ADMIN_PASSWORD not configured",
+    };
   }
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -81,8 +90,11 @@ export async function bootstrapSuperAdminImpl() {
     wasCreated = true;
   } else {
     const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    const found = (list?.users ?? []).find((u) => (u.email ?? "").toLowerCase() === email.toLowerCase());
-    if (!found) return { ok: false as const, reason: createErr?.message ?? "Could not resolve account" };
+    const found = (list?.users ?? []).find(
+      (u) => (u.email ?? "").toLowerCase() === email.toLowerCase(),
+    );
+    if (!found)
+      return { ok: false as const, reason: createErr?.message ?? "Could not resolve account" };
     userId = found.id;
     // Keep the account in sync with the configured secret (and confirmed).
     await supabaseAdmin.auth.admin.updateUserById(userId, { password, email_confirm: true });
@@ -97,13 +109,16 @@ export async function bootstrapSuperAdminImpl() {
   if ((existing ?? []).length === 0) {
     const { error: roleErr } = await supabaseAdmin
       .from("user_roles")
-      .insert({ user_id: userId, role: "super_admin" as any });
+      .insert({ user_id: userId, role: "super_admin" });
     if (roleErr && !roleErr.message.toLowerCase().includes("duplicate")) {
       return { ok: false as const, reason: roleErr.message };
     }
   }
 
-  await supabaseAdmin.from("profiles").update({ is_active: true, status: "active" }).eq("id", userId);
+  await supabaseAdmin
+    .from("profiles")
+    .update({ is_active: true, status: "active" })
+    .eq("id", userId);
 
   return { ok: true as const, created: wasCreated };
 }

@@ -10,7 +10,9 @@ export const Route = createFileRoute("/shopkeeper/reviews")({
           <Star className="h-6 w-6" />
         </div>
         <div className="mt-3 text-body font-semibold">No reviews yet</div>
-        <p className="mt-1 text-meta text-muted-foreground">Customer reviews will appear here soon.</p>
+        <p className="mt-1 text-meta text-muted-foreground">
+          Customer reviews will appear here soon.
+        </p>
       </div>
     </div>
   ),

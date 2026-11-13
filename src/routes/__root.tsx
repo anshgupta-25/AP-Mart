@@ -17,8 +17,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Capacitor } from "@capacitor/core";
 import { setNativeNavigator } from "@/integrations/firebase/native-push";
 
-
-
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -51,12 +49,17 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => { router.invalidate(); reset(); }}
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
             className="rounded-xl gradient-primary px-4 py-2 text-sm font-bold text-primary-foreground"
           >
             Try again
           </button>
-          <a href="/" className="rounded-xl border border-input px-4 py-2 text-sm font-medium">Go home</a>
+          <a href="/" className="rounded-xl border border-input px-4 py-2 text-sm font-medium">
+            Go home
+          </a>
         </div>
       </div>
     </div>
@@ -69,10 +72,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "AP Mart — Groceries from shops near you" },
-      { name: "description", content: "Order groceries, snacks and daily essentials from trusted local shops near you." },
+      {
+        name: "description",
+        content: "Order groceries, snacks and daily essentials from trusted local shops near you.",
+      },
       { name: "theme-color", content: "#A3E635" },
       { property: "og:title", content: "AP Mart — Groceries from local shops" },
-      { property: "og:description", content: "Fresh groceries and household essentials from independent shops in your neighbourhood." },
+      {
+        property: "og:description",
+        content:
+          "Fresh groceries and household essentials from independent shops in your neighbourhood.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -183,7 +193,9 @@ function RootComponent() {
   // Filtered so hourly TOKEN_REFRESHED / INITIAL_SESSION events don't
   // trigger a cache-wide refetch storm.
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       if (event === "SIGNED_OUT") {
         // Drop protected data so no stale query hits the API without a token.
@@ -204,4 +216,3 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
-

@@ -11,16 +11,22 @@ import { FastDeliveryBadge } from "@/components/FastDeliveryBadge";
 import { runOptimistic, removeRow } from "@/lib/optimistic";
 import { PageHeader } from "@/components/data";
 
-
 export const Route = createFileRoute("/delivery/available-orders")({
   head: () => ({ meta: [{ title: "Available Orders — Delivery" }] }),
   component: Page,
 });
 
 type Parent = {
-  parent_id: string; order_number: string; total: number; shop_count: number;
-  items_count: number; city: string | null; pincode: string | null; ready_at: string;
-  delivery_type: string | null; fast_delivery_fee: number | null;
+  parent_id: string;
+  order_number: string;
+  total: number;
+  shop_count: number;
+  items_count: number;
+  city: string | null;
+  pincode: string | null;
+  ready_at: string;
+  delivery_type: string | null;
+  fast_delivery_fee: number | null;
 };
 
 function Page() {
@@ -35,7 +41,9 @@ function Page() {
         qc.invalidateQueries({ queryKey: ["available-parent-orders"] });
       })
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, [qc]);
 
   const parents = useQuery({
@@ -53,9 +61,16 @@ function Page() {
     queryFn: async () => {
       const { data } = await supabase.rpc("partner_available_orders");
       return (data ?? []) as Array<{
-        id: string; order_number: string; total: number; city: string | null;
-        area_pincode: string | null; item_count: number; shop_name: string | null;
-        delivery_type?: string | null; fast_delivery_fee?: number | null; placed_at?: string;
+        id: string;
+        order_number: string;
+        total: number;
+        city: string | null;
+        area_pincode: string | null;
+        item_count: number;
+        shop_name: string | null;
+        delivery_type?: string | null;
+        fast_delivery_fee?: number | null;
+        placed_at?: string;
       }>;
     },
     refetchInterval: 30000,
@@ -82,11 +97,13 @@ function Page() {
     });
   };
 
-
   return (
     <>
       <div className="space-y-5 px-4 py-4 md:px-6">
-        <PageHeader title="Available orders" subtitle="Orders from nearby shops, ready for pickup." />
+        <PageHeader
+          title="Available orders"
+          subtitle="Orders from nearby shops, ready for pickup."
+        />
 
         <section className="space-y-2.5">
           <div className="flex items-center gap-2">
@@ -98,7 +115,10 @@ function Page() {
             return (
               <div
                 key={p.parent_id}
-                className={"space-y-3 rounded-xl border bg-card p-3.5 " + (isFast ? "border-destructive/30" : "border-border/70")}
+                className={
+                  "space-y-3 rounded-xl border bg-card p-3.5 " +
+                  (isFast ? "border-destructive/30" : "border-border/70")
+                }
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -107,14 +127,23 @@ function Page() {
                       {isFast && <FastDeliveryBadge />}
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-muted-foreground">
-                      <span className="inline-flex items-center gap-1"><Store className="h-3 w-3" /> {p.shop_count} shops</span>
-                      <span className="inline-flex items-center gap-1"><Package className="h-3 w-3" /> {p.items_count} items</span>
-                      {[p.city, p.pincode].filter(Boolean).length > 0 && <span>{[p.city, p.pincode].filter(Boolean).join(" · ")}</span>}
+                      <span className="inline-flex items-center gap-1">
+                        <Store className="h-3 w-3" /> {p.shop_count} shops
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <Package className="h-3 w-3" /> {p.items_count} items
+                      </span>
+                      {[p.city, p.pincode].filter(Boolean).length > 0 && (
+                        <span>{[p.city, p.pincode].filter(Boolean).join(" · ")}</span>
+                      )}
                     </div>
                   </div>
                   <div className="text-body font-semibold">{rupees(p.total)}</div>
                 </div>
-                <Button onClick={() => acceptParent(p.parent_id)} className="h-11 w-full rounded-xl">
+                <Button
+                  onClick={() => acceptParent(p.parent_id)}
+                  className="h-11 w-full rounded-xl"
+                >
                   <Truck className="h-4 w-4" /> Accept all shops
                 </Button>
               </div>
@@ -134,7 +163,10 @@ function Page() {
             return (
               <div
                 key={o.id}
-                className={"space-y-3 rounded-xl border bg-card p-3.5 " + (isFast ? "border-destructive/30" : "border-border/70")}
+                className={
+                  "space-y-3 rounded-xl border bg-card p-3.5 " +
+                  (isFast ? "border-destructive/30" : "border-border/70")
+                }
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -143,11 +175,13 @@ function Page() {
                       {isFast && <FastDeliveryBadge />}
                     </div>
                     <div className="mt-1 text-small leading-snug text-muted-foreground">
-                      {[o.shop_name, o.city, o.area_pincode].filter(Boolean).join(" · ")} · {o.item_count} item{o.item_count === 1 ? "" : "s"}
+                      {[o.shop_name, o.city, o.area_pincode].filter(Boolean).join(" · ")} ·{" "}
+                      {o.item_count} item{o.item_count === 1 ? "" : "s"}
                     </div>
                     {isFast && (
                       <div className="mt-1 text-caption font-semibold text-destructive">
-                        Priority delivery{o.fast_delivery_fee ? ` · +${rupees(o.fast_delivery_fee)}` : ""}
+                        Priority delivery
+                        {o.fast_delivery_fee ? ` · +${rupees(o.fast_delivery_fee)}` : ""}
                       </div>
                     )}
                   </div>
@@ -157,7 +191,9 @@ function Page() {
                   onClick={() => accept(o.id)}
                   className={
                     "h-11 w-full rounded-xl " +
-                    (isFast ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : "")
+                    (isFast
+                      ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      : "")
                   }
                 >
                   {isFast ? "Accept now" : "Accept"}

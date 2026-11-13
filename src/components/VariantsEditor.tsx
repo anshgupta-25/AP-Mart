@@ -149,52 +149,100 @@ function VariantCard({
         </button>
         <div className="flex-1 text-body font-semibold">
           Variant {index + 1}
-          {value.size && <span className="ml-2 text-muted-foreground font-normal">· {value.size}</span>}
+          {value.size && (
+            <span className="ml-2 text-muted-foreground font-normal">· {value.size}</span>
+          )}
         </div>
-        <Button type="button" size="sm" variant="ghost" onClick={onDuplicate} aria-label="Duplicate variant">
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={onDuplicate}
+          aria-label="Duplicate variant"
+        >
           <Copy className="h-4 w-4" />
         </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={onRemove} aria-label="Delete variant">
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={onRemove}
+          aria-label="Delete variant"
+        >
           <Trash2 className="h-4 w-4 text-destructive" />
         </Button>
       </div>
-
 
       {open && (
         <div className="space-y-3 p-3 pt-0">
           <div className="grid grid-cols-2 gap-3">
             <Field label="Variant name (optional)">
-              <Input value={value.name} onChange={(e) => onChange({ name: e.target.value })} placeholder="e.g. Small pack" />
+              <Input
+                value={value.name}
+                onChange={(e) => onChange({ name: e.target.value })}
+                placeholder="e.g. Small pack"
+              />
             </Field>
             <Field label="Size *">
-              <Input value={value.size} onChange={(e) => onChange({ size: e.target.value })} placeholder="e.g. 500" />
+              <Input
+                value={value.size}
+                onChange={(e) => onChange({ size: e.target.value })}
+                placeholder="e.g. 500"
+              />
             </Field>
             <Field label="Unit">
-              <Input value={value.unit} onChange={(e) => onChange({ unit: e.target.value })} placeholder="ml, g, pcs" />
+              <Input
+                value={value.unit}
+                onChange={(e) => onChange({ unit: e.target.value })}
+                placeholder="ml, g, pcs"
+              />
             </Field>
             <Field label="Weight">
-              <Input value={value.weight} onChange={(e) => onChange({ weight: e.target.value })} placeholder="e.g. 500g" />
+              <Input
+                value={value.weight}
+                onChange={(e) => onChange({ weight: e.target.value })}
+                placeholder="e.g. 500g"
+              />
             </Field>
             <Field label="SKU">
               <Input value={value.sku} onChange={(e) => onChange({ sku: e.target.value })} />
             </Field>
             <Field label="Barcode">
-              <Input value={value.barcode} onChange={(e) => onChange({ barcode: e.target.value })} />
+              <Input
+                value={value.barcode}
+                onChange={(e) => onChange({ barcode: e.target.value })}
+              />
             </Field>
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Field label="MRP ₹">
-              <Input type="number" value={value.mrp} onChange={(e) => onChange({ mrp: Number(e.target.value) })} />
+              <Input
+                type="number"
+                value={value.mrp}
+                onChange={(e) => onChange({ mrp: Number(e.target.value) })}
+              />
             </Field>
             <Field label="Selling ₹ *">
-              <Input type="number" value={value.selling_price} onChange={(e) => onChange({ selling_price: Number(e.target.value) })} />
+              <Input
+                type="number"
+                value={value.selling_price}
+                onChange={(e) => onChange({ selling_price: Number(e.target.value) })}
+              />
             </Field>
             <Field label="Retail ₹">
-              <Input type="number" value={value.retail_price} onChange={(e) => onChange({ retail_price: Number(e.target.value) })} />
+              <Input
+                type="number"
+                value={value.retail_price}
+                onChange={(e) => onChange({ retail_price: Number(e.target.value) })}
+              />
             </Field>
             <Field label="Stock *">
-              <Input type="number" value={value.stock} onChange={(e) => onChange({ stock: Number(e.target.value) })} />
+              <Input
+                type="number"
+                value={value.stock}
+                onChange={(e) => onChange({ stock: Number(e.target.value) })}
+              />
             </Field>
           </div>
 
@@ -207,11 +255,17 @@ function VariantCard({
 
           <div className="flex items-center gap-4 pt-1">
             <label className="flex items-center gap-2 text-meta">
-              <Switch checked={value.is_available} onCheckedChange={(v) => onChange({ is_available: v })} />
+              <Switch
+                checked={value.is_available}
+                onCheckedChange={(v) => onChange({ is_available: v })}
+              />
               Available
             </label>
             <label className="flex items-center gap-2 text-meta">
-              <Switch checked={value.is_default} onCheckedChange={(v) => onChange({ is_default: v })} />
+              <Switch
+                checked={value.is_default}
+                onCheckedChange={(v) => onChange({ is_default: v })}
+              />
               Default variant
             </label>
           </div>

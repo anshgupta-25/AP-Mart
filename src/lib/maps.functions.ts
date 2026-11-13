@@ -38,8 +38,12 @@ async function googleFetch(path: string, init: RequestInit = {}) {
 function validLatLng(p: unknown): p is LatLng {
   if (!p || typeof p !== "object") return false;
   const { lat, lng } = p as { lat?: unknown; lng?: unknown };
-  return typeof lat === "number" && typeof lng === "number"
-    && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+  return (
+    typeof lat === "number" &&
+    typeof lng === "number" &&
+    Math.abs(lat) <= 90 &&
+    Math.abs(lng) <= 180
+  );
 }
 
 /**
@@ -56,14 +60,18 @@ export const computeRoute = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const body = {
       origin: { location: { latLng: { latitude: data.origin.lat, longitude: data.origin.lng } } },
-      destination: { location: { latLng: { latitude: data.destination.lat, longitude: data.destination.lng } } },
+      destination: {
+        location: { latLng: { latitude: data.destination.lat, longitude: data.destination.lng } },
+      },
       travelMode: "TWO_WHEELER",
       routingPreference: "TRAFFIC_AWARE",
       polylineEncoding: "ENCODED_POLYLINE",
     };
     const json = await googleFetch("/routes/directions/v2:computeRoutes", {
       method: "POST",
-      headers: { "X-Goog-FieldMask": "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline" },
+      headers: {
+        "X-Goog-FieldMask": "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline",
+      },
       body: JSON.stringify(body),
     });
     const route = json?.routes?.[0];
@@ -82,33 +90,44 @@ export const computeRoute = createServerFn({ method: "POST" })
  * Returns shop IDs ordered by ETA ascending.
  */
 export const rankShopsByEta = createServerFn({ method: "POST" })
-  .inputValidator((input: { destination: LatLng; shops: { id: string; lat: number; lng: number }[] }) => {
-    if (!validLatLng(input?.destination)) throw new Error("Invalid destination");
-    if (!Array.isArray(input?.shops) || input.shops.length === 0) throw new Error("No shops provided");
-    if (input.shops.length > 25) throw new Error("Too many shops (max 25)");
-    return input;
-  })
+  .inputValidator(
+    (input: { destination: LatLng; shops: { id: string; lat: number; lng: number }[] }) => {
+      if (!validLatLng(input?.destination)) throw new Error("Invalid destination");
+      if (!Array.isArray(input?.shops) || input.shops.length === 0)
+        throw new Error("No shops provided");
+      if (input.shops.length > 25) throw new Error("Too many shops (max 25)");
+      return input;
+    },
+  )
   .handler(async ({ data }) => {
     const body = {
       origins: data.shops.map((s) => ({
         waypoint: { location: { latLng: { latitude: s.lat, longitude: s.lng } } },
         routeModifiers: {},
       })),
-      destinations: [{
-        waypoint: { location: { latLng: { latitude: data.destination.lat, longitude: data.destination.lng } } },
-      }],
+      destinations: [
+        {
+          waypoint: {
+            location: {
+              latLng: { latitude: data.destination.lat, longitude: data.destination.lng },
+            },
+          },
+        },
+      ],
       travelMode: "TWO_WHEELER",
       routingPreference: "TRAFFIC_AWARE",
     };
     const json = await googleFetch("/routes/distanceMatrix/v2:computeRouteMatrix", {
       method: "POST",
-      headers: { "X-Goog-FieldMask": "originIndex,destinationIndex,duration,distanceMeters,condition" },
+      headers: {
+        "X-Goog-FieldMask": "originIndex,destinationIndex,duration,distanceMeters,condition",
+      },
       body: JSON.stringify(body),
     });
     const rows = Array.isArray(json) ? json : [];
     const ranked = rows
-      .filter((r: any) => r?.condition === "ROUTE_EXISTS")
-      .map((r: any) => ({
+      .filter((r) => r?.condition === "ROUTE_EXISTS")
+      .map((r) => ({
         shopId: data.shops[r.originIndex].id,
         etaSeconds: Number(String(r.duration ?? "0s").replace(/s$/, "")) || 0,
         distanceMeters: Number(r.distanceMeters ?? 0),
@@ -136,13 +155,18 @@ export const reverseGeocode = createServerFn({ method: "POST" })
     }
     const result = json?.results?.[0];
     if (!result) return { formatted: null, pincode: null, city: null, state: null, area: null };
-    const comps: Array<{ long_name: string; short_name: string; types: string[] }> = result.address_components ?? [];
+    const comps: Array<{ long_name: string; short_name: string; types: string[] }> =
+      result.address_components ?? [];
     const pick = (type: string) => comps.find((c) => c.types.includes(type))?.long_name ?? null;
     return {
       formatted: (result.formatted_address as string) ?? null,
       pincode: pick("postal_code"),
-      city: pick("locality") ?? pick("administrative_area_level_3") ?? pick("administrative_area_level_2"),
+      city:
+        pick("locality") ??
+        pick("administrative_area_level_3") ??
+        pick("administrative_area_level_2"),
       state: pick("administrative_area_level_1"),
-      area: pick("sublocality_level_1") ?? pick("sublocality") ?? pick("route") ?? pick("neighborhood"),
+      area:
+        pick("sublocality_level_1") ?? pick("sublocality") ?? pick("route") ?? pick("neighborhood"),
     };
   });

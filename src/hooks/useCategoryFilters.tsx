@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useDeliveryContext } from "./useDeliveryContext";
 import type { ProductCardData } from "@/components/ProductCard";
+import { rpcArgs } from "@/integrations/supabase/rpc";
 
 export interface FacetOption {
   label: string;
@@ -43,7 +44,6 @@ const EMPTY: CategoryFacets = {
   delivery: [],
 };
 
-
 /** Live filter options derived from the products available in this category + pincode. */
 export function useCategoryFacets(categoryId?: string | null, enabled = true) {
   const { pincode, ready } = useDeliveryContext();
@@ -53,10 +53,13 @@ export function useCategoryFacets(categoryId?: string | null, enabled = true) {
     staleTime: 5 * 60 * 1000,
     placeholderData: (prev) => prev,
     queryFn: async (): Promise<CategoryFacets> => {
-      const { data, error } = await (supabase as any).rpc("category_filter_facets", {
-        _pincode: pincode,
-        _category_id: categoryId,
-      });
+      const { data, error } = await supabase.rpc(
+        "category_filter_facets",
+        rpcArgs("category_filter_facets", {
+          _pincode: pincode,
+          _category_id: categoryId,
+        }),
+      );
       if (error) throw error;
       return { ...EMPTY, ...((data ?? {}) as Partial<CategoryFacets>) };
     },
@@ -99,7 +102,6 @@ export function activeFilterCount(f: CategoryFilterState) {
   );
 }
 
-
 export interface FilteredProduct extends ProductCardData {
   brand: string | null;
 }
@@ -120,26 +122,28 @@ export function useFilteredCategoryProducts(
     // screen until the new result set arrives — no blank flash.
     placeholderData: (prev) => prev,
     queryFn: async (): Promise<FilteredProduct[]> => {
-      const { data, error } = await (supabase as any).rpc("list_category_products", {
-        _pincode: pincode,
-        _category_id: categoryId,
-        _search: null,
-        _brands: filters.brands.length ? filters.brands : null,
-        _sizes: filters.sizes.length ? filters.sizes : null,
-        _subcategory_ids: filters.subcategories.length ? filters.subcategories : null,
-        _subcategory_id: subcategoryId,
-        _delivery: filters.delivery.length ? filters.delivery : null,
+      const { data, error } = await supabase.rpc(
+        "list_category_products",
+        rpcArgs("list_category_products", {
+          _pincode: pincode,
+          _category_id: categoryId,
+          _search: null,
+          _brands: filters.brands.length ? filters.brands : null,
+          _sizes: filters.sizes.length ? filters.sizes : null,
+          _subcategory_ids: filters.subcategories.length ? filters.subcategories : null,
+          _subcategory_id: subcategoryId,
+          _delivery: filters.delivery.length ? filters.delivery : null,
 
-        _min_price: filters.minPrice,
-        _max_price: filters.maxPrice,
-        _min_rating: filters.minRating,
-        _min_discount: filters.minDiscount,
-        _sort: filters.sort,
-        _limit: limit,
-      });
+          _min_price: filters.minPrice,
+          _max_price: filters.maxPrice,
+          _min_rating: filters.minRating,
+          _min_discount: filters.minDiscount,
+          _sort: filters.sort,
+          _limit: limit,
+        }),
+      );
       if (error) throw error;
       return (data ?? []) as FilteredProduct[];
     },
   });
 }
-

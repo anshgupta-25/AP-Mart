@@ -56,6 +56,7 @@ export function currentNavItem(nav: PortalNav, pathname: string, search = ""): N
     .filter((i) => isNavActive(pathname, i.to, search))
     .sort(
       (a, b) =>
-        b.to.split("?")[0].length - a.to.split("?")[0].length || queryParamCount(b.to) - queryParamCount(a.to),
+        b.to.split("?")[0].length - a.to.split("?")[0].length ||
+        queryParamCount(b.to) - queryParamCount(a.to),
     )[0];
 }

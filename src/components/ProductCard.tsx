@@ -63,11 +63,19 @@ function ProductCardImpl({ product }: { product: ProductCardData }) {
             </span>
           ) : line ? (
             <div className="flex h-7 items-center rounded-lg bg-primary text-primary-foreground shadow-soft">
-              <button onClick={() => setQty(line.id, line.quantity - 1)} className="grid h-7 w-6 place-items-center" aria-label="Decrease">
+              <button
+                onClick={() => setQty(line.id, line.quantity - 1)}
+                className="grid h-7 w-6 place-items-center"
+                aria-label="Decrease"
+              >
                 <Minus className="h-3 w-3" strokeWidth={2.6} />
               </button>
               <span className="min-w-3.5 text-center text-small font-bold">{line.quantity}</span>
-              <button onClick={() => setQty(line.id, line.quantity + 1)} className="grid h-7 w-6 place-items-center" aria-label="Increase">
+              <button
+                onClick={() => setQty(line.id, line.quantity + 1)}
+                className="grid h-7 w-6 place-items-center"
+                aria-label="Increase"
+              >
                 <Plus className="h-3 w-3" strokeWidth={2.6} />
               </button>
             </div>
@@ -88,7 +96,9 @@ function ProductCardImpl({ product }: { product: ProductCardData }) {
       <div className="mt-1.5 flex items-baseline gap-1.5">
         <span className="text-meta font-bold">{rupees(product.price)}</span>
         {product.mrp > product.price && (
-          <span className="text-caption text-muted-foreground line-through">{rupees(product.mrp)}</span>
+          <span className="text-caption text-muted-foreground line-through">
+            {rupees(product.mrp)}
+          </span>
         )}
       </div>
       {discount > 0 && <div className="text-micro font-semibold text-primary">{discount}% OFF</div>}

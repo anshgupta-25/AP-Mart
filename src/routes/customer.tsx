@@ -1,4 +1,10 @@
-import { createFileRoute, Navigate, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Navigate,
+  Outlet,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { StorefrontShell } from "@/components/shell/StorefrontShell";
@@ -12,7 +18,7 @@ export const Route = createFileRoute("/customer")({
 
 function CustomerShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { user, loading, roles } = useAuth() as any;
+  const { user, loading, roles } = useAuth();
   const navigate = useNavigate();
   const { hasAddress, ready: addressReady } = useDeliveryContext();
   useCustomerCatalogRealtime();

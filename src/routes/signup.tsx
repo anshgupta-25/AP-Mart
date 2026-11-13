@@ -11,12 +11,11 @@ import { signInWithGoogle } from "@/lib/googleAuth";
 import { toast } from "sonner";
 import { describeAuthError } from "@/lib/authErrors";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { errorMessage } from "@/lib/utils";
 
 export const Route = createFileRoute("/signup")({
   validateSearch: (search: Record<string, unknown>): { next?: string } =>
-    typeof search.next === "string" && search.next.startsWith("/")
-      ? { next: search.next }
-      : {},
+    typeof search.next === "string" && search.next.startsWith("/") ? { next: search.next } : {},
 
   head: () => ({ meta: [{ title: "Create account — AP Mart" }] }),
   component: SignupPage,
@@ -43,8 +42,8 @@ function SignupPage() {
     () => deriveLocationOptions(locationsQ.data ?? []),
     [locationsQ.data],
   );
-  const cityOptions = state ? citiesByState.get(state) ?? [] : [];
-  const pincodeOptions = state && city ? pincodesByCity.get(`${state}|${city}`) ?? [] : [];
+  const cityOptions = state ? (citiesByState.get(state) ?? []) : [];
+  const pincodeOptions = state && city ? (pincodesByCity.get(`${state}|${city}`) ?? []) : [];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -86,16 +85,18 @@ function SignupPage() {
       }
       // App: the sign-in browser has closed (deep link handles success).
       if (!result.redirected) setGoogleLoading(false);
-    } catch (err: any) {
+    } catch (err) {
       setGoogleLoading(false);
-      toast.error(err?.message || "Google sign-in failed");
+      toast.error(errorMessage(err, "Google sign-in failed"));
     }
   }
 
   return (
     <div className="flex min-h-screen items-start justify-center bg-background px-4 pb-10 pt-safe md:items-center">
       <div className="w-full max-w-md">
-        <Link to="/" className="mb-4 mt-6 flex justify-center"><Logo size="md" /></Link>
+        <Link to="/" className="mb-4 mt-6 flex justify-center">
+          <Logo size="md" />
+        </Link>
         <div className="text-center">
           <h1 className="large-title">Create your account</h1>
           <p className="mt-1 text-meta text-muted-foreground">Order from local shops near you.</p>
@@ -117,7 +118,10 @@ function SignupPage() {
             ) : (
               <>
                 <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden>
-                  <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.24 1.4-1.7 4.1-5.5 4.1-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.7 3.4 14.6 2.4 12 2.4 6.7 2.4 2.5 6.6 2.5 12s4.2 9.6 9.5 9.6c5.5 0 9.1-3.8 9.1-9.3 0-.6-.1-1.1-.2-1.6H12z" />
+                  <path
+                    fill="#EA4335"
+                    d="M12 10.2v3.9h5.5c-.24 1.4-1.7 4.1-5.5 4.1-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.7 3.4 14.6 2.4 12 2.4 6.7 2.4 2.5 6.6 2.5 12s4.2 9.6 9.5 9.6c5.5 0 9.1-3.8 9.1-9.3 0-.6-.1-1.1-.2-1.6H12z"
+                  />
                 </svg>
                 Continue with Google
               </>
@@ -125,18 +129,33 @@ function SignupPage() {
           </Button>
 
           <div className="relative my-5">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border/70" /></div>
-            <div className="relative flex justify-center"><span className="bg-card px-3 text-small text-muted-foreground">or</span></div>
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border/70" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-card px-3 text-small text-muted-foreground">or</span>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-1.5">
               <Label className="text-meta font-medium">Full name</Label>
-              <Input required value={fullName} onChange={(e) => setFullName(e.target.value)} className="h-11" />
+              <Input
+                required
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="h-11"
+              />
             </div>
             <div className="space-y-1.5">
               <Label className="text-meta font-medium">Email</Label>
-              <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-11" />
+              <Input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-11"
+              />
             </div>
             <div className="space-y-1.5">
               <Label className="text-meta font-medium">Phone number</Label>
@@ -218,7 +237,10 @@ function SignupPage() {
         </div>
 
         <p className="mt-5 text-center text-meta text-muted-foreground">
-          Already have an account? <Link to="/login" className="font-semibold text-primary">Log in</Link>
+          Already have an account?{" "}
+          <Link to="/login" className="font-semibold text-primary">
+            Log in
+          </Link>
         </p>
       </div>
     </div>

@@ -15,9 +15,15 @@ export const Route = createFileRoute("/admin/locations")({
   head: () => ({
     meta: [
       { title: "Serviceable Locations — AP Mart Admin" },
-      { name: "description", content: "Manage the states, cities and PIN codes AP Mart delivers to." },
+      {
+        name: "description",
+        content: "Manage the states, cities and PIN codes AP Mart delivers to.",
+      },
       { property: "og:title", content: "Serviceable Locations — AP Mart Admin" },
-      { property: "og:description", content: "Add, deactivate or remove delivery locations by state, city and PIN code." },
+      {
+        property: "og:description",
+        content: "Add, deactivate or remove delivery locations by state, city and PIN code.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -132,7 +138,8 @@ function LocationsPage() {
         .eq("id", r.id)
         .select("id, is_active")
         .single();
-      if (error) throw describeError(error, "update location status", { id: r.id, is_active: next });
+      if (error)
+        throw describeError(error, "update location status", { id: r.id, is_active: next });
       if (!data) throw new Error("Location not found or you don't have permission to change it");
       return data;
     },
@@ -154,8 +161,14 @@ function LocationsPage() {
       // Nothing references locations by foreign key, but shops / addresses
       // reference the same PIN code by value — warn before a hard delete.
       const [shops, addresses] = await Promise.all([
-        supabase.from("shops").select("id", { count: "exact", head: true }).eq("pincode", r.pincode),
-        supabase.from("addresses").select("id", { count: "exact", head: true }).eq("pincode", r.pincode),
+        supabase
+          .from("shops")
+          .select("id", { count: "exact", head: true })
+          .eq("pincode", r.pincode),
+        supabase
+          .from("addresses")
+          .select("id", { count: "exact", head: true })
+          .eq("pincode", r.pincode),
       ]);
       const inUse = (shops.count ?? 0) + (addresses.count ?? 0);
       if (inUse > 0) {
@@ -165,7 +178,10 @@ function LocationsPage() {
             `Click Cancel to deactivate it instead (recommended).`,
         );
         if (!ok) {
-          const { error } = await supabase.from("locations").update({ is_active: false }).eq("id", r.id);
+          const { error } = await supabase
+            .from("locations")
+            .update({ is_active: false })
+            .eq("id", r.id);
           if (error) throw describeError(error, "deactivate location", { id: r.id });
           return { softDeleted: true };
         }
@@ -191,7 +207,9 @@ function LocationsPage() {
     <div className="mx-auto w-full max-w-5xl space-y-5 px-4 py-4 md:px-6 md:py-6">
       <div>
         <h1 className="large-title">Service locations</h1>
-        <p className="mt-0.5 text-meta text-muted-foreground">PIN codes customers can order from.</p>
+        <p className="mt-0.5 text-meta text-muted-foreground">
+          PIN codes customers can order from.
+        </p>
       </div>
       <section className="rounded-xl border border-border/70 bg-card p-4">
         <h2 className="section-title mb-4">Add location</h2>
@@ -204,11 +222,21 @@ function LocationsPage() {
         >
           <div>
             <Label className="text-meta font-medium">State</Label>
-            <Input value={state} onChange={(e) => setState(e.target.value)} placeholder="Uttar Pradesh" className="mt-1" />
+            <Input
+              value={state}
+              onChange={(e) => setState(e.target.value)}
+              placeholder="Uttar Pradesh"
+              className="mt-1"
+            />
           </div>
           <div>
             <Label className="text-meta font-medium">City</Label>
-            <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Noida" className="mt-1" />
+            <Input
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="Noida"
+              className="mt-1"
+            />
           </div>
           <div>
             <Label className="text-meta font-medium">PIN code</Label>
@@ -223,7 +251,11 @@ function LocationsPage() {
           </div>
           <div className="flex items-end">
             <Button type="submit" disabled={addMutation.isPending} className="w-full gap-2">
-              {addMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              {addMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
               {addMutation.isPending ? "Saving…" : "Add"}
             </Button>
           </div>
@@ -232,9 +264,7 @@ function LocationsPage() {
 
       <section className="rounded-xl border border-border/70 bg-card p-4">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="section-title">
-            All locations ({q.isSuccess ? q.data.length : "—"})
-          </h2>
+          <h2 className="section-title">All locations ({q.isSuccess ? q.data.length : "—"})</h2>
           <div className="flex items-center gap-2">
             <Input
               value={filter}
@@ -242,7 +272,13 @@ function LocationsPage() {
               placeholder="Search state, city, PIN…"
               className="max-w-xs"
             />
-            <Button variant="secondary" size="icon" onClick={() => q.refetch()} disabled={q.isFetching} aria-label="Refresh">
+            <Button
+              variant="secondary"
+              size="icon"
+              onClick={() => q.refetch()}
+              disabled={q.isFetching}
+              aria-label="Refresh"
+            >
               <RefreshCw className={`h-4 w-4 ${q.isFetching ? "animate-spin" : ""}`} />
             </Button>
           </div>
@@ -260,16 +296,23 @@ function LocationsPage() {
             <p className="text-xs text-muted-foreground break-words max-w-xl mx-auto">
               {(q.error as Error)?.message}
             </p>
-            <Button variant="secondary" onClick={() => q.refetch()}>Retry</Button>
+            <Button variant="secondary" onClick={() => q.refetch()}>
+              Retry
+            </Button>
           </div>
         ) : (
           <>
             <div className="md:hidden">
               {rows.map((r) => (
-                <div key={r.id} className="flex items-center justify-between gap-3 border-b border-border/70 py-3 last:border-0">
+                <div
+                  key={r.id}
+                  className="flex items-center justify-between gap-3 border-b border-border/70 py-3 last:border-0"
+                >
                   <div className="min-w-0">
                     <div className="font-mono text-subtitle font-semibold">{r.pincode}</div>
-                    <div className="mt-0.5 truncate text-meta text-muted-foreground">{r.city}, {r.state}</div>
+                    <div className="mt-0.5 truncate text-meta text-muted-foreground">
+                      {r.city}, {r.state}
+                    </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <Switch
@@ -286,13 +329,18 @@ function LocationsPage() {
                       disabled={rowBusy(r.id)}
                       aria-label="Delete location"
                       onClick={() => {
-                        if (!window.confirm("Are you sure you want to delete this location?")) return;
+                        if (!window.confirm("Are you sure you want to delete this location?"))
+                          return;
                         setBusyId(r.id);
                         deleteMutation.mutate(r);
                       }}
                       className="text-destructive"
                     >
-                      {rowBusy(r.id) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                      {rowBusy(r.id) ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -311,7 +359,10 @@ function LocationsPage() {
               </thead>
               <tbody>
                 {rows.map((r) => (
-                  <tr key={r.id} className="border-b border-border/70 last:border-0 hover:bg-secondary/50">
+                  <tr
+                    key={r.id}
+                    className="border-b border-border/70 last:border-0 hover:bg-secondary/50"
+                  >
                     <td className="px-3 py-2.5">{r.state}</td>
                     <td className="px-3 py-2.5">{r.city}</td>
                     <td className="px-3 py-2.5 font-mono">{r.pincode}</td>
@@ -331,13 +382,18 @@ function LocationsPage() {
                         size="sm"
                         disabled={rowBusy(r.id)}
                         onClick={() => {
-                          if (!window.confirm("Are you sure you want to delete this location?")) return;
+                          if (!window.confirm("Are you sure you want to delete this location?"))
+                            return;
                           setBusyId(r.id);
                           deleteMutation.mutate(r);
                         }}
                         className="text-destructive"
                       >
-                        {rowBusy(r.id) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        {rowBusy(r.id) ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
                       </Button>
                     </td>
                   </tr>

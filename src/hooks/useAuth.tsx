@@ -16,7 +16,9 @@ export function setRememberMe(remember: boolean) {
   try {
     localStorage.setItem(REMEMBER_KEY, remember ? "1" : "0");
     sessionStorage.setItem(SESSION_MARKER, "1");
-  } catch {}
+  } catch {
+    // Best effort: storage may be unavailable or the step is optional.
+  }
 }
 
 function shouldDropSessionOnRestart() {
@@ -51,7 +53,14 @@ export const ROLE_HOME: Record<Role, RoleHome> = {
 };
 
 /** Highest-privilege role first — drives role-based redirects. */
-export const ROLE_PRIORITY: Role[] = ["super_admin", "admin", "support", "shopkeeper", "delivery", "customer"];
+export const ROLE_PRIORITY: Role[] = [
+  "super_admin",
+  "admin",
+  "support",
+  "shopkeeper",
+  "delivery",
+  "customer",
+];
 
 export function homeForRoles(roles: string[] | undefined | null): RoleHome {
   const found = ROLE_PRIORITY.find((r) => (roles ?? []).includes(r));
@@ -75,7 +84,11 @@ interface AuthContextValue {
     extra?: { state?: string; city?: string; pincode?: string },
   ) => Promise<{ error: Error | null }>;
   sendPhoneOtp: (phone: string) => Promise<{ error: Error | null }>;
-  verifyPhoneOtp: (phone: string, code: string, remember?: boolean) => Promise<{ error: Error | null }>;
+  verifyPhoneOtp: (
+    phone: string,
+    code: string,
+    remember?: boolean,
+  ) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -89,7 +102,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [rolesLoading, setRolesLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, s) => {
       // Only react to identity transitions. TOKEN_REFRESHED (~hourly + on focus)
       // and INITIAL_SESSION (every mount) would otherwise thrash role reloads
       // and query caches.
@@ -101,7 +116,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        try { sessionStorage.setItem(SESSION_MARKER, "1"); } catch {}
+        try {
+          sessionStorage.setItem(SESSION_MARKER, "1");
+        } catch {
+          // Best effort: storage may be unavailable or the step is optional.
+        }
         setRolesLoading(true);
         // Defer DB call so we don't block the auth callback.
         setTimeout(() => loadRoles(s.user.id), 0);
@@ -122,7 +141,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        try { sessionStorage.setItem(SESSION_MARKER, "1"); } catch {}
+        try {
+          sessionStorage.setItem(SESSION_MARKER, "1");
+        } catch {
+          // Best effort: storage may be unavailable or the step is optional.
+        }
         setRolesLoading(true);
         loadRoles(s.user.id);
       } else {
@@ -141,7 +164,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         supabase.from("profiles").select("status, is_active").eq("id", userId).maybeSingle(),
       ]);
       const p = profileRes.data as { status?: string | null; is_active?: boolean | null } | null;
-      const blocked = p?.is_active === false || p?.status === "disabled" || p?.status === "suspended";
+      const blocked =
+        p?.is_active === false || p?.status === "disabled" || p?.status === "suspended";
       if (blocked) {
         await supabase.auth.signOut();
         setRoles([]);
@@ -186,7 +210,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     // With email confirmation on, Supabase hides duplicates by returning a user with no identities.
     if (!error && data?.user && (data.user.identities?.length ?? 1) === 0) {
-      return { error: { message: "already registered", code: "user_already_exists" } as any };
+      return {
+        error: Object.assign(new Error("already registered"), { code: "user_already_exists" }),
+      };
     }
     return { error };
   };
@@ -225,7 +251,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     try {
       sessionStorage.removeItem(SESSION_MARKER);
-    } catch {}
+    } catch {
+      // Best effort: storage may be unavailable or the step is optional.
+    }
     // Remove this device's push token while still signed in (RLS needs the session).
     try {
       await disablePush(user?.id);

@@ -17,7 +17,10 @@ export function MoreSheet({
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[82dvh] overflow-y-auto rounded-t-2xl px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-4">
+      <SheetContent
+        side="bottom"
+        className="max-h-[82dvh] overflow-y-auto rounded-t-2xl px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-4"
+      >
         <SheetHeader className="mb-2 text-left">
           <SheetTitle className="text-subtitle">More</SheetTitle>
         </SheetHeader>
@@ -34,8 +37,8 @@ export function MoreSheet({
                   return (
                     <Link
                       key={i.to}
-                      to={path as any}
-                      search={search as any}
+                      to={path}
+                      search={search}
                       onClick={() => onOpenChange(false)}
                       className={cn(
                         "press flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 text-center",

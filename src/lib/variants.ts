@@ -21,7 +21,7 @@ export type VariantRow = {
 };
 
 export async function loadVariants(productId: string): Promise<VariantRow[]> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("product_variants")
     .select("*")
     .eq("product_id", productId)
@@ -51,7 +51,7 @@ export function rowToDraft(r: VariantRow): VariantDraft {
 }
 
 export async function saveVariants(productId: string, drafts: VariantDraft[]) {
-  const client = supabase as any;
+  const client = supabase;
 
   // Deletes
   const toDelete = drafts.filter((d) => d._deleted && d.id).map((d) => d.id!);
@@ -126,4 +126,3 @@ export async function saveVariants(productId: string, drafts: VariantDraft[]) {
     if (error) throw error;
   }
 }
-
