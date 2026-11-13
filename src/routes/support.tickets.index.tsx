@@ -25,7 +25,7 @@ import {
 import { TICKET_CATEGORIES } from "@/components/SupportTicketForm";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/support/tickets")({
+export const Route = createFileRoute("/support/tickets/")({
   head: () => ({ meta: [{ title: "Support Tickets — AP Mart" }] }),
   component: Page,
 });
@@ -263,9 +263,9 @@ function ResolveButton({ ticketId, onDone }: { ticketId: string; onDone: () => v
       <Button
         size="sm"
         onClick={() => setOpen(true)}
-        className="h-8 gap-1 rounded-full px-3.5 text-small"
+        className="h-8 gap-1.5 rounded-full bg-primary-soft px-3.5 text-small font-semibold text-primary-ink shadow-none ring-1 ring-inset ring-primary/20 hover:bg-primary hover:text-primary-foreground"
       >
-        <CheckCircle2 className="h-3.5 w-3.5" /> Resolve
+        <CheckCircle2 className="h-3.5 w-3.5" /> Resolve issue
       </Button>
     );
   }

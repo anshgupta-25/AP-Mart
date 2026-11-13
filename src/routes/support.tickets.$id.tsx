@@ -12,7 +12,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Phone, Mail, MapPin, ShoppingBag, Store, Bike, Lock } from "lucide-react";
+import {
+  CheckCircle2,
+  Loader2,
+  Phone,
+  Mail,
+  MapPin,
+  ShoppingBag,
+  Store,
+  Bike,
+  Lock,
+} from "lucide-react";
 import { toast } from "sonner";
 import { rupees } from "@/lib/format";
 import { StorageImg, StorageLink } from "@/components/StorageImg";
@@ -204,8 +214,8 @@ function Page() {
             <Button size="sm" variant="secondary" onClick={() => setStatus("in_progress")}>
               Mark in progress
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => setShowResolve((v) => !v)}>
-              Resolve…
+            <Button size="sm" className="gap-1.5" onClick={() => setShowResolve((v) => !v)}>
+              <CheckCircle2 className="h-3.5 w-3.5" /> Resolve issue
             </Button>
             <Button size="sm" variant="secondary" onClick={() => setStatus("closed")}>
               Close
