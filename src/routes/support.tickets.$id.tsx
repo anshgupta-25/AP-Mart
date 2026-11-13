@@ -22,6 +22,11 @@ import {
   Store,
   Bike,
   Lock,
+  Play,
+  RotateCcw,
+  SendHorizontal,
+  UserCheck,
+  XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { rupees } from "@/lib/format";
@@ -32,7 +37,13 @@ export const Route = createFileRoute("/support/tickets/$id")({
   component: Page,
 });
 
-const STATUS_OPTIONS = ["open", "assigned", "in_progress", "resolved", "closed"] as const;
+const STATUS_TONE: Record<string, string> = {
+  open: "bg-tint-sun text-foreground",
+  assigned: "bg-tint-sky text-foreground",
+  in_progress: "bg-tint-sky text-foreground",
+  resolved: "bg-primary-soft text-primary-ink",
+  closed: "bg-muted text-muted-foreground",
+};
 
 function Page() {
   const { id } = Route.useParams();
@@ -40,9 +51,8 @@ function Page() {
   const qc = useQueryClient();
   const [reply, setReply] = useState("");
   const [internal, setInternal] = useState(false);
-  const [resolveNotes, setResolveNotes] = useState("");
-  const [showResolve, setShowResolve] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [statusBusy, setStatusBusy] = useState<string | null>(null);
 
   useEffect(() => {
     const ch = supabase
@@ -115,15 +125,32 @@ function Page() {
     }
   };
 
-  const setStatus = async (s: string, notes?: string) => {
+  const setStatus = async (next: string, okMsg: string) => {
+    const key = ["ticket-context", id];
+    const prev = qc.getQueryData<any>(key);
+    // Update the page immediately; roll back if the server rejects it.
+    if (prev?.ticket) {
+      qc.setQueryData(key, {
+        ...prev,
+        ticket: {
+          ...prev.ticket,
+          status: next,
+          resolved_at: next === "resolved" ? new Date().toISOString() : prev.ticket.resolved_at,
+        },
+      });
+    }
+    setStatusBusy(next);
     // Always send _notes: with it omitted, Postgres cannot choose between the two
     // update_ticket_status overloads ("best candidate function" error).
-    const payload: any = { _ticket_id: id, _status: s, _notes: notes ?? null };
+    const payload: any = { _ticket_id: id, _status: next, _notes: null };
     const { error } = await supabase.rpc("update_ticket_status", payload);
-    if (error) toast.error(error.message);
-    else {
-      toast.success("Status updated");
-      qc.invalidateQueries({ queryKey: ["ticket-context", id] });
+    setStatusBusy(null);
+    if (error) {
+      toast.error(error.message);
+      if (prev) qc.setQueryData(key, prev);
+    } else {
+      toast.success(okMsg);
+      qc.invalidateQueries({ queryKey: key });
     }
   };
 
@@ -152,6 +179,7 @@ function Page() {
   const shop = ctx.data?.shop;
   const partner = ctx.data?.partner;
   const role = t.role_at_creation;
+  const isDone = t.status === "resolved" || t.status === "closed";
 
   return (
     <div className="mx-auto grid max-w-6xl gap-4 px-4 pb-8 pt-4 md:px-6 lg:grid-cols-3">
@@ -169,7 +197,9 @@ function Page() {
                 {t.category.replace(/_/g, " ")} · created {new Date(t.created_at).toLocaleString()}
               </div>
             </div>
-            <span className="rounded-full bg-secondary px-2.5 py-1 text-caption font-semibold capitalize">
+            <span
+              className={`rounded-full px-2.5 py-1 text-caption font-semibold capitalize ${STATUS_TONE[t.status] ?? "bg-secondary"}`}
+            >
               {t.status.replace(/_/g, " ")}
             </span>
           </div>
@@ -209,75 +239,91 @@ function Page() {
         </div>
 
         {/* Actions */}
-        <div className="space-y-3 rounded-xl border border-border/70 bg-card p-4">
-          <h2 className="section-title">Actions</h2>
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="secondary" onClick={() => setStatus("in_progress")}>
-              Mark in progress
-            </Button>
-            <Button size="sm" className="gap-1.5" onClick={() => setShowResolve((v) => !v)}>
-              <CheckCircle2 className="h-3.5 w-3.5" /> Resolve issue
-            </Button>
-            <Button size="sm" variant="secondary" onClick={() => setStatus("closed")}>
-              Close
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={!user}
-              onClick={() => user && assign(user.id)}
-            >
-              Assign to me
-            </Button>
-          </div>
-          {showResolve && (
-            <div className="space-y-2 rounded-xl bg-secondary p-3.5">
-              <div className="text-small font-semibold">Resolution notes (sent to the user)</div>
-              <Textarea
-                rows={3}
-                value={resolveNotes}
-                onChange={(e) => setResolveNotes(e.target.value)}
-                placeholder="Describe how the issue was resolved…"
-              />
-              <div className="flex justify-end gap-2">
+        <div className="space-y-3 rounded-xl border border-border/50 bg-card p-3.5 shadow-soft">
+          {isDone ? (
+            <div className="flex items-center gap-2.5">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary-soft text-primary-ink">
+                <CheckCircle2 className="h-[18px] w-[18px]" />
+              </span>
+              <div className="min-w-0 flex-1 leading-tight">
+                <div className="text-body font-semibold capitalize">{t.status}</div>
+                <div className="text-small text-muted-foreground">
+                  {t.resolved_at
+                    ? new Date(t.resolved_at).toLocaleString()
+                    : "No further action needed"}
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                disabled={!!statusBusy}
+                onClick={() => setStatus("open", "Ticket reopened")}
+              >
+                {statusBusy === "open" ? <Loader2 className="animate-spin" /> : <RotateCcw />}
+                Reopen
+              </Button>
+            </div>
+          ) : (
+            <>
+              <Button
+                className="h-10 w-full gap-2 rounded-xl text-[14px]"
+                disabled={!!statusBusy}
+                onClick={() => setStatus("resolved", "Ticket resolved. User notified.")}
+              >
+                {statusBusy === "resolved" ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <CheckCircle2 />
+                )}
+                Resolve issue
+              </Button>
+              <div className="grid grid-cols-3 gap-2">
                 <Button
                   size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setShowResolve(false);
-                    setResolveNotes("");
-                  }}
+                  variant="secondary"
+                  className="gap-1.5"
+                  disabled={!!statusBusy || t.status === "in_progress"}
+                  onClick={() => setStatus("in_progress", "Marked in progress")}
                 >
-                  Cancel
+                  {statusBusy === "in_progress" ? <Loader2 className="animate-spin" /> : <Play />}
+                  In progress
                 </Button>
                 <Button
                   size="sm"
-                  onClick={async () => {
-                    await setStatus("resolved", resolveNotes.trim() || undefined);
-                    setShowResolve(false);
-                    setResolveNotes("");
-                  }}
+                  variant="secondary"
+                  className="gap-1.5"
+                  disabled={!user}
+                  onClick={() => user && assign(user.id)}
                 >
-                  Mark resolved
+                  <UserCheck />
+                  Assign me
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="gap-1.5"
+                  disabled={!!statusBusy}
+                  onClick={() => setStatus("closed", "Ticket closed")}
+                >
+                  {statusBusy === "closed" ? <Loader2 className="animate-spin" /> : <XCircle />}
+                  Close
                 </Button>
               </div>
-            </div>
+            </>
           )}
-          <div className="flex items-center gap-2">
-            <span className="text-small font-semibold">Reassign</span>
-            <Select onValueChange={assign}>
-              <SelectTrigger className="w-full max-w-64">
-                <SelectValue placeholder="Select agent…" />
-              </SelectTrigger>
-              <SelectContent>
-                {(agents.data ?? []).map((a) => (
-                  <SelectItem key={a.user_id} value={a.user_id}>
-                    {a.display_name ?? a.user_id.slice(0, 8)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select onValueChange={assign}>
+            <SelectTrigger>
+              <SelectValue placeholder="Reassign to another agent…" />
+            </SelectTrigger>
+            <SelectContent>
+              {(agents.data ?? []).map((a) => (
+                <SelectItem key={a.user_id} value={a.user_id}>
+                  {a.display_name ?? a.user_id.slice(0, 8)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Conversation */}
@@ -314,31 +360,32 @@ function Page() {
               </div>
             )}
           </div>
-          <div className="bar-blur hairline-t sticky bottom-[calc(60px+env(safe-area-inset-bottom))] -mx-4 -mb-4 space-y-2.5 rounded-b-xl px-4 py-3 md:bottom-0">
-            <Textarea
-              value={reply}
-              onChange={(e) => setReply(e.target.value)}
-              rows={2}
-              placeholder="Write a reply…"
-            />
-            <div className="flex items-center justify-between gap-3">
-              <label className="flex select-none items-center gap-2 text-small text-muted-foreground">
-                <input
-                  type="checkbox"
-                  checked={internal}
-                  onChange={(e) => setInternal(e.target.checked)}
-                  className="h-4 w-4 accent-primary"
-                />
-                Internal note
-              </label>
+          <div className="bar-blur hairline-t sticky bottom-[calc(60px+env(safe-area-inset-bottom))] -mx-4 -mb-4 space-y-2 rounded-b-xl px-4 py-3 md:bottom-0">
+            <div className="flex items-end gap-2">
+              <Textarea
+                value={reply}
+                onChange={(e) => setReply(e.target.value)}
+                rows={1}
+                placeholder={internal ? "Add an internal note…" : "Write a reply to the user…"}
+                className={`min-h-9 flex-1 resize-none rounded-2xl ${internal ? "bg-tint-sun" : ""}`}
+              />
               <Button
                 onClick={send}
                 disabled={busy || !reply.trim()}
-                className="h-9 rounded-full px-5"
+                size="icon"
+                aria-label="Send"
+                className="shrink-0"
               >
-                {busy && <Loader2 className="h-4 w-4 animate-spin" />} Send
+                {busy ? <Loader2 className="animate-spin" /> : <SendHorizontal />}
               </Button>
             </div>
+            <button
+              type="button"
+              onClick={() => setInternal((v) => !v)}
+              className={`press inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-caption font-semibold ${internal ? "bg-tint-sun text-foreground" : "bg-secondary text-muted-foreground"}`}
+            >
+              <Lock className="h-3 w-3" /> Internal note {internal ? "on" : "off"}
+            </button>
           </div>
         </div>
       </div>
