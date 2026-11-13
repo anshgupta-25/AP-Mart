@@ -33,7 +33,9 @@ export function StorefrontShell({
   const nav = user ? CUSTOMER_NAV : PUBLIC_NAV;
   const active = tabKey(pathname);
   const isHome = pathname === "/" || pathname === "/customer/home";
-  const showCartBar = !hideTabs && !/^\/(customer\/cart|checkout)/.test(pathname);
+  // Product pages have their own fixed add-to-cart bar in the same spot (the Cart tab
+  // still shows the count), so the floating cart bar would cover its +/- buttons.
+  const showCartBar = !hideTabs && !/^\/(customer\/cart|checkout|product\/|customer\/product\/)/.test(pathname);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

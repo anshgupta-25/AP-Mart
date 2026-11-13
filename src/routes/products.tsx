@@ -69,7 +69,7 @@ function ProductsPage() {
     enabled: !catalogMode,
     key: `list:${q ?? ""}:${cat ?? ""}:${sort}`,
   });
-  const catalogProducts = useCatalogProducts({ ...params, pc: pc ?? catRow?.id }, catalogMode);
+  const catalogProducts = useCatalogProducts({ ...params, pc: pc ?? catRow?.id, search: q ?? null }, catalogMode);
   const products = catalogMode ? catalogProducts : rpcProducts;
 
   const title = q ? `Results for "${q}"` : cat ? categories.data?.find((c) => c.slug === cat)?.name : "All products";

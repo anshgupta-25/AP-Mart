@@ -1,11 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import type { ProductCardData } from "@/components/ProductCard";
 import { cn } from "@/lib/utils";
+import { useCustomerProducts } from "@/hooks/useCustomerProducts";
 
 export type CatalogSort = "relevance" | "price-asc" | "price-desc" | "rating" | "discount";
 
@@ -31,41 +32,55 @@ export function useCollections() {
   });
 }
 
-/** Same query logic the public landing page had on main: collections + product_categories + price/discount/stock/sort. */
-export function useCatalogProducts(p: CatalogParams, enabled = true) {
-  const { coll = null, pc = null, sort = "relevance", max = 1000, disc = false, stock = false } = p;
-  return useQuery({
-    queryKey: ["catalog", pc, coll, sort, max, disc, stock],
-    enabled,
+/**
+ * Filtered catalog for /products. Always goes through the PIN-code-aware
+ * `list_customer_products` RPC (via useCustomerProducts), so the customer only
+ * sees products a nearby shop can deliver, and the search term is kept.
+ * Collection membership narrows the RPC by product ids; category goes to the
+ * RPC's own category filter; price / stock / discount / discount-sort apply on top.
+ */
+export function useCatalogProducts(p: CatalogParams & { search?: string | null }, enabled = true) {
+  const { coll = null, pc = null, sort = "relevance", max = 1000, disc = false, stock = false, search = null } = p;
+
+  const collectionIds = useQuery({
+    queryKey: ["collection-product-ids", coll],
+    enabled: enabled && !!coll,
     staleTime: 60_000,
-    queryFn: async () => {
-      let ids: string[] | null = null;
-      if (coll) {
-        const { data: pcl } = await supabase.from("product_collections").select("product_id").eq("collection_id", coll);
-        ids = (pcl ?? []).map((r) => r.product_id);
-        if (ids.length === 0) return [] as ProductCardData[];
-      }
-      if (pc) {
-        const { data: catLinks } = await (supabase as any).from("product_categories").select("product_id").eq("category_id", pc);
-        const catIds = ((catLinks ?? []) as { product_id: string }[]).map((r) => r.product_id);
-        ids = ids ? ids.filter((id) => catIds.includes(id)) : catIds;
-        if (ids.length === 0) return [] as ProductCardData[];
-      }
-      let qb = supabase.from("products").select("id, slug, name, unit, price, mrp, image_url, delivery_minutes, stock, rating, category_id");
-      if (ids) qb = qb.in("id", ids);
-      if (max < 1000) qb = qb.lte("price", max);
-      if (stock) qb = qb.gt("stock", 0);
-      if (sort === "price-asc") qb = qb.order("price", { ascending: true });
-      else if (sort === "price-desc") qb = qb.order("price", { ascending: false });
-      else if (sort === "rating") qb = qb.order("rating", { ascending: false });
-      const { data } = await qb.limit(60);
-      let rows = (data ?? []) as ProductCardData[];
-      if (disc) rows = rows.filter((x) => Number(x.mrp) > Number(x.price));
-      if (sort === "discount")
-        rows = [...rows].sort((a, b) => (Number(b.mrp) - Number(b.price)) / Number(b.mrp || 1) - (Number(a.mrp) - Number(a.price)) / Number(a.mrp || 1));
-      return rows;
-    },
+    queryFn: async () =>
+      ((await supabase.from("product_collections").select("product_id").eq("collection_id", coll!)).data ?? []).map(
+        (r) => r.product_id,
+      ),
   });
+  const ids = coll ? (collectionIds.data ?? null) : null;
+
+  const rpcSort = sort === "price-asc" ? "price_asc" : sort === "price-desc" ? "price_desc" : sort === "rating" ? "rating" : "relevance";
+  const products = useCustomerProducts({
+    categoryId: pc,
+    search,
+    sort: rpcSort,
+    ids,
+    limit: 200,
+    // Wait for the collection's product ids before querying.
+    enabled: enabled && (!coll || collectionIds.isSuccess),
+    key: `catalog:${coll ?? ""}`,
+  });
+
+  const data = useMemo(() => {
+    if (coll && collectionIds.isSuccess && collectionIds.data.length === 0) return [] as ProductCardData[];
+    if (!products.data) return undefined;
+    let rows = products.data;
+    if (max < 1000) rows = rows.filter((x) => Number(x.price) <= max);
+    if (stock) rows = rows.filter((x) => Number(x.stock) > 0);
+    if (disc) rows = rows.filter((x) => Number(x.mrp) > Number(x.price));
+    if (sort === "discount")
+      rows = [...rows].sort(
+        (a, b) =>
+          (Number(b.mrp) - Number(b.price)) / Number(b.mrp || 1) - (Number(a.mrp) - Number(a.price)) / Number(a.mrp || 1),
+      );
+    return rows.slice(0, 60);
+  }, [products.data, coll, collectionIds.isSuccess, collectionIds.data, max, stock, disc, sort]);
+
+  return { data };
 }
 
 const chip = (active: boolean) =>
