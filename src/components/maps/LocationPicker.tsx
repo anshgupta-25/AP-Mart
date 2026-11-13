@@ -38,27 +38,32 @@ export function LocationPicker({
   // Init map
   useEffect(() => {
     let cancelled = false;
-    loadGoogleMaps(["places", "geometry"]).then((g) => {
-      if (cancelled || !mapDiv.current) return;
-      const center = value ?? { lat: 12.9716, lng: 77.5946 };
-      const map = new g.maps.Map(mapDiv.current, {
-        center,
-        zoom: value ? 16 : 13,
-        disableDefaultUI: true,
-        zoomControl: true,
-        clickableIcons: false,
-      });
-      mapRef.current = map;
-      sessionTokenRef.current = new g.maps.places.AutocompleteSessionToken();
-      if (value) placeMarker(value);
-      map.addListener("click", (e: google.maps.MapMouseEvent) => {
-        if (!e.latLng) return;
-        const v = { lat: e.latLng.lat(), lng: e.latLng.lng() };
-        placeMarker(v); onChange(v);
-      });
-      setReady(true);
-    }).catch((err) => toast.error(err.message ?? "Could not load map"));
-    return () => { cancelled = true; };
+    loadGoogleMaps(["places", "geometry"])
+      .then((g) => {
+        if (cancelled || !mapDiv.current) return;
+        const center = value ?? { lat: 12.9716, lng: 77.5946 };
+        const map = new g.maps.Map(mapDiv.current, {
+          center,
+          zoom: value ? 16 : 13,
+          disableDefaultUI: true,
+          zoomControl: true,
+          clickableIcons: false,
+        });
+        mapRef.current = map;
+        sessionTokenRef.current = new g.maps.places.AutocompleteSessionToken();
+        if (value) placeMarker(value);
+        map.addListener("click", (e: google.maps.MapMouseEvent) => {
+          if (!e.latLng) return;
+          const v = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+          placeMarker(v);
+          onChange(v);
+        });
+        setReady(true);
+      })
+      .catch((err) => toast.error(err.message ?? "Could not load map"));
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -93,8 +98,10 @@ export function LocationPicker({
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const v = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        onChange(v); placeMarker(v);
-        mapRef.current?.panTo(v); mapRef.current?.setZoom(17);
+        onChange(v);
+        placeMarker(v);
+        mapRef.current?.panTo(v);
+        mapRef.current?.setZoom(17);
         toast.success("Location captured");
       },
       () => toast.error("Could not get location"),
@@ -103,14 +110,20 @@ export function LocationPicker({
 
   // Places Autocomplete (New API surface)
   const onQuery = (text: string) => {
-    setQuery(text); setShowSug(true);
+    setQuery(text);
+    setShowSug(true);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!text.trim()) { setSuggestions([]); return; }
+    if (!text.trim()) {
+      setSuggestions([]);
+      return;
+    }
     debounceRef.current = setTimeout(async () => {
       try {
         const g = window.google;
         if (!g) return;
-        const { AutocompleteSuggestion } = await g.maps.importLibrary("places") as google.maps.PlacesLibrary;
+        const { AutocompleteSuggestion } = (await g.maps.importLibrary(
+          "places",
+        )) as google.maps.PlacesLibrary;
         const { suggestions: sug } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
           input: text,
           sessionToken: sessionTokenRef.current ?? undefined,
@@ -129,18 +142,21 @@ export function LocationPicker({
   };
 
   const selectSuggestion = async (placeId: string, text: string) => {
-    setQuery(text); setShowSug(false);
+    setQuery(text);
+    setShowSug(false);
     try {
       const g = window.google;
       if (!g) return;
-      const { Place } = await g.maps.importLibrary("places") as google.maps.PlacesLibrary;
+      const { Place } = (await g.maps.importLibrary("places")) as google.maps.PlacesLibrary;
       const place = new Place({ id: placeId });
       await place.fetchFields({ fields: ["location"] });
       const loc = place.location;
       if (!loc) return toast.error("No coordinates for that place");
       const v = { lat: loc.lat(), lng: loc.lng() };
-      onChange(v); placeMarker(v);
-      mapRef.current?.panTo(v); mapRef.current?.setZoom(17);
+      onChange(v);
+      placeMarker(v);
+      mapRef.current?.panTo(v);
+      mapRef.current?.setZoom(17);
       // Reset session token after each picked place (billing best practice)
       sessionTokenRef.current = new g.maps.places.AutocompleteSessionToken();
     } catch (e: any) {
@@ -182,15 +198,26 @@ export function LocationPicker({
       </div>
 
       <div className="mt-3 overflow-hidden rounded-xl">
-        <div ref={mapDiv} className={`${height} w-full ${ready ? "" : "bg-secondary animate-pulse"}`} />
+        <div
+          ref={mapDiv}
+          className={`${height} w-full ${ready ? "" : "bg-secondary animate-pulse"}`}
+        />
       </div>
 
       <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
         <div className="inline-flex items-center gap-1 text-small text-muted-foreground">
           <MapPin className="h-3 w-3 text-primary" />
-          {value ? `${value.lat.toFixed(5)}, ${value.lng.toFixed(5)}` : "Search, tap map, or use my location"}
+          {value
+            ? `${value.lat.toFixed(5)}, ${value.lng.toFixed(5)}`
+            : "Search, tap map, or use my location"}
         </div>
-        <Button type="button" size="sm" variant="secondary" className="h-8 rounded-full px-3.5" onClick={useMyLocation}>
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          className="h-8 rounded-full px-3.5"
+          onClick={useMyLocation}
+        >
           <Crosshair className="h-3.5 w-3.5 mr-1.5" /> Use my location
         </Button>
       </div>

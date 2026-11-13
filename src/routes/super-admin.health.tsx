@@ -7,7 +7,11 @@ export const Route = createFileRoute("/super-admin/health")({
   head: () => ({
     meta: [
       { title: "Database Health & Backups — AP Mart" },
-      { name: "description", content: "Table volumes, recent write activity and backup guidance for the AP Mart platform." },
+      {
+        name: "description",
+        content:
+          "Table volumes, recent write activity and backup guidance for the AP Mart platform.",
+      },
       { property: "og:title", content: "Database Health & Backups — AP Mart" },
       { property: "og:description", content: "Database health and backup overview." },
       { property: "og:type", content: "website" },
@@ -36,7 +40,9 @@ function HealthPage() {
     queryFn: async () => {
       const results = await Promise.all(
         TABLES.map(async (t) => {
-          const { count, error } = await supabase.from(t as any).select("id", { count: "exact", head: true });
+          const { count, error } = await supabase
+            .from(t as any)
+            .select("id", { count: "exact", head: true });
           return { table: t, count: error ? null : (count ?? 0) };
         }),
       );
@@ -54,7 +60,9 @@ function HealthPage() {
     <div className="space-y-5">
       <div>
         <h1 className="large-title">Database health</h1>
-        <p className="mt-0.5 text-small text-muted-foreground">Row volumes and write activity across the platform's core tables.</p>
+        <p className="mt-0.5 text-small text-muted-foreground">
+          Row volumes and write activity across the platform's core tables.
+        </p>
       </div>
 
       <div className="rounded-xl border border-border/70 bg-card p-3.5">
@@ -66,7 +74,9 @@ function HealthPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid place-items-center py-12"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+        <div className="grid place-items-center py-12">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-border/70 bg-card">
           <div className="section-title flex items-center gap-2 border-b border-border/70 px-4 py-3">
@@ -74,9 +84,14 @@ function HealthPage() {
           </div>
           <ul className="divide-y divide-border/70">
             {(data?.results ?? []).map((r) => (
-              <li key={r.table} className="flex items-center justify-between px-4 py-2.5 text-small">
+              <li
+                key={r.table}
+                className="flex items-center justify-between px-4 py-2.5 text-small"
+              >
                 <code className="font-mono text-small">{r.table}</code>
-                <span className="font-semibold">{r.count === null ? "—" : r.count.toLocaleString("en-IN")}</span>
+                <span className="font-semibold">
+                  {r.count === null ? "—" : r.count.toLocaleString("en-IN")}
+                </span>
               </li>
             ))}
           </ul>
@@ -88,9 +103,10 @@ function HealthPage() {
           <HardDriveDownload className="h-4 w-4 text-muted-foreground" /> Backup &amp; restore
         </div>
         <p className="mt-1 text-small leading-relaxed text-muted-foreground">
-          The platform database is backed up automatically by the managed hosting layer with point-in-time recovery.
-          Restores are performed from your project's backend settings — deliberately not exposed as an in-app button, since a
-          mis-click would overwrite live production data.
+          The platform database is backed up automatically by the managed hosting layer with
+          point-in-time recovery. Restores are performed from your project's backend settings —
+          deliberately not exposed as an in-app button, since a mis-click would overwrite live
+          production data.
         </p>
       </div>
     </div>

@@ -12,12 +12,26 @@ export const Route = createFileRoute("/delivery/history")({ component: Page });
 function Page() {
   const { user } = useAuth();
   const [pid, setPid] = useState<string | null>(null);
-  useEffect(() => { if (user) supabase.from("delivery_partners").select("id").eq("user_id", user.id).maybeSingle().then(({ data }) => setPid(data?.id ?? null)); }, [user]);
+  useEffect(() => {
+    if (user)
+      supabase
+        .from("delivery_partners")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle()
+        .then(({ data }) => setPid(data?.id ?? null));
+  }, [user]);
   const q = useQuery({
     queryKey: ["delivery-history", pid],
     queryFn: async () => {
       if (!pid) return [];
-      const { data } = await supabase.from("orders").select("id, order_number, total, status, placed_at").eq("partner_id", pid).eq("status", "delivered").order("placed_at", { ascending: false }).limit(50);
+      const { data } = await supabase
+        .from("orders")
+        .select("id, order_number, total, status, placed_at")
+        .eq("partner_id", pid)
+        .eq("status", "delivered")
+        .order("placed_at", { ascending: false })
+        .limit(50);
       return data ?? [];
     },
     enabled: !!pid,
@@ -48,7 +62,11 @@ function Page() {
         </div>
       ) : (
         <Panel>
-          <EmptyState icon={<History />} title="No delivered orders yet" description="Completed deliveries will be listed here." />
+          <EmptyState
+            icon={<History />}
+            title="No delivered orders yet"
+            description="Completed deliveries will be listed here."
+          />
         </Panel>
       )}
     </div>

@@ -6,9 +6,15 @@ export const Route = createFileRoute("/wishlist")({
   head: () => ({
     meta: [
       { title: "Your favourites — AP Mart" },
-      { name: "description", content: "All the AP Mart products you saved for later, in one place." },
+      {
+        name: "description",
+        content: "All the AP Mart products you saved for later, in one place.",
+      },
       { property: "og:title", content: "Your favourites — AP Mart" },
-      { property: "og:description", content: "All the AP Mart products you saved for later, in one place." },
+      {
+        property: "og:description",
+        content: "All the AP Mart products you saved for later, in one place.",
+      },
     ],
   }),
   component: WishlistGate,

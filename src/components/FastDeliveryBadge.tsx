@@ -2,8 +2,19 @@ import { useEffect, useState } from "react";
 import { Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function FastDeliveryBadge({ className, size = "sm" }: { className?: string; size?: "xs" | "sm" | "md" }) {
-  const px = size === "xs" ? "px-1.5 py-0.5 text-micro" : size === "md" ? "px-2.5 py-1 text-xs" : "px-2 py-0.5 text-micro";
+export function FastDeliveryBadge({
+  className,
+  size = "sm",
+}: {
+  className?: string;
+  size?: "xs" | "sm" | "md";
+}) {
+  const px =
+    size === "xs"
+      ? "px-1.5 py-0.5 text-micro"
+      : size === "md"
+        ? "px-2.5 py-1 text-xs"
+        : "px-2 py-0.5 text-micro";
   return (
     <span
       className={cn(
@@ -19,8 +30,21 @@ export function FastDeliveryBadge({ className, size = "sm" }: { className?: stri
 }
 
 /** Renders the correct badge for any delivery_type stored on an order. */
-export function DeliveryTypeBadge({ type, className, size = "sm" }: { type?: string | null; className?: string; size?: "xs" | "sm" | "md" }) {
-  const px = size === "xs" ? "px-1.5 py-0.5 text-micro" : size === "md" ? "px-2.5 py-1 text-xs" : "px-2 py-0.5 text-micro";
+export function DeliveryTypeBadge({
+  type,
+  className,
+  size = "sm",
+}: {
+  type?: string | null;
+  className?: string;
+  size?: "xs" | "sm" | "md";
+}) {
+  const px =
+    size === "xs"
+      ? "px-1.5 py-0.5 text-micro"
+      : size === "md"
+        ? "px-2.5 py-1 text-xs"
+        : "px-2 py-0.5 text-micro";
   const map: Record<string, { label: string; bg: string; icon: string }> = {
     express_delivery: { label: "Express", bg: "bg-primary-soft text-primary-ink", icon: "🚀" },
     fast_delivery: { label: "Fast", bg: "bg-tint-sun text-accent-foreground", icon: "⚡" },
@@ -29,8 +53,16 @@ export function DeliveryTypeBadge({ type, className, size = "sm" }: { type?: str
   };
   const t = map[type ?? "standard_delivery"] ?? map.standard_delivery;
   return (
-    <span className={cn("inline-flex items-center gap-1 rounded-full font-semibold", t.bg, px, className)}>
-      <span>{t.icon}</span>{t.label}
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full font-semibold",
+        t.bg,
+        px,
+        className,
+      )}
+    >
+      <span>{t.icon}</span>
+      {t.label}
     </span>
   );
 }

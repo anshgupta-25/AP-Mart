@@ -67,9 +67,7 @@ export async function saveProductCategories(productId: string, categoryIds: stri
     if (dErr) throw dErr;
   }
   if (toInsert.length > 0) {
-    const { error: iErr } = await (supabase as any)
-      .from("product_categories")
-      .insert(toInsert);
+    const { error: iErr } = await (supabase as any).from("product_categories").insert(toInsert);
     if (iErr) throw iErr;
   }
 }

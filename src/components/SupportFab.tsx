@@ -11,7 +11,12 @@ export function SupportFab({ className = "" }: { className?: string }) {
 
   return (
     <>
-      <div className={"fixed right-4 bottom-[calc(84px+env(safe-area-inset-bottom))] md:bottom-6 z-40 flex flex-col items-end gap-2 " + className}>
+      <div
+        className={
+          "fixed right-4 bottom-[calc(84px+env(safe-area-inset-bottom))] md:bottom-6 z-40 flex flex-col items-end gap-2 " +
+          className
+        }
+      >
         <Button
           onClick={() => nav({ to: "/support/my-tickets" as any })}
           variant="secondary"

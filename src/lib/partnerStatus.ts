@@ -12,15 +12,27 @@ export const PARTNER_STATUS_VALUES = [
 export type PartnerStatus = (typeof PARTNER_STATUS_VALUES)[number];
 
 const META: Record<string, { label: string; cls: string }> = {
-  available:        { label: "Available",          cls: "bg-green-500/15 text-green-700 dark:text-green-400" },
-  assigned:         { label: "Assigned",           cls: "bg-blue-500/15 text-blue-700 dark:text-blue-400" },
-  going_to_shop:    { label: "Going to shop",      cls: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-400" },
-  picked_up:        { label: "Picked up",          cls: "bg-purple-500/15 text-purple-700 dark:text-purple-400" },
-  out_for_delivery: { label: "Out for delivery",   cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400" },
-  reached_area:     { label: "Reached area",       cls: "bg-orange-500/15 text-orange-700 dark:text-orange-400" },
-  delivered:        { label: "Delivered",          cls: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" },
-  offline:          { label: "Offline",            cls: "bg-muted text-muted-foreground" },
-  busy:             { label: "Busy",               cls: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400" },
+  available: { label: "Available", cls: "bg-green-500/15 text-green-700 dark:text-green-400" },
+  assigned: { label: "Assigned", cls: "bg-blue-500/15 text-blue-700 dark:text-blue-400" },
+  going_to_shop: {
+    label: "Going to shop",
+    cls: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-400",
+  },
+  picked_up: { label: "Picked up", cls: "bg-purple-500/15 text-purple-700 dark:text-purple-400" },
+  out_for_delivery: {
+    label: "Out for delivery",
+    cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+  },
+  reached_area: {
+    label: "Reached area",
+    cls: "bg-orange-500/15 text-orange-700 dark:text-orange-400",
+  },
+  delivered: {
+    label: "Delivered",
+    cls: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+  },
+  offline: { label: "Offline", cls: "bg-muted text-muted-foreground" },
+  busy: { label: "Busy", cls: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400" },
 };
 
 export function partnerStatusMeta(status?: string | null, fallbackOnline?: boolean) {

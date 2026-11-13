@@ -42,9 +42,7 @@ export async function saveProductSubcategories(productId: string, subcategoryIds
     if (dErr) throw dErr;
   }
   if (toInsert.length > 0) {
-    const { error: iErr } = await (supabase as any)
-      .from("product_subcategories")
-      .insert(toInsert);
+    const { error: iErr } = await (supabase as any).from("product_subcategories").insert(toInsert);
     if (iErr) throw iErr;
   }
 }

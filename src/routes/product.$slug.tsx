@@ -1,6 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Clock, Star, ShieldCheck, Truck, Minus, Plus, ChevronLeft, ChevronRight, ChevronDown, ArrowLeft, X, Store } from "lucide-react";
+import {
+  Clock,
+  Star,
+  ShieldCheck,
+  Truck,
+  Minus,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  ArrowLeft,
+  X,
+  Store,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,11 +29,16 @@ import { ProductRail } from "@/components/customer/ProductRail";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductImage } from "@/components/ProductImage";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { StorageImg } from "@/components/StorageImg";
-
 
 export const Route = createFileRoute("/product/$slug")({
   head: ({ params }) => ({ meta: [{ title: `${params.slug} — AP Mart` }] }),
@@ -50,7 +68,8 @@ function ProductPage() {
 
   const product = useQuery({
     queryKey: ["product", slug],
-    queryFn: async () => (await supabase.from("products").select("*").eq("slug", slug).maybeSingle()).data,
+    queryFn: async () =>
+      (await supabase.from("products").select("*").eq("slug", slug).maybeSingle()).data,
   });
 
   const variantsQ = useQuery({
@@ -71,7 +90,11 @@ function ProductPage() {
   const settings = useQuery({
     queryKey: ["app-config", "enable_customer_shop_selection"],
     queryFn: async () => {
-      const { data } = await supabase.from("app_config").select("value").eq("key", "enable_customer_shop_selection").maybeSingle();
+      const { data } = await supabase
+        .from("app_config")
+        .select("value")
+        .eq("key", "enable_customer_shop_selection")
+        .maybeSingle();
       const raw = (data as any)?.value;
       return raw === false || raw === "false" ? false : true;
     },
@@ -85,7 +108,9 @@ function ProductPage() {
     [variants],
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = hasVariants ? (variants.find((v) => v.id === selectedId) ?? defaultVariant) : null;
+  const selected = hasVariants
+    ? (variants.find((v) => v.id === selectedId) ?? defaultVariant)
+    : null;
 
   const eligibleQ = useEligibleShops({
     productId: product.data?.id,
@@ -109,10 +134,16 @@ function ProductPage() {
   });
   const baseShops = baseShopsQ.data ?? [];
 
-
   // Open vs closed shops carrying this item — drives the "Currently Unavailable" state
   const availabilityQ = useQuery({
-    queryKey: ["product-availability", product.data?.id, selected?.id ?? null, delivery.pincode, delivery.lat, delivery.lng],
+    queryKey: [
+      "product-availability",
+      product.data?.id,
+      selected?.id ?? null,
+      delivery.pincode,
+      delivery.lat,
+      delivery.lng,
+    ],
     enabled: !!product.data?.id,
     queryFn: async () => {
       const { data, error } = await (supabase as any).rpc("product_shop_availability", {
@@ -161,13 +192,27 @@ function ProductPage() {
     enabled: !!(product.data as any)?.category_id,
   });
 
-  const [conflict, setConflict] = useState<{ productId: string; variantId: string | null; shopId: string } | null>(null);
-  const [priceChange, setPriceChange] = useState<{ oldPrice: number; newPrice: number } | null>(null);
+  const [conflict, setConflict] = useState<{
+    productId: string;
+    variantId: string | null;
+    shopId: string;
+  } | null>(null);
+  const [priceChange, setPriceChange] = useState<{ oldPrice: number; newPrice: number } | null>(
+    null,
+  );
 
-
-
-  if (product.isLoading) return <div className="mx-auto max-w-6xl px-4 py-6"><Skeleton className="aspect-square w-full rounded-2xl" /></div>;
-  if (!product.data) return <div className="mx-auto max-w-6xl px-4 py-20 text-center text-meta text-muted-foreground">Product not found.</div>;
+  if (product.isLoading)
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-6">
+        <Skeleton className="aspect-square w-full rounded-2xl" />
+      </div>
+    );
+  if (!product.data)
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-20 text-center text-meta text-muted-foreground">
+        Product not found.
+      </div>
+    );
 
   const p = product.data;
 
@@ -195,13 +240,16 @@ function ProductPage() {
   );
   const discount = pricing.discount;
 
-
   async function doAdd() {
     try {
       await add(p.id, 1, selected?.id ?? null, selectedShop?.shop_id ?? null);
     } catch (e) {
       if (e instanceof CartShopConflictError) {
-        setConflict({ productId: p.id, variantId: selected?.id ?? null, shopId: selectedShop!.shop_id });
+        setConflict({
+          productId: p.id,
+          variantId: selected?.id ?? null,
+          shopId: selectedShop!.shop_id,
+        });
       }
     }
   }
@@ -238,7 +286,6 @@ function ProductPage() {
     await doAdd();
   }
 
-
   async function confirmSwitchShop() {
     if (!conflict) return;
     try {
@@ -253,7 +300,10 @@ function ProductPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-44 pt-3 md:pb-10 md:pt-5">
-      <Link to="/products" className="press inline-flex items-center gap-1 text-meta font-medium text-muted-foreground">
+      <Link
+        to="/products"
+        className="press inline-flex items-center gap-1 text-meta font-medium text-muted-foreground"
+      >
         <ArrowLeft className="h-3.5 w-3.5" /> All products
       </Link>
 
@@ -264,7 +314,9 @@ function ProductPage() {
 
         <div>
           {p.brand && <div className="eyebrow">{p.brand}</div>}
-          <h1 className="mt-0.5 text-subtitle font-semibold leading-[1.25] tracking-tight">{p.name}</h1>
+          <h1 className="mt-0.5 text-subtitle font-semibold leading-[1.25] tracking-tight">
+            {p.name}
+          </h1>
           <div className="mt-1.5 inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-small font-medium text-foreground/80">
             {effUnit}
           </div>
@@ -281,7 +333,9 @@ function ProductPage() {
           </div>
 
           <div className="mt-4 flex items-center gap-2.5">
-            <div className="text-page font-bold leading-none tracking-tight">{rupees(effPrice)}</div>
+            <div className="text-page font-bold leading-none tracking-tight">
+              {rupees(effPrice)}
+            </div>
             {effMrp > effPrice && (
               <>
                 <div className="text-meta text-muted-foreground line-through">{rupees(effMrp)}</div>
@@ -303,7 +357,9 @@ function ProductPage() {
                 <div className="truncate text-meta font-semibold">{selectedShop.shop_name}</div>
               </div>
               {shopSelectionEnabled && eligibleShops.length > 1 && (
-                <span className="text-caption font-medium text-muted-foreground">{eligibleShops.length} shops</span>
+                <span className="text-caption font-medium text-muted-foreground">
+                  {eligibleShops.length} shops
+                </span>
               )}
             </div>
           )}
@@ -329,7 +385,9 @@ function ProductPage() {
                       disabled={oos}
                       onClick={() => setSelectedId(v.id)}
                       className={`press rounded-xl px-3 py-2 text-left transition ${
-                        active ? "bg-primary-soft ring-1 ring-primary" : "border border-border/70 bg-card"
+                        active
+                          ? "bg-primary-soft ring-1 ring-primary"
+                          : "border border-border/70 bg-card"
                       } ${oos ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       <div className="text-meta font-semibold">
@@ -339,14 +397,15 @@ function ProductPage() {
                       <div className="mt-0.5 flex items-center gap-1 text-caption">
                         <span className="font-semibold text-foreground">{rupees(vp.price)}</span>
                         {vp.mrp > vp.price && (
-                          <span className="text-muted-foreground line-through">{rupees(vp.mrp)}</span>
+                          <span className="text-muted-foreground line-through">
+                            {rupees(vp.mrp)}
+                          </span>
                         )}
                         {vp.discount > 0 && (
                           <span className="font-semibold text-primary">{vp.discount}% off</span>
                         )}
                         {oos && <span className="ml-1 text-destructive">Out</span>}
                       </div>
-
                     </button>
                   );
                 })}
@@ -358,25 +417,46 @@ function ProductPage() {
             <div className="shrink-0 leading-tight md:hidden">
               <div className="text-subtitle font-bold">{rupees(effPrice)}</div>
               {effMrp > effPrice && (
-                <div className="text-caption text-muted-foreground line-through">{rupees(effMrp)}</div>
+                <div className="text-caption text-muted-foreground line-through">
+                  {rupees(effMrp)}
+                </div>
               )}
             </div>
             {allShopsClosed ? (
-              <Button disabled className="h-11 flex-1 rounded-xl md:flex-none">Currently unavailable</Button>
+              <Button disabled className="h-11 flex-1 rounded-xl md:flex-none">
+                Currently unavailable
+              </Button>
             ) : effStock <= 0 ? (
-              <Button disabled className="h-11 flex-1 rounded-xl md:flex-none">Out of stock</Button>
+              <Button disabled className="h-11 flex-1 rounded-xl md:flex-none">
+                Out of stock
+              </Button>
             ) : line ? (
               <div className="flex h-11 flex-1 items-center justify-between rounded-xl bg-primary text-primary-foreground md:w-40 md:flex-none">
-                <button onClick={() => setQty(line.id, line.quantity - 1)} className="grid h-11 w-12 place-items-center" aria-label="Decrease"><Minus className="h-4 w-4" /></button>
+                <button
+                  onClick={() => setQty(line.id, line.quantity - 1)}
+                  className="grid h-11 w-12 place-items-center"
+                  aria-label="Decrease"
+                >
+                  <Minus className="h-4 w-4" />
+                </button>
                 <span className="w-8 text-center text-body font-semibold">{line.quantity}</span>
-                <button onClick={() => setQty(line.id, line.quantity + 1)} className="grid h-11 w-12 place-items-center" aria-label="Increase"><Plus className="h-4 w-4" /></button>
+                <button
+                  onClick={() => setQty(line.id, line.quantity + 1)}
+                  className="grid h-11 w-12 place-items-center"
+                  aria-label="Increase"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
               </div>
             ) : (
               <Button onClick={handleAdd} className="h-11 flex-1 rounded-xl px-8 md:flex-none">
                 Add to cart
               </Button>
             )}
-            <Link to="/customer/cart" className="press hidden h-11 items-center rounded-xl bg-secondary px-4 text-body font-semibold md:inline-flex">
+            <Link
+              to="/customer/cart"
+              className="press hidden h-11 items-center rounded-xl bg-secondary px-4 text-body font-semibold md:inline-flex"
+            >
               Go to cart
             </Link>
           </div>
@@ -392,7 +472,9 @@ function ProductPage() {
             <div className="mt-6">
               <div className="mb-2.5 flex items-center justify-between">
                 <h3 className="section-title">Available shops</h3>
-                <span className="text-small text-muted-foreground">{eligibleShops.length} nearby</span>
+                <span className="text-small text-muted-foreground">
+                  {eligibleShops.length} nearby
+                </span>
               </div>
               <ShopPicker
                 shops={eligibleShops}
@@ -403,17 +485,32 @@ function ProductPage() {
             </div>
           )}
 
-          {shopSelectionEnabled && !allShopsClosed && eligibleShops.length === 0 && delivery.pincode && !eligibleQ.isLoading && (
-            <div className="mt-5 rounded-xl bg-secondary p-3 text-meta text-muted-foreground">
-              No shop in your area ({delivery.pincode}) currently has this item in stock.
-            </div>
-          )}
-
+          {shopSelectionEnabled &&
+            !allShopsClosed &&
+            eligibleShops.length === 0 &&
+            delivery.pincode &&
+            !eligibleQ.isLoading && (
+              <div className="mt-5 rounded-xl bg-secondary p-3 text-meta text-muted-foreground">
+                No shop in your area ({delivery.pincode}) currently has this item in stock.
+              </div>
+            )}
 
           <div className="mt-6 divide-y divide-border/60 overflow-hidden rounded-xl border border-border/70 bg-card">
-            <Perk icon={<Store className="h-4 w-4" />} title="Sold by local shops" sub="Stocked and packed by stores near you" />
-            <Perk icon={<Truck className="h-4 w-4" />} title="Delivered to your door" sub="Free delivery on orders above ₹199" />
-            <Perk icon={<ShieldCheck className="h-4 w-4" />} title="Quality assured" sub="Fresh and authentic products" />
+            <Perk
+              icon={<Store className="h-4 w-4" />}
+              title="Sold by local shops"
+              sub="Stocked and packed by stores near you"
+            />
+            <Perk
+              icon={<Truck className="h-4 w-4" />}
+              title="Delivered to your door"
+              sub="Free delivery on orders above ₹199"
+            />
+            <Perk
+              icon={<ShieldCheck className="h-4 w-4" />}
+              title="Quality assured"
+              sub="Fresh and authentic products"
+            />
           </div>
 
           {p.description && (
@@ -422,7 +519,9 @@ function ProductPage() {
                 Product details
                 <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
               </summary>
-              <p className="mt-2 text-meta leading-relaxed text-muted-foreground">{p.description}</p>
+              <p className="mt-2 text-meta leading-relaxed text-muted-foreground">
+                {p.description}
+              </p>
             </details>
           )}
         </div>
@@ -430,7 +529,10 @@ function ProductPage() {
 
       {similar.data && similar.data.filter((x) => x.id !== p.id).length > 0 && (
         <div className="-mx-4 mt-8">
-          <ProductRail title="Similar products" products={similar.data.filter((x) => x.id !== p.id)} />
+          <ProductRail
+            title="Similar products"
+            products={similar.data.filter((x) => x.id !== p.id)}
+          />
         </div>
       )}
 
@@ -441,8 +543,13 @@ function ProductPage() {
             <AlertDialogDescription asChild>
               <div className="space-y-1">
                 <div>The shop updated this item's price.</div>
-                <div>Old price: <span className="line-through">{rupees(priceChange?.oldPrice ?? 0)}</span></div>
-                <div className="font-semibold text-foreground">New price: {rupees(priceChange?.newPrice ?? 0)}</div>
+                <div>
+                  Old price:{" "}
+                  <span className="line-through">{rupees(priceChange?.oldPrice ?? 0)}</span>
+                </div>
+                <div className="font-semibold text-foreground">
+                  New price: {rupees(priceChange?.newPrice ?? 0)}
+                </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -459,7 +566,6 @@ function ProductPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
 
       <AlertDialog open={!!conflict} onOpenChange={(v) => !v && setConflict(null)}>
         <AlertDialogContent>
@@ -480,11 +586,12 @@ function ProductPage() {
   );
 }
 
-
 function Perk({ icon, title, sub }: { icon: React.ReactNode; title: string; sub: string }) {
   return (
     <div className="flex items-center gap-3 px-3.5 py-2.5">
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-tint-mint text-primary-ink">{icon}</span>
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-tint-mint text-primary-ink">
+        {icon}
+      </span>
       <div className="min-w-0">
         <div className="text-meta font-semibold leading-tight">{title}</div>
         <div className="mt-0.5 text-small text-muted-foreground">{sub}</div>
@@ -534,12 +641,21 @@ function ProductGallery({ images, name }: { images: string[]; name: string }) {
             setTouchX(null);
           }}
         >
-          <ProductImage src={images[safeIdx]} alt={name} fit="contain" className="absolute inset-0 h-full w-full bg-transparent p-4" eager />
+          <ProductImage
+            src={images[safeIdx]}
+            alt={name}
+            fit="contain"
+            className="absolute inset-0 h-full w-full bg-transparent p-4"
+            eager
+          />
           {images.length > 1 && (
             <>
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); go(-1); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  go(-1);
+                }}
                 className="absolute left-3 top-1/2 hidden h-8 w-8 bg-card -translate-y-1/2 place-items-center rounded-full md:grid"
                 aria-label="Previous image"
               >
@@ -547,7 +663,10 @@ function ProductGallery({ images, name }: { images: string[]; name: string }) {
               </button>
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); go(1); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  go(1);
+                }}
                 className="absolute right-3 top-1/2 hidden h-8 w-8 bg-card -translate-y-1/2 place-items-center rounded-full md:grid"
                 aria-label="Next image"
               >
@@ -558,7 +677,10 @@ function ProductGallery({ images, name }: { images: string[]; name: string }) {
                   <button
                     key={i}
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); setIdx(i); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIdx(i);
+                    }}
                     className={`h-1.5 rounded-full transition-all ${i === safeIdx ? "w-5 bg-foreground" : "w-1.5 bg-foreground/20"}`}
                     aria-label={`Go to image ${i + 1}`}
                   />
@@ -576,7 +698,12 @@ function ProductGallery({ images, name }: { images: string[]; name: string }) {
                 onClick={() => setIdx(i)}
                 className={`shrink-0 h-12 w-12 rounded-lg overflow-hidden bg-card ring-2 transition ${i === safeIdx ? "ring-primary" : "ring-transparent opacity-70 hover:opacity-100"}`}
               >
-                <ProductImage src={url} alt="" className="h-full w-full" fallbackClassName="text-lg" />
+                <ProductImage
+                  src={url}
+                  alt=""
+                  className="h-full w-full"
+                  fallbackClassName="text-lg"
+                />
               </button>
             ))}
           </div>

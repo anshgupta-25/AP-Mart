@@ -43,7 +43,6 @@ const EMPTY: CategoryFacets = {
   delivery: [],
 };
 
-
 /** Live filter options derived from the products available in this category + pincode. */
 export function useCategoryFacets(categoryId?: string | null, enabled = true) {
   const { pincode, ready } = useDeliveryContext();
@@ -99,7 +98,6 @@ export function activeFilterCount(f: CategoryFilterState) {
   );
 }
 
-
 export interface FilteredProduct extends ProductCardData {
   brand: string | null;
 }
@@ -142,4 +140,3 @@ export function useFilteredCategoryProducts(
     },
   });
 }
-

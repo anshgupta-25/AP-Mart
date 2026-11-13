@@ -26,7 +26,6 @@ function AppEntry() {
     else navigate({ to: "/customer/home", replace: true });
   }, [user, loading, roles, navigate]);
 
-
   return (
     <div className="min-h-screen grid place-items-center bg-background">
       <div className="flex flex-col items-center gap-3 text-muted-foreground">

@@ -22,7 +22,14 @@ type Props = {
   trailing?: ReactNode;
 };
 
-export function RoleHeader({ homeTo, accountTo, searchTo = "/products", showSearch = true, leading, trailing }: Props) {
+export function RoleHeader({
+  homeTo,
+  accountTo,
+  searchTo = "/products",
+  showSearch = true,
+  leading,
+  trailing,
+}: Props) {
   const [q, setQ] = useState("");
   const nav = useNavigate();
   const { user, signOut, isAdmin } = useAuth();
@@ -37,9 +44,14 @@ export function RoleHeader({ homeTo, accountTo, searchTo = "/products", showSear
     <header className="bg-tint-mint hairline-b sticky top-0 z-40 pt-safe">
       <div className="flex items-center gap-3 px-4 py-3">
         {leading}
-        <Link to={homeTo as any} className="flex items-center gap-2 font-display font-bold text-subtitle">
+        <Link
+          to={homeTo as any}
+          className="flex items-center gap-2 font-display font-bold text-subtitle"
+        >
           <LogoMark size="sm" className="h-8 w-8 rounded-full" />
-          <span>AP <span className="text-primary">Mart</span></span>
+          <span>
+            AP <span className="text-primary">Mart</span>
+          </span>
         </Link>
         <div className="flex-1" />
         {trailing}
@@ -50,7 +62,6 @@ export function RoleHeader({ homeTo, accountTo, searchTo = "/products", showSear
         >
           <User className="h-5 w-5" />
         </Link>
-
       </div>
 
       {showSearch && (

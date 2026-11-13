@@ -28,7 +28,11 @@ export function isFcmConfigured(): boolean {
   // Native config lives in android/app/google-services.json (detected at build time).
   if (isNativeApp()) return isNativePushConfigured();
   return Boolean(
-    firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId && firebaseConfig.messagingSenderId && vapidKey,
+    firebaseConfig.apiKey &&
+    firebaseConfig.projectId &&
+    firebaseConfig.appId &&
+    firebaseConfig.messagingSenderId &&
+    vapidKey,
   );
 }
 
@@ -81,11 +85,18 @@ async function storeToken(userId: string, token: string) {
  * Request permission (must be called from a user gesture on first run),
  * register the service worker, fetch the FCM token and store it in Supabase.
  */
-export async function enablePush(userId: string, opts?: { requestPermission?: boolean }): Promise<PushResult> {
+export async function enablePush(
+  userId: string,
+  opts?: { requestPermission?: boolean },
+): Promise<PushResult> {
   if (isNativeApp()) return enableNativePush(userId, opts);
   try {
     if (!isFcmConfigured()) return { status: "not-configured" };
-    if (typeof window === "undefined" || !("Notification" in window) || !("serviceWorker" in navigator)) {
+    if (
+      typeof window === "undefined" ||
+      !("Notification" in window) ||
+      !("serviceWorker" in navigator)
+    ) {
       return { status: "unsupported" };
     }
     const { isSupported, getToken } = await import("firebase/messaging");
@@ -120,7 +131,8 @@ export async function enablePush(userId: string, opts?: { requestPermission?: bo
 export async function refreshPushToken(userId: string): Promise<PushResult> {
   // Native apps may prompt without a user gesture (Android 13+ runtime permission).
   if (isNativeApp()) return enableNativePush(userId);
-  if (typeof window === "undefined" || !("Notification" in window)) return { status: "unsupported" };
+  if (typeof window === "undefined" || !("Notification" in window))
+    return { status: "unsupported" };
   if (Notification.permission !== "granted") return { status: "denied" };
   return enablePush(userId, { requestPermission: false });
 }
@@ -153,7 +165,10 @@ export async function disablePush(userId?: string): Promise<void> {
     const registration = await navigator.serviceWorker.getRegistration("/");
     let token: string | null = null;
     try {
-      token = await getToken(messaging, { vapidKey: vapidKey!, serviceWorkerRegistration: registration ?? undefined });
+      token = await getToken(messaging, {
+        vapidKey: vapidKey!,
+        serviceWorkerRegistration: registration ?? undefined,
+      });
     } catch {
       token = null;
     }
@@ -161,7 +176,11 @@ export async function disablePush(userId?: string): Promise<void> {
       const query = supabase.from("fcm_tokens").delete().eq("token", token);
       if (userId) await query.eq("user_id", userId);
       else await query;
-      try { await deleteToken(messaging); } catch {}
+      try {
+        await deleteToken(messaging);
+      } catch {
+        // Best effort: storage may be unavailable or the step is optional.
+      }
     }
   } catch (e) {
     console.warn("[FCM] disablePush error", e);
@@ -174,8 +193,12 @@ export async function getCurrentToken(): Promise<string | null> {
     if (!isFcmConfigured() || Notification.permission !== "granted") return null;
     const { getToken } = await import("firebase/messaging");
     const messaging = await getMessagingInstance();
-    const registration = (await navigator.serviceWorker.getRegistration("/")) ?? (await registerServiceWorker());
-    return await getToken(messaging, { vapidKey: vapidKey!, serviceWorkerRegistration: registration });
+    const registration =
+      (await navigator.serviceWorker.getRegistration("/")) ?? (await registerServiceWorker());
+    return await getToken(messaging, {
+      vapidKey: vapidKey!,
+      serviceWorkerRegistration: registration,
+    });
   } catch {
     return null;
   }

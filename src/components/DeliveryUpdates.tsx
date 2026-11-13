@@ -23,7 +23,12 @@ export function DeliveryUpdates({ orderId }: { orderId: string }) {
       .channel(`delivery-messages-${orderId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "delivery_messages", filter: `order_id=eq.${orderId}` },
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "delivery_messages",
+          filter: `order_id=eq.${orderId}`,
+        },
         () => qc.invalidateQueries({ queryKey: ["delivery-messages", orderId] }),
       )
       .subscribe();
@@ -43,7 +48,10 @@ export function DeliveryUpdates({ orderId }: { orderId: string }) {
         {data.map((m: any) => (
           <li key={m.id} className="flex gap-3 py-2.5 first:pt-0 last:pb-0">
             <div className="w-14 shrink-0 pt-0.5 text-caption font-medium text-muted-foreground">
-              {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              {new Date(m.created_at).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
             </div>
             <div className="text-meta">{m.message}</div>
           </li>

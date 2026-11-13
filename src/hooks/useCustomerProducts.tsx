@@ -58,19 +58,16 @@ export function useCustomerProducts(args: CustomerProductsArgs = {}) {
     // Keep the previous page of products on screen while a new key loads.
     placeholderData: (prev) => prev,
     queryFn: async (): Promise<ProductCardData[]> => {
-      const { data, error } = await (supabase as any).rpc(
-        "list_customer_products",
-        {
-          _pincode: pincode,
-          _category_id: categoryId,
-          _search: search,
-          _only_featured: onlyFeatured,
-          _only_bestseller: onlyBestseller,
-          _sort: sort,
-          _limit: limit,
-          _ids: ids,
-        },
-      );
+      const { data, error } = await (supabase as any).rpc("list_customer_products", {
+        _pincode: pincode,
+        _category_id: categoryId,
+        _search: search,
+        _only_featured: onlyFeatured,
+        _only_bestseller: onlyBestseller,
+        _sort: sort,
+        _limit: limit,
+        _ids: ids,
+      });
       if (error) throw error;
       return (data ?? []) as ProductCardData[];
     },
@@ -107,7 +104,11 @@ export function useCustomerCatalogRealtime() {
     if (!channel) {
       channel = supabase
         .channel("customer-catalog")
-        .on("postgres_changes", { event: "*", schema: "public", table: "shop_products" }, invalidate)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "shop_products" },
+          invalidate,
+        )
         .on("postgres_changes", { event: "*", schema: "public", table: "products" }, invalidate)
         .on("postgres_changes", { event: "*", schema: "public", table: "shops" }, invalidate)
         .subscribe();

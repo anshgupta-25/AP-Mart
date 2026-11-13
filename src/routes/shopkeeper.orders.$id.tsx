@@ -7,10 +7,15 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { DeliveryTypeBadge } from "@/components/FastDeliveryBadge";
 import { useOrderDetails } from "@/components/order/useOrderDetails";
-import { CustomerInfoCard, OrderItemsPanel, OrderMetaStrip, OrderSummaryCard, OrderTimeline } from "@/components/order/OrderPanels";
+import {
+  CustomerInfoCard,
+  OrderItemsPanel,
+  OrderMetaStrip,
+  OrderSummaryCard,
+  OrderTimeline,
+} from "@/components/order/OrderPanels";
 import { useQueryClient } from "@tanstack/react-query";
 import { runOptimistic, patchOrderDetail } from "@/lib/optimistic";
-
 
 export const Route = createFileRoute("/shopkeeper/orders/$id")({
   head: () => ({ meta: [{ title: "Order — Shopkeeper" }] }),
@@ -22,10 +27,11 @@ function Page() {
   const qc = useQueryClient();
   const q = useOrderDetails(id, { scopeToShop: true, refetchInterval: 15000 });
 
-
   if (!q.data)
     return (
-      <div className="mx-auto max-w-6xl px-4 py-4 text-body text-muted-foreground md:px-6">{q.isLoading ? <div className="h-40 rounded-xl shimmer" /> : "Order not found."}</div>
+      <div className="mx-auto max-w-6xl px-4 py-4 text-body text-muted-foreground md:px-6">
+        {q.isLoading ? <div className="h-40 rounded-xl shimmer" /> : "Order not found."}
+      </div>
     );
 
   const { order: o, items, totalQuantity, productCount } = q.data as any;
@@ -38,8 +44,10 @@ function Page() {
       keys: [["order-details", id], ["shop-orders"]],
       updater: patchOrderDetail({ status: "accepted_by_shop" }),
       request: () =>
-        (supabase.rpc as any)(isChild ? "shop_accept_child" : "shop_accept_order",
-          isChild ? { _child_id: o.id, _prep_minutes: 15 } : { _order_id: o.id }),
+        (supabase.rpc as any)(
+          isChild ? "shop_accept_child" : "shop_accept_order",
+          isChild ? { _child_id: o.id, _prep_minutes: 15 } : { _order_id: o.id },
+        ),
       success: "Order accepted",
     });
   };
@@ -50,8 +58,10 @@ function Page() {
       keys: [["order-details", id], ["shop-orders"]],
       updater: patchOrderDetail({ status: "awaiting_shop" }),
       request: () =>
-        (supabase.rpc as any)(isChild ? "shop_reject_child" : "shop_reject_order",
-          isChild ? { _child_id: o.id, _reason: reason } : { _order_id: o.id, _reason: reason }),
+        (supabase.rpc as any)(
+          isChild ? "shop_reject_child" : "shop_reject_order",
+          isChild ? { _child_id: o.id, _reason: reason } : { _order_id: o.id, _reason: reason },
+        ),
       success: "Order rejected — searching replacement shop",
     });
   };
@@ -61,12 +71,13 @@ function Page() {
       keys: [["order-details", id], ["shop-orders"]],
       updater: patchOrderDetail({ status: isChild ? "packed" : "packed" }),
       request: () =>
-        (supabase.rpc as any)(isChild ? "shop_mark_child_ready" : "shop_mark_packed",
-          isChild ? { _child_id: o.id } : { _order_id: o.id }),
+        (supabase.rpc as any)(
+          isChild ? "shop_mark_child_ready" : "shop_mark_packed",
+          isChild ? { _child_id: o.id } : { _order_id: o.id },
+        ),
       success: "Marked ready",
     });
   };
-
 
   return (
     <>
@@ -77,31 +88,53 @@ function Page() {
               {o.order_number}
               <DeliveryTypeBadge type={o.delivery_type} size="sm" />
             </h1>
-            <div className="mt-1 text-body capitalize text-muted-foreground">{o.status.replace(/_/g, " ")} · {rupees(o.total)}</div>
-            {isChild && <div className="mt-1.5 text-meta font-medium text-primary-ink">Part of a multi-shop order — showing only your items</div>}
+            <div className="mt-1 text-body capitalize text-muted-foreground">
+              {o.status.replace(/_/g, " ")} · {rupees(o.total)}
+            </div>
+            {isChild && (
+              <div className="mt-1.5 text-meta font-medium text-primary-ink">
+                Part of a multi-shop order — showing only your items
+              </div>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
             {o.status === "awaiting_shop" && (
               <>
-                <Button onClick={accept}><Check className="mr-1 h-4 w-4" />Accept</Button>
-                <Button variant="secondary" onClick={reject}><X className="mr-1 h-4 w-4" />Reject</Button>
+                <Button onClick={accept}>
+                  <Check className="mr-1 h-4 w-4" />
+                  Accept
+                </Button>
+                <Button variant="secondary" onClick={reject}>
+                  <X className="mr-1 h-4 w-4" />
+                  Reject
+                </Button>
               </>
             )}
             {o.status === "accepted_by_shop" && (
-              <Button onClick={pack}><PackageCheck className="mr-1 h-4 w-4" />Mark ready</Button>
+              <Button onClick={pack}>
+                <PackageCheck className="mr-1 h-4 w-4" />
+                Mark ready
+              </Button>
             )}
             {phone && (
               <>
                 <Button asChild variant="secondary">
-                  <a href={`tel:${phone}`}><Phone className="mr-1 h-4 w-4" />Call</a>
+                  <a href={`tel:${phone}`}>
+                    <Phone className="mr-1 h-4 w-4" />
+                    Call
+                  </a>
                 </Button>
                 <Button asChild variant="secondary">
-                  <a href={`sms:${phone}`}><MessageCircle className="mr-1 h-4 w-4" />Chat</a>
+                  <a href={`sms:${phone}`}>
+                    <MessageCircle className="mr-1 h-4 w-4" />
+                    Chat
+                  </a>
                 </Button>
               </>
             )}
             <Button variant="secondary" onClick={() => window.print()}>
-              <Printer className="mr-1 h-4 w-4" />Print
+              <Printer className="mr-1 h-4 w-4" />
+              Print
             </Button>
           </div>
         </div>
@@ -111,8 +144,12 @@ function Page() {
         {o.pickup_otp && o.status !== "awaiting_shop" && o.status !== "cancelled" && (
           <div className="rounded-xl bg-tint-mint p-4">
             <div className="eyebrow">Pickup code</div>
-            <div className="mt-1 font-mono text-page font-semibold tracking-widest text-primary-ink">{o.pickup_otp}</div>
-            <div className="mt-1 text-meta text-foreground/65">Share this code with the delivery partner at handover.</div>
+            <div className="mt-1 font-mono text-page font-semibold tracking-widest text-primary-ink">
+              {o.pickup_otp}
+            </div>
+            <div className="mt-1 text-meta text-foreground/65">
+              Share this code with the delivery partner at handover.
+            </div>
           </div>
         )}
 

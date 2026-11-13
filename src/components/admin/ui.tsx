@@ -1,8 +1,18 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export function PageContainer({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("mx-auto w-full max-w-7xl space-y-5 px-4 py-4 md:px-6 md:py-6", className)}>{children}</div>;
+export function PageContainer({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("mx-auto w-full max-w-7xl space-y-5 px-4 py-4 md:px-6 md:py-6", className)}>
+      {children}
+    </div>
+  );
 }
 
 export function PageHeader({
@@ -75,7 +85,12 @@ export function StatTile({
   return (
     <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-3">
       {icon && (
-        <div className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-lg [&_svg]:h-[17px] [&_svg]:w-[17px]", TINTS[tint])}>
+        <div
+          className={cn(
+            "grid h-9 w-9 shrink-0 place-items-center rounded-lg [&_svg]:h-[17px] [&_svg]:w-[17px]",
+            TINTS[tint],
+          )}
+        >
           {icon}
         </div>
       )}
@@ -89,7 +104,11 @@ export function StatTile({
 }
 
 export function StatGrid({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("grid grid-cols-2 gap-2.5 md:gap-4 lg:grid-cols-4", className)}>{children}</div>;
+  return (
+    <div className={cn("grid grid-cols-2 gap-2.5 md:gap-4 lg:grid-cols-4", className)}>
+      {children}
+    </div>
+  );
 }
 
 const PILL = {
@@ -110,21 +129,33 @@ export function Pill({
   className?: string;
 }) {
   return (
-    <span className={cn("inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-caption font-semibold", PILL[tone], className)}>
+    <span
+      className={cn(
+        "inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-caption font-semibold",
+        PILL[tone],
+        className,
+      )}
+    >
       {children}
     </span>
   );
 }
 
 export function orderTone(status: string): keyof typeof PILL {
-  if (["delivered", "completed", "paid", "approved", "active", "resolved"].includes(status)) return "success";
-  if (["cancelled", "failed", "rejected", "refunded", "no_shop_available"].includes(status)) return "danger";
+  if (["delivered", "completed", "paid", "approved", "active", "resolved"].includes(status))
+    return "success";
+  if (["cancelled", "failed", "rejected", "refunded", "no_shop_available"].includes(status))
+    return "danger";
   if (["awaiting_shop", "pending", "open", "in_progress"].includes(status)) return "warning";
   return "info";
 }
 
 export function Panel({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("overflow-hidden rounded-xl border border-border/70 bg-card", className)}>{children}</div>;
+  return (
+    <div className={cn("overflow-hidden rounded-xl border border-border/70 bg-card", className)}>
+      {children}
+    </div>
+  );
 }
 
 export function EmptyState({
@@ -146,7 +177,9 @@ export function EmptyState({
         </div>
       )}
       <div className="text-subtitle font-semibold">{title}</div>
-      {description && <p className="mt-1 max-w-xs text-meta text-muted-foreground">{description}</p>}
+      {description && (
+        <p className="mt-1 max-w-xs text-meta text-muted-foreground">{description}</p>
+      )}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );
@@ -171,7 +204,9 @@ export function FilterChip({
       onClick={onClick}
       className={cn(
         "press h-8 whitespace-nowrap rounded-full px-3.5 text-meta font-medium transition-colors",
-        active ? "bg-foreground text-background" : "bg-secondary text-muted-foreground hover:text-foreground",
+        active
+          ? "bg-foreground text-background"
+          : "bg-secondary text-muted-foreground hover:text-foreground",
       )}
     >
       {children}

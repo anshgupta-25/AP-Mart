@@ -33,10 +33,20 @@ export function DevLoginPanel() {
 
   return (
     <div className="mt-5 rounded-xl bg-secondary p-3.5">
-      <p className="mb-3 text-small font-semibold text-muted-foreground">Development only · test logins</p>
+      <p className="mb-3 text-small font-semibold text-muted-foreground">
+        Development only · test logins
+      </p>
       <div className="grid grid-cols-2 gap-2">
         {ACCOUNTS.map((a) => (
-          <Button key={a.email} type="button" variant="secondary" size="sm" className="bg-card" disabled={!!busy} onClick={() => login(a.email)}>
+          <Button
+            key={a.email}
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="bg-card"
+            disabled={!!busy}
+            onClick={() => login(a.email)}
+          >
             {busy === a.email && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
             Login as {a.label}
           </Button>

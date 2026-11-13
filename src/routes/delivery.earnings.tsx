@@ -7,7 +7,11 @@ export const Route = createFileRoute("/delivery/earnings")({
     <div className="space-y-5 px-4 py-4 md:px-6">
       <PageHeader title="Earnings" />
       <Panel>
-        <EmptyState icon={<Wallet />} title="Coming soon" description="Your payouts and earnings will appear here." />
+        <EmptyState
+          icon={<Wallet />}
+          title="Coming soon"
+          description="Your payouts and earnings will appear here."
+        />
       </Panel>
     </div>
   ),

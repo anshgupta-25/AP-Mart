@@ -97,7 +97,10 @@ interface CacheEntry {
 }
 const urlCache = new Map<string, CacheEntry>();
 const inflight = new Map<string, Promise<string | null>>();
-const pending = new Map<string, Array<{ path: string; ref: string; resolve: (u: string | null) => void }>>();
+const pending = new Map<
+  string,
+  Array<{ path: string; ref: string; resolve: (u: string | null) => void }>
+>();
 let flushScheduled = false;
 
 function flushPending() {
@@ -323,7 +326,9 @@ async function prepareImage(file: File, maxEdge: number): Promise<File> {
 // Banners are shown full-width (sharp on wide / retina screens); product photos are small cards.
 const BANNER_BUCKETS: readonly string[] = ["offers", "categories", "shop-collections"];
 
-export async function uploadImage(opts: UploadOptions & { maxEdge?: number }): Promise<StoredObject> {
+export async function uploadImage(
+  opts: UploadOptions & { maxEdge?: number },
+): Promise<StoredObject> {
   const maxEdge = opts.maxEdge ?? (BANNER_BUCKETS.includes(opts.bucket) ? 2400 : 1200);
   const file = await prepareImage(opts.file, maxEdge);
   return uploadFile({ ...opts, file, allowedTypes: opts.allowedTypes ?? IMAGE_TYPES });

@@ -41,23 +41,34 @@ const pickImage = (item: any, product: any, variant: any): string | null =>
   product?.image_url ||
   null;
 
-export function useOrderDetails(orderId: string, opts?: { shopId?: string | null; scopeToShop?: boolean; refetchInterval?: number }) {
+export function useOrderDetails(
+  orderId: string,
+  opts?: { shopId?: string | null; scopeToShop?: boolean; refetchInterval?: number },
+) {
   return useQuery<OrderDetails | null>({
     queryKey: ["order-details", orderId, opts?.shopId ?? null, opts?.scopeToShop ?? false],
     refetchInterval: opts?.refetchInterval,
     queryFn: async () => {
-      const { data: order } = await supabase.from("orders").select("*").eq("id", orderId).maybeSingle();
+      const { data: order } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("id", orderId)
+        .maybeSingle();
       if (!order) return null;
 
       const [{ data: rawItems }, { data: children }] = await Promise.all([
-        supabase.from("order_items").select("*").or(`order_id.eq.${orderId},child_order_id.eq.${orderId}`),
+        supabase
+          .from("order_items")
+          .select("*")
+          .or(`order_id.eq.${orderId},child_order_id.eq.${orderId}`),
         (order as any).is_parent
           ? supabase.from("orders").select("*").eq("parent_order_id", orderId)
           : Promise.resolve({ data: [] as any[] }),
       ]);
 
       let items = (rawItems ?? []) as any[];
-      const scopeShop = opts?.shopId ?? (opts?.scopeToShop ? ((order as any).shop_id as string | null) : null);
+      const scopeShop =
+        opts?.shopId ?? (opts?.scopeToShop ? ((order as any).shop_id as string | null) : null);
       if (scopeShop) items = items.filter((i) => !i.shop_id || i.shop_id === scopeShop);
 
       const productIds = [...new Set(items.map((i) => i.product_id).filter(Boolean))];
@@ -70,7 +81,9 @@ export function useOrderDetails(orderId: string, opts?: { shopId?: string | null
         productIds.length
           ? supabase
               .from("products")
-              .select("id, name, brand, unit, image_url, cover_image, image_gallery, category_id, categories(name)")
+              .select(
+                "id, name, brand, unit, image_url, cover_image, image_gallery, category_id, categories(name)",
+              )
               .in("id", productIds)
               .then((r) => r.data ?? [])
           : Promise.resolve([]),
@@ -93,7 +106,9 @@ export function useOrderDetails(orderId: string, opts?: { shopId?: string | null
       const pMap = new Map(products.map((p: any) => [p.id, p]));
       const vMap = new Map(variants.map((v: any) => [v.id, v]));
       const spById = new Map(shopProducts.map((s: any) => [s.id, s]));
-      const spByShopProduct = new Map(shopProducts.map((s: any) => [`${s.shop_id}:${s.product_id}`, s]));
+      const spByShopProduct = new Map(
+        shopProducts.map((s: any) => [`${s.shop_id}:${s.product_id}`, s]),
+      );
 
       const alreadyDeducted = DEDUCTED.has((order as any).status);
 
@@ -101,7 +116,9 @@ export function useOrderDetails(orderId: string, opts?: { shopId?: string | null
         const p: any = pMap.get(it.product_id);
         const v: any = vMap.get(it.variant_id);
         const shopId = it.shop_id ?? (order as any).shop_id ?? null;
-        const sp: any = spById.get(it.shop_product_id) ?? (shopId ? spByShopProduct.get(`${shopId}:${it.product_id}`) : null);
+        const sp: any =
+          spById.get(it.shop_product_id) ??
+          (shopId ? spByShopProduct.get(`${shopId}:${it.product_id}`) : null);
         const stockBefore = sp ? Number(sp.stock) : null;
         const qty = Number(it.quantity) || 0;
         return {
@@ -119,7 +136,12 @@ export function useOrderDetails(orderId: string, opts?: { shopId?: string | null
           total: (Number(it.price) || 0) * qty,
           shopId,
           stockBefore,
-          stockAfter: stockBefore == null ? null : alreadyDeducted ? stockBefore : Math.max(0, stockBefore - qty),
+          stockAfter:
+            stockBefore == null
+              ? null
+              : alreadyDeducted
+                ? stockBefore
+                : Math.max(0, stockBefore - qty),
           alreadyDeducted,
         };
       });
@@ -136,8 +158,10 @@ export function useOrderDetails(orderId: string, opts?: { shopId?: string | null
 }
 
 export const stockTone = (stock: number | null) => {
-  if (stock == null) return { label: "Unknown", cls: "bg-secondary text-muted-foreground", dot: "" };
+  if (stock == null)
+    return { label: "Unknown", cls: "bg-secondary text-muted-foreground", dot: "" };
   if (stock <= 0) return { label: "Out of stock", cls: "bg-tint-rose text-destructive", dot: "" };
-  if (stock <= LOW_STOCK_THRESHOLD) return { label: "Low stock", cls: "bg-tint-sun text-warning-foreground", dot: "" };
+  if (stock <= LOW_STOCK_THRESHOLD)
+    return { label: "Low stock", cls: "bg-tint-sun text-warning-foreground", dot: "" };
   return { label: "Healthy stock", cls: "bg-primary-soft text-primary-ink", dot: "" };
 };

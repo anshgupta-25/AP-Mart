@@ -4,7 +4,21 @@ import { Toaster } from "./ui/sonner";
 import { useNotifications } from "@/hooks/useNotifications";
 
 // Paths that render their own chrome (portals, auth screens) or none at all.
-const OWN_CHROME_PREFIXES = ["/customer", "/shopkeeper", "/delivery", "/admin", "/login", "/signup", "/app", "/support", "/staff-login", "/super-admin", "/superadmin", "/reset-password", "/auth"];
+const OWN_CHROME_PREFIXES = [
+  "/customer",
+  "/shopkeeper",
+  "/delivery",
+  "/admin",
+  "/login",
+  "/signup",
+  "/app",
+  "/support",
+  "/staff-login",
+  "/super-admin",
+  "/superadmin",
+  "/reset-password",
+  "/auth",
+];
 
 function PublicFooter() {
   return (

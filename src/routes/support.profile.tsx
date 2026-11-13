@@ -26,12 +26,20 @@ function Page() {
 
   useEffect(() => {
     if (!user) return;
-    (supabase as any).from("support_agents").select("display_name, is_active").eq("user_id", user.id).maybeSingle()
+    (supabase as any)
+      .from("support_agents")
+      .select("display_name, is_active")
+      .eq("user_id", user.id)
+      .maybeSingle()
       .then(({ data }: any) => {
         setName(data?.display_name ?? "");
         setActive(data?.is_active ?? true);
       });
-    (supabase as any).from("profiles").select("full_name, phone").eq("id", user.id).maybeSingle()
+    (supabase as any)
+      .from("profiles")
+      .select("full_name, phone")
+      .eq("id", user.id)
+      .maybeSingle()
       .then(({ data }: any) => {
         setFullName(data?.full_name ?? "");
         setPhone(data?.phone ?? "");
@@ -43,10 +51,14 @@ function Page() {
     setBusy(true);
     const [r1, r2] = await Promise.all([
       (supabase as any).from("support_agents").upsert({
-        user_id: user.id, display_name: name, is_active: active,
+        user_id: user.id,
+        display_name: name,
+        is_active: active,
       }),
       (supabase as any).from("profiles").upsert({
-        id: user.id, full_name: fullName, phone,
+        id: user.id,
+        full_name: fullName,
+        phone,
       }),
     ]);
     setBusy(false);
@@ -74,7 +86,9 @@ function Page() {
           {(fullName || name || user?.email || "S").slice(0, 1).toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-subtitle font-semibold">{fullName || name || "Support Agent"}</div>
+          <div className="truncate text-subtitle font-semibold">
+            {fullName || name || "Support Agent"}
+          </div>
           <div className="flex items-center gap-1 truncate text-small text-muted-foreground">
             <Mail className="h-3.5 w-3.5" /> {user?.email}
           </div>
@@ -86,36 +100,50 @@ function Page() {
 
       <section className="space-y-3">
         <h2 className="section-title">Details</h2>
-      <div className="space-y-3.5 rounded-xl border border-border/70 bg-card p-4">
-        <div className="space-y-1.5">
-          <Label className="flex items-center gap-1 text-small font-medium text-muted-foreground"><UserIcon className="h-3.5 w-3.5" /> Full name</Label>
-          <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your full name" />
+        <div className="space-y-3.5 rounded-xl border border-border/70 bg-card p-4">
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-1 text-small font-medium text-muted-foreground">
+              <UserIcon className="h-3.5 w-3.5" /> Full name
+            </Label>
+            <Input
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Your full name"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-small font-medium text-muted-foreground">
+              Display name (shown on tickets)
+            </Label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Eshan T."
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-1 text-small font-medium text-muted-foreground">
+              <Phone className="h-3.5 w-3.5" /> Phone
+            </Label>
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91…" />
+          </div>
+
+          <label className="flex select-none items-center gap-2 pt-1 text-small">
+            <input
+              type="checkbox"
+              checked={active}
+              onChange={(e) => setActive(e.target.checked)}
+              className="h-4 w-4 accent-primary"
+            />
+            Available for new ticket assignments
+          </label>
+
+          <Button onClick={save} disabled={busy} className="h-11 w-full rounded-xl">
+            {busy ? "Saving…" : "Save changes"}
+          </Button>
         </div>
-
-        <div className="space-y-1.5">
-          <Label className="text-small font-medium text-muted-foreground">Display name (shown on tickets)</Label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Eshan T." />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label className="flex items-center gap-1 text-small font-medium text-muted-foreground"><Phone className="h-3.5 w-3.5" /> Phone</Label>
-          <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91…" />
-        </div>
-
-        <label className="flex select-none items-center gap-2 pt-1 text-small">
-          <input
-            type="checkbox"
-            checked={active}
-            onChange={(e) => setActive(e.target.checked)}
-            className="h-4 w-4 accent-primary"
-          />
-          Available for new ticket assignments
-        </label>
-
-        <Button onClick={save} disabled={busy} className="h-11 w-full rounded-xl">
-          {busy ? "Saving…" : "Save changes"}
-        </Button>
-      </div>
       </section>
 
       <Button

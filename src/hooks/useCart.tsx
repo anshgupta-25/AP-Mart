@@ -44,7 +44,6 @@ export interface CartLine {
   shopMrp?: number | null;
 }
 
-
 export class CartShopConflictError extends Error {
   constructor(
     public currentShopId: string,
@@ -68,7 +67,7 @@ export function useCart() {
       const { data, error } = await (supabase as any)
         .from("cart_items")
         .select(
-          "id, product_id, variant_id, shop_id, quantity, products(id, name, slug, price, mrp, image_url, unit, stock), product_variants:variant_id(id, name, size, unit, selling_price, mrp, stock, images, is_default), shops:shop_id(id, name, address, pincode, latitude, longitude)"
+          "id, product_id, variant_id, shop_id, quantity, products(id, name, slug, price, mrp, image_url, unit, stock), product_variants:variant_id(id, name, size, unit, selling_price, mrp, stock, images, is_default), shops:shop_id(id, name, address, pincode, latitude, longitude)",
         )
         .eq("user_id", user.id);
       if (error) throw error;
@@ -86,7 +85,10 @@ export function useCart() {
           .in("shop_id", shopIds)
           .in("product_id", productIds);
         invMap = new Map(
-          (inv ?? []).map((r: any) => [`${r.shop_id}:${r.product_id}`, { price: Number(r.price), mrp: r.mrp == null ? null : Number(r.mrp) }]),
+          (inv ?? []).map((r: any) => [
+            `${r.shop_id}:${r.product_id}`,
+            { price: Number(r.price), mrp: r.mrp == null ? null : Number(r.mrp) },
+          ]),
         );
       }
 
@@ -150,13 +152,9 @@ export function useCart() {
 
       // Detect shop conflict
       if (shopId && currentShopId && currentShopId !== shopId && !force) {
-        const newShop = (await supabase.from("shops").select("name").eq("id", shopId).maybeSingle()).data;
-        throw new CartShopConflictError(
-          currentShopId,
-          shopId,
-          currentShop?.name,
-          newShop?.name,
-        );
+        const newShop = (await supabase.from("shops").select("name").eq("id", shopId).maybeSingle())
+          .data;
+        throw new CartShopConflictError(currentShopId, shopId, currentShop?.name, newShop?.name);
       }
 
       // If forcing, clear existing cart first (different shop)
@@ -210,7 +208,10 @@ export function useCart() {
         const { error } = await supabase.from("cart_items").delete().eq("id", lineId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("cart_items").update({ quantity: qty }).eq("id", lineId);
+        const { error } = await supabase
+          .from("cart_items")
+          .update({ quantity: qty })
+          .eq("id", lineId);
         if (error) throw error;
       }
     },
@@ -234,7 +235,13 @@ export function useCart() {
     if (!user) return;
     const previous = snapshot();
     // Instant UI: repoint every line at the new shop (single batched update below).
-    setLines(previous.map((l) => ({ ...l, shop_id: newShopId, shop: l.shop ? { ...l.shop, id: newShopId } : l.shop })));
+    setLines(
+      previous.map((l) => ({
+        ...l,
+        shop_id: newShopId,
+        shop: l.shop ? { ...l.shop, id: newShopId } : l.shop,
+      })),
+    );
     const { error } = await supabase
       .from("cart_items")
       .update({ shop_id: newShopId })
@@ -272,13 +279,20 @@ export function useCart() {
     mrpOf,
     loading: cartQuery.isLoading,
 
-    add: (productId: string, qty = 1, variantId: string | null = null, shopId: string | null = null) =>
-      addMutation.mutateAsync({ productId, variantId, shopId, qty }),
-    addForce: (productId: string, qty = 1, variantId: string | null = null, shopId: string | null = null) =>
-      addMutation.mutateAsync({ productId, variantId, shopId, qty, force: true }),
+    add: (
+      productId: string,
+      qty = 1,
+      variantId: string | null = null,
+      shopId: string | null = null,
+    ) => addMutation.mutateAsync({ productId, variantId, shopId, qty }),
+    addForce: (
+      productId: string,
+      qty = 1,
+      variantId: string | null = null,
+      shopId: string | null = null,
+    ) => addMutation.mutateAsync({ productId, variantId, shopId, qty, force: true }),
     setQty: (lineId: string, qty: number) => updateMutation.mutate({ lineId, qty }),
     changeShop,
     clear,
   };
 }
-

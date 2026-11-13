@@ -2,8 +2,19 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
-  BarChart, Bar, PieChart, Pie, Cell, Legend,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from "recharts";
 import { Download, Search, ArrowUpDown, TrendingUp, TrendingDown } from "lucide-react";
 
@@ -13,7 +24,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/admin/earnings")({
@@ -22,27 +36,72 @@ export const Route = createFileRoute("/admin/earnings")({
 });
 
 // ---------- date helpers ----------
-type PresetKey = "today" | "yesterday" | "this_week" | "last_week" | "this_month" | "last_month" | "this_year" | "custom";
+type PresetKey =
+  | "today"
+  | "yesterday"
+  | "this_week"
+  | "last_week"
+  | "this_month"
+  | "last_month"
+  | "this_year"
+  | "custom";
 
-function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
-function endOfDay(d: Date) { const x = new Date(d); x.setHours(23, 59, 59, 999); return x; }
-function addDays(d: Date, n: number) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
-function startOfWeek(d: Date) { const x = startOfDay(d); const day = (x.getDay() + 6) % 7; return addDays(x, -day); } // Mon start
+function startOfDay(d: Date) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+function endOfDay(d: Date) {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
+}
+function addDays(d: Date, n: number) {
+  const x = new Date(d);
+  x.setDate(x.getDate() + n);
+  return x;
+}
+function startOfWeek(d: Date) {
+  const x = startOfDay(d);
+  const day = (x.getDay() + 6) % 7;
+  return addDays(x, -day);
+} // Mon start
 
-function presetRange(k: PresetKey, custom?: { from: string; to: string }): { from: Date; to: Date; label: string } {
+function presetRange(
+  k: PresetKey,
+  custom?: { from: string; to: string },
+): { from: Date; to: Date; label: string } {
   const now = new Date();
   switch (k) {
-    case "today": return { from: startOfDay(now), to: endOfDay(now), label: "Today" };
-    case "yesterday": { const y = addDays(now, -1); return { from: startOfDay(y), to: endOfDay(y), label: "Yesterday" }; }
-    case "this_week": return { from: startOfWeek(now), to: endOfDay(now), label: "This Week" };
-    case "last_week": { const s = addDays(startOfWeek(now), -7); return { from: s, to: endOfDay(addDays(s, 6)), label: "Last Week" }; }
-    case "this_month": return { from: startOfDay(new Date(now.getFullYear(), now.getMonth(), 1)), to: endOfDay(now), label: "This Month" };
+    case "today":
+      return { from: startOfDay(now), to: endOfDay(now), label: "Today" };
+    case "yesterday": {
+      const y = addDays(now, -1);
+      return { from: startOfDay(y), to: endOfDay(y), label: "Yesterday" };
+    }
+    case "this_week":
+      return { from: startOfWeek(now), to: endOfDay(now), label: "This Week" };
+    case "last_week": {
+      const s = addDays(startOfWeek(now), -7);
+      return { from: s, to: endOfDay(addDays(s, 6)), label: "Last Week" };
+    }
+    case "this_month":
+      return {
+        from: startOfDay(new Date(now.getFullYear(), now.getMonth(), 1)),
+        to: endOfDay(now),
+        label: "This Month",
+      };
     case "last_month": {
       const s = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const e = new Date(now.getFullYear(), now.getMonth(), 0);
       return { from: startOfDay(s), to: endOfDay(e), label: "Last Month" };
     }
-    case "this_year": return { from: startOfDay(new Date(now.getFullYear(), 0, 1)), to: endOfDay(now), label: "This Year" };
+    case "this_year":
+      return {
+        from: startOfDay(new Date(now.getFullYear(), 0, 1)),
+        to: endOfDay(now),
+        label: "This Year",
+      };
     case "custom": {
       const f = custom?.from ? new Date(custom.from) : startOfDay(now);
       const t = custom?.to ? new Date(custom.to) : endOfDay(now);
@@ -52,25 +111,57 @@ function presetRange(k: PresetKey, custom?: { from: string; to: string }): { fro
 }
 
 const PRESETS: { key: PresetKey; label: string }[] = [
-  { key: "today", label: "Today" }, { key: "yesterday", label: "Yesterday" },
-  { key: "this_week", label: "This Week" }, { key: "last_week", label: "Last Week" },
-  { key: "this_month", label: "This Month" }, { key: "last_month", label: "Last Month" },
-  { key: "this_year", label: "This Year" }, { key: "custom", label: "Custom" },
+  { key: "today", label: "Today" },
+  { key: "yesterday", label: "Yesterday" },
+  { key: "this_week", label: "This Week" },
+  { key: "last_week", label: "Last Week" },
+  { key: "this_month", label: "This Month" },
+  { key: "last_month", label: "Last Month" },
+  { key: "this_year", label: "This Year" },
+  { key: "custom", label: "Custom" },
 ];
 
 // ---------- types ----------
 type OrderRow = {
-  id: string; order_number: string; status: string; payment_status: string;
-  subtotal: number; discount: number; tax: number; delivery_fee: number;
-  handling_fee: number; fast_delivery_fee: number; total: number;
-  placed_at: string; shop_id: string | null; user_id: string;
+  id: string;
+  order_number: string;
+  status: string;
+  payment_status: string;
+  subtotal: number;
+  discount: number;
+  tax: number;
+  delivery_fee: number;
+  handling_fee: number;
+  fast_delivery_fee: number;
+  total: number;
+  placed_at: string;
+  shop_id: string | null;
+  user_id: string;
   delivery_pincode: string | null;
 };
-type ShopRow = { id: string; name: string; owner_id: string | null; city: string; pincode: string; is_open: boolean; created_at: string; address: string; phone: string | null };
+type ShopRow = {
+  id: string;
+  name: string;
+  owner_id: string | null;
+  city: string;
+  pincode: string;
+  is_open: boolean;
+  created_at: string;
+  address: string;
+  phone: string | null;
+};
 
 const COMPLETED = new Set(["delivered"]);
 const CANCELLED_SET = new Set(["cancelled"]);
-const PENDING_SET = new Set(["placed", "payment_confirmed", "awaiting_shop", "accepted_by_shop", "packing", "packed", "out_for_delivery"]);
+const PENDING_SET = new Set([
+  "placed",
+  "payment_confirmed",
+  "awaiting_shop",
+  "accepted_by_shop",
+  "packing",
+  "packed",
+  "out_for_delivery",
+]);
 const RETURNED_SET = new Set<string>([]); // no explicit status; keep zero unless added later
 
 function Page() {
@@ -80,15 +171,25 @@ function Page() {
 
   const [commission, setCommission] = useState(0.1);
   useEffect(() => {
-    supabase.from("app_config").select("value").eq("key", "platform_commission_pct").maybeSingle()
-      .then(({ data }) => { const v = Number(data?.value); if (!Number.isNaN(v) && v > 0) setCommission(v > 1 ? v / 100 : v); });
+    supabase
+      .from("app_config")
+      .select("value")
+      .eq("key", "platform_commission_pct")
+      .maybeSingle()
+      .then(({ data }) => {
+        const v = Number(data?.value);
+        if (!Number.isNaN(v) && v > 0) setCommission(v > 1 ? v / 100 : v);
+      });
   }, []);
 
   const ordersQ = useQuery({
     queryKey: ["admin-earn-orders", range.from.toISOString(), range.to.toISOString()],
     queryFn: async () => {
-      const { data, error } = await supabase.from("orders")
-        .select("id,order_number,status,payment_status,subtotal,discount,tax,delivery_fee,handling_fee,fast_delivery_fee,total,placed_at,shop_id,user_id,delivery_pincode")
+      const { data, error } = await supabase
+        .from("orders")
+        .select(
+          "id,order_number,status,payment_status,subtotal,discount,tax,delivery_fee,handling_fee,fast_delivery_fee,total,placed_at,shop_id,user_id,delivery_pincode",
+        )
         .gte("placed_at", range.from.toISOString())
         .lte("placed_at", range.to.toISOString())
         .order("placed_at", { ascending: false });
@@ -100,17 +201,27 @@ function Page() {
   const shopsQ = useQuery({
     queryKey: ["admin-earn-shops"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("shops").select("id,name,owner_id,city,pincode,is_open,created_at,address,phone");
+      const { data, error } = await supabase
+        .from("shops")
+        .select("id,name,owner_id,city,pincode,is_open,created_at,address,phone");
       if (error) throw error;
       return (data ?? []) as ShopRow[];
     },
   });
 
   const ownersQ = useQuery({
-    queryKey: ["admin-earn-owners", shopsQ.data?.map(s => s.owner_id).sort().join(",")],
+    queryKey: [
+      "admin-earn-owners",
+      shopsQ.data
+        ?.map((s) => s.owner_id)
+        .sort()
+        .join(","),
+    ],
     enabled: !!shopsQ.data?.length,
     queryFn: async () => {
-      const ids = Array.from(new Set((shopsQ.data ?? []).map(s => s.owner_id).filter(Boolean))) as string[];
+      const ids = Array.from(
+        new Set((shopsQ.data ?? []).map((s) => s.owner_id).filter(Boolean)),
+      ) as string[];
       if (!ids.length) return new Map<string, { full_name: string | null; phone: string | null }>();
       const { data } = await supabase.from("profiles").select("id,full_name,phone").in("id", ids);
       const m = new Map<string, { full_name: string | null; phone: string | null }>();
@@ -125,8 +236,16 @@ function Page() {
 
   // ---------- KPI aggregation ----------
   const stats = useMemo(() => {
-    let grossRevenue = 0, completedGross = 0, deliveryCharges = 0, discounts = 0, taxes = 0, refunds = 0;
-    let completed = 0, cancelled = 0, pending = 0, returned = 0;
+    let grossRevenue = 0,
+      completedGross = 0,
+      deliveryCharges = 0,
+      discounts = 0,
+      taxes = 0,
+      refunds = 0;
+    let completed = 0,
+      cancelled = 0,
+      pending = 0,
+      returned = 0;
     const customers = new Set<string>();
     for (const o of orders) {
       grossRevenue += Number(o.total ?? 0);
@@ -134,25 +253,45 @@ function Page() {
       discounts += Number(o.discount ?? 0);
       taxes += Number(o.tax ?? 0);
       customers.add(o.user_id);
-      if (COMPLETED.has(o.status)) { completed++; completedGross += Number(o.total ?? 0); }
-      else if (CANCELLED_SET.has(o.status)) { cancelled++; if (o.payment_status === "refunded" || o.payment_status === "refund_initiated") refunds += Number(o.total ?? 0); }
-      else if (PENDING_SET.has(o.status)) pending++;
+      if (COMPLETED.has(o.status)) {
+        completed++;
+        completedGross += Number(o.total ?? 0);
+      } else if (CANCELLED_SET.has(o.status)) {
+        cancelled++;
+        if (o.payment_status === "refunded" || o.payment_status === "refund_initiated")
+          refunds += Number(o.total ?? 0);
+      } else if (PENDING_SET.has(o.status)) pending++;
       if (RETURNED_SET.has(o.status)) returned++;
     }
     const platformCommission = completedGross * commission;
     const shopEarnings = completedGross - platformCommission - refunds;
     const netRevenue = platformCommission + deliveryCharges;
-    const activeShops = shops.filter(s => s.is_open).length;
+    const activeShops = shops.filter((s) => s.is_open).length;
     const aov = orders.length ? grossRevenue / orders.length : 0;
     return {
-      grossRevenue, shopEarnings, totalOrders: orders.length, completed, pending, cancelled, returned,
-      activeShops, aov, customers: customers.size, deliveryCharges, platformCommission, refunds, netRevenue,
+      grossRevenue,
+      shopEarnings,
+      totalOrders: orders.length,
+      completed,
+      pending,
+      cancelled,
+      returned,
+      activeShops,
+      aov,
+      customers: customers.size,
+      deliveryCharges,
+      platformCommission,
+      refunds,
+      netRevenue,
     };
   }, [orders, shops, commission]);
 
   // ---------- time series ----------
   const timeSeries = useMemo(() => {
-    const map = new Map<string, { day: string; orders: number; revenue: number; earnings: number }>();
+    const map = new Map<
+      string,
+      { day: string; orders: number; revenue: number; earnings: number }
+    >();
     for (const o of orders) {
       const day = new Date(o.placed_at).toISOString().slice(0, 10);
       const cur = map.get(day) ?? { day, orders: 0, revenue: 0, earnings: 0 };
@@ -172,11 +311,25 @@ function Page() {
 
   // ---------- shop performance ----------
   type ShopStat = {
-    shop_id: string; name: string; owner: string; city: string; pincode: string; status: string;
-    ordersTotal: number; ordersToday: number; ordersWeek: number; ordersMonth: number;
-    completed: number; pending: number; cancelled: number; returned: number;
-    grossRevenue: number; shopEarnings: number; platformCommission: number;
-    aov: number; lastOrderAt: string | null;
+    shop_id: string;
+    name: string;
+    owner: string;
+    city: string;
+    pincode: string;
+    status: string;
+    ordersTotal: number;
+    ordersToday: number;
+    ordersWeek: number;
+    ordersMonth: number;
+    completed: number;
+    pending: number;
+    cancelled: number;
+    returned: number;
+    grossRevenue: number;
+    shopEarnings: number;
+    platformCommission: number;
+    aov: number;
+    lastOrderAt: string | null;
   };
   const shopStats: ShopStat[] = useMemo(() => {
     const now = new Date();
@@ -186,23 +339,40 @@ function Page() {
     const perShop = new Map<string, ShopStat>();
     for (const s of shops) {
       perShop.set(s.id, {
-        shop_id: s.id, name: s.name, owner: owners.get(s.owner_id ?? "")?.full_name ?? (s.owner_id ? "—" : "Unassigned"),
-        city: s.city, pincode: s.pincode, status: s.is_open ? "Open" : "Closed",
-        ordersTotal: 0, ordersToday: 0, ordersWeek: 0, ordersMonth: 0,
-        completed: 0, pending: 0, cancelled: 0, returned: 0,
-        grossRevenue: 0, shopEarnings: 0, platformCommission: 0, aov: 0, lastOrderAt: null,
+        shop_id: s.id,
+        name: s.name,
+        owner: owners.get(s.owner_id ?? "")?.full_name ?? (s.owner_id ? "—" : "Unassigned"),
+        city: s.city,
+        pincode: s.pincode,
+        status: s.is_open ? "Open" : "Closed",
+        ordersTotal: 0,
+        ordersToday: 0,
+        ordersWeek: 0,
+        ordersMonth: 0,
+        completed: 0,
+        pending: 0,
+        cancelled: 0,
+        returned: 0,
+        grossRevenue: 0,
+        shopEarnings: 0,
+        platformCommission: 0,
+        aov: 0,
+        lastOrderAt: null,
       });
     }
     for (const o of orders) {
       if (!o.shop_id) continue;
-      const s = perShop.get(o.shop_id); if (!s) continue;
+      const s = perShop.get(o.shop_id);
+      if (!s) continue;
       s.ordersTotal++;
       const t = new Date(o.placed_at).getTime();
       if (t >= todayStart) s.ordersToday++;
       if (t >= weekStart) s.ordersWeek++;
       if (t >= monthStart) s.ordersMonth++;
-      if (COMPLETED.has(o.status)) { s.completed++; s.grossRevenue += Number(o.total ?? 0); }
-      else if (CANCELLED_SET.has(o.status)) s.cancelled++;
+      if (COMPLETED.has(o.status)) {
+        s.completed++;
+        s.grossRevenue += Number(o.total ?? 0);
+      } else if (CANCELLED_SET.has(o.status)) s.cancelled++;
       else if (PENDING_SET.has(o.status)) s.pending++;
       if (RETURNED_SET.has(o.status)) s.returned++;
       if (!s.lastOrderAt || t > new Date(s.lastOrderAt).getTime()) s.lastOrderAt = o.placed_at;
@@ -218,7 +388,10 @@ function Page() {
   // ---------- top / bottom leaderboards ----------
   const topByRevenue = [...shopStats].sort((a, b) => b.grossRevenue - a.grossRevenue).slice(0, 10);
   const topByOrders = [...shopStats].sort((a, b) => b.ordersTotal - a.ordersTotal).slice(0, 10);
-  const worstByRevenue = [...shopStats].filter(s => s.ordersTotal > 0).sort((a, b) => a.grossRevenue - b.grossRevenue).slice(0, 5);
+  const worstByRevenue = [...shopStats]
+    .filter((s) => s.ordersTotal > 0)
+    .sort((a, b) => a.grossRevenue - b.grossRevenue)
+    .slice(0, 5);
   const mostCancellations = [...shopStats].sort((a, b) => b.cancelled - a.cancelled).slice(0, 5);
 
   // ---------- table controls ----------
@@ -230,10 +403,19 @@ function Page() {
   const filteredShops = useMemo(() => {
     const needle = q.trim().toLowerCase();
     let list = shopStats;
-    if (needle) list = list.filter(s => s.name.toLowerCase().includes(needle) || s.owner.toLowerCase().includes(needle) || s.city.toLowerCase().includes(needle) || s.pincode.includes(needle));
+    if (needle)
+      list = list.filter(
+        (s) =>
+          s.name.toLowerCase().includes(needle) ||
+          s.owner.toLowerCase().includes(needle) ||
+          s.city.toLowerCase().includes(needle) ||
+          s.pincode.includes(needle),
+      );
     list = [...list].sort((a, b) => {
-      const av = a[sortBy] as any, bv = b[sortBy] as any;
-      if (av == null) return 1; if (bv == null) return -1;
+      const av = a[sortBy] as any,
+        bv = b[sortBy] as any;
+      if (av == null) return 1;
+      if (bv == null) return -1;
       const cmp = typeof av === "number" ? av - bv : String(av).localeCompare(String(bv));
       return sortDir === "asc" ? cmp : -cmp;
     });
@@ -241,20 +423,61 @@ function Page() {
   }, [shopStats, q, sortBy, sortDir]);
   const totalPages = Math.max(1, Math.ceil(filteredShops.length / perPage));
   const pageRows = filteredShops.slice((page - 1) * perPage, page * perPage);
-  useEffect(() => { setPage(1); }, [q, preset]);
+  useEffect(() => {
+    setPage(1);
+  }, [q, preset]);
 
   const [drawerShop, setDrawerShop] = useState<ShopStat | null>(null);
 
   const toggleSort = (col: keyof ShopStat) => {
-    if (sortBy === col) setSortDir(d => d === "asc" ? "desc" : "asc");
-    else { setSortBy(col); setSortDir("desc"); }
+    if (sortBy === col) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSortBy(col);
+      setSortDir("desc");
+    }
   };
 
   const exportCsv = () => {
-    const cols = ["Shop", "Owner", "Pincode", "City", "Status", "Orders (Total)", "Today", "This Week", "This Month", "Completed", "Pending", "Cancelled", "Gross Revenue", "Shop Earnings", "Platform Commission", "AOV", "Last Order"];
+    const cols = [
+      "Shop",
+      "Owner",
+      "Pincode",
+      "City",
+      "Status",
+      "Orders (Total)",
+      "Today",
+      "This Week",
+      "This Month",
+      "Completed",
+      "Pending",
+      "Cancelled",
+      "Gross Revenue",
+      "Shop Earnings",
+      "Platform Commission",
+      "AOV",
+      "Last Order",
+    ];
     const lines = [cols.join(",")];
     for (const s of filteredShops) {
-      const row = [s.name, s.owner, s.pincode, s.city, s.status, s.ordersTotal, s.ordersToday, s.ordersWeek, s.ordersMonth, s.completed, s.pending, s.cancelled, s.grossRevenue.toFixed(2), s.shopEarnings.toFixed(2), s.platformCommission.toFixed(2), s.aov.toFixed(2), s.lastOrderAt ?? ""].map(v => `"${String(v).replace(/"/g, '""')}"`);
+      const row = [
+        s.name,
+        s.owner,
+        s.pincode,
+        s.city,
+        s.status,
+        s.ordersTotal,
+        s.ordersToday,
+        s.ordersWeek,
+        s.ordersMonth,
+        s.completed,
+        s.pending,
+        s.cancelled,
+        s.grossRevenue.toFixed(2),
+        s.shopEarnings.toFixed(2),
+        s.platformCommission.toFixed(2),
+        s.aov.toFixed(2),
+        s.lastOrderAt ?? "",
+      ].map((v) => `"${String(v).replace(/"/g, '""')}"`);
       lines.push(row.join(","));
     }
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
@@ -269,209 +492,391 @@ function Page() {
 
   return (
     <>
-    <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-4 md:px-6 md:py-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="large-title">Earnings</h1>
-          <p className="mt-0.5 text-meta text-muted-foreground">Platform revenue, shop performance, and operational insight for <b>{range.label}</b></p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary">{PRESETS.find(p => p.key === preset)?.label} ▾</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {PRESETS.map(p => (
-                <DropdownMenuItem key={p.key} onClick={() => setPreset(p.key)}>{p.label}</DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {preset === "custom" && (
-            <div className="flex items-center gap-1">
-              <Input type="date" value={custom.from} onChange={(e) => setCustom(c => ({ ...c, from: e.target.value }))} className="w-[150px]" />
-              <span className="text-muted-foreground">→</span>
-              <Input type="date" value={custom.to} onChange={(e) => setCustom(c => ({ ...c, to: e.target.value }))} className="w-[150px]" />
-            </div>
-          )}
-          <Button className="gap-2" onClick={exportCsv}><Download className="h-4 w-4" />Export CSV</Button>
-        </div>
-      </header>
-
-      {/* KPI cards */}
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4 xl:grid-cols-7">
-        <Kpi label="Total Platform Revenue" value={rupees(stats.grossRevenue)} accent />
-        <Kpi label="Shop Earnings" value={rupees(stats.shopEarnings)} />
-        <Kpi label="Platform Commission" value={rupees(stats.platformCommission)} />
-        <Kpi label="Net Revenue" value={rupees(stats.netRevenue)} />
-        <Kpi label="Delivery Charges" value={rupees(stats.deliveryCharges)} />
-        <Kpi label="Refunds" value={rupees(stats.refunds)} />
-        <Kpi label="Avg Order Value" value={rupees(Math.round(stats.aov))} />
-        <Kpi label="Total Orders" value={String(stats.totalOrders)} />
-        <Kpi label="Completed" value={String(stats.completed)} tone="success" />
-        <Kpi label="Pending" value={String(stats.pending)} tone="warn" />
-        <Kpi label="Cancelled" value={String(stats.cancelled)} tone="danger" />
-        <Kpi label="Returned" value={String(stats.returned)} />
-        <Kpi label="Active Shops" value={String(stats.activeShops)} />
-        <Kpi label="Customers" value={String(stats.customers)} />
-      </section>
-
-      {/* Charts */}
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <ChartCard title="Revenue & Orders Trend" className="lg:col-span-2">
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={timeSeries}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-              <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-              <YAxis yAxisId="l" tick={{ fontSize: 11 }} />
-              <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 11 }} />
-              <Tooltip />
-              <Legend />
-              <Line yAxisId="l" type="monotone" dataKey="revenue" stroke="#27a05a" strokeWidth={2.5} name="Revenue" dot={false} />
-              <Line yAxisId="r" type="monotone" dataKey="orders" stroke="#f5b43c" strokeWidth={2.5} name="Orders" dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartCard>
-        <ChartCard title="Order Status Distribution">
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie data={statusDist} dataKey="value" nameKey="name" outerRadius={90} label>
-                {statusDist.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        <ChartCard title="Top 10 Shops by Revenue" className="lg:col-span-2">
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={topByRevenue.map(s => ({ name: s.name, revenue: Math.round(s.grossRevenue) }))}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-              <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-15} textAnchor="end" height={60} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip />
-              <Bar dataKey="revenue" fill="#27a05a" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-        <ChartCard title="Top 10 Shops by Orders">
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={topByOrders.map(s => ({ name: s.name, orders: s.ordersTotal }))}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-              <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-15} textAnchor="end" height={60} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip />
-              <Bar dataKey="orders" fill="#f5b43c" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </section>
-
-      {/* Analytics highlights */}
-      <section className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-4">
-        <Highlight icon={<TrendingUp className="text-primary" />} title="Highest Revenue Shop" value={topByRevenue[0]?.name ?? "—"} sub={rupees(topByRevenue[0]?.grossRevenue ?? 0)} />
-        <Highlight icon={<TrendingDown className="text-destructive" />} title="Lowest Revenue (active)" value={worstByRevenue[0]?.name ?? "—"} sub={rupees(worstByRevenue[0]?.grossRevenue ?? 0)} />
-        <Highlight icon={<TrendingUp className="text-primary" />} title="Most Orders" value={topByOrders[0]?.name ?? "—"} sub={`${topByOrders[0]?.ordersTotal ?? 0} orders`} />
-        <Highlight icon={<TrendingDown className="text-destructive" />} title="Most Cancellations" value={mostCancellations[0]?.name ?? "—"} sub={`${mostCancellations[0]?.cancelled ?? 0} cancelled`} />
-      </section>
-
-      {/* Shop performance table */}
-      <section className="overflow-hidden rounded-xl border border-border/70 bg-card">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 p-4 md:p-5">
-          <h2 className="section-title">Shop performance</h2>
-          <div className="flex w-full items-center gap-2 sm:w-auto">
-            <div className="relative w-full sm:w-auto">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search shop, owner, pincode..." className="w-full pl-10 sm:w-[260px]" />
-            </div>
+      <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-4 md:px-6 md:py-6">
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="large-title">Earnings</h1>
+            <p className="mt-0.5 text-meta text-muted-foreground">
+              Platform revenue, shop performance, and operational insight for <b>{range.label}</b>
+            </p>
           </div>
-        </div>
-        <div className="md:hidden">
-          {loading && <div className="m-4 h-24 rounded-xl shimmer" />}
-          {!loading && pageRows.length === 0 && <div className="px-6 py-10 text-center text-body text-muted-foreground">No shops match your filter.</div>}
-          {pageRows.map((s) => (
-            <button
-              key={s.shop_id}
-              type="button"
-              onClick={() => setDrawerShop(s)}
-              className="press flex w-full items-center justify-between gap-3 border-b border-border/70 px-4 py-3 text-left last:border-0"
-            >
-              <div className="min-w-0">
-                <div className="truncate text-subtitle font-semibold">{s.name}</div>
-                <div className="mt-0.5 truncate text-small text-muted-foreground">{s.owner} · {s.city} · {s.ordersTotal} orders</div>
-              </div>
-              <div className="flex shrink-0 flex-col items-end gap-1">
-                <span className="text-subtitle font-semibold">{rupees(s.grossRevenue)}</span>
-                <span className={`rounded-full px-2.5 py-0.5 text-caption font-semibold ${s.status === "Open" ? "bg-primary-soft text-primary-ink" : "bg-secondary text-muted-foreground"}`}>{s.status}</span>
-              </div>
-            </button>
-          ))}
-        </div>
-        <div className="hidden overflow-x-auto md:block">
-          <table className="w-full text-sm">
-            <thead className="text-left text-small font-medium text-muted-foreground">
-              <tr className="border-b border-border/70">
-                {[
-                  ["name", "Shop"], ["owner", "Owner"], ["pincode", "Pincode"], ["city", "City"], ["status", "Status"],
-                  ["ordersToday", "Today"], ["ordersWeek", "Week"], ["ordersMonth", "Month"], ["ordersTotal", "Total"],
-                  ["completed", "✓"], ["pending", "…"], ["cancelled", "✗"],
-                  ["grossRevenue", "Gross"], ["shopEarnings", "Earnings"], ["platformCommission", "Commission"],
-                  ["aov", "AOV"], ["lastOrderAt", "Last Order"],
-                ].map(([k, label]) => (
-                  <th key={k} className="whitespace-nowrap px-3 py-3 text-left font-medium">
-                    <button className="inline-flex items-center gap-1 hover:text-primary" onClick={() => toggleSort(k as keyof ShopStat)}>
-                      {label}<ArrowUpDown className="h-3 w-3 opacity-50" />
-                    </button>
-                  </th>
+          <div className="flex items-center gap-2 flex-wrap">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary">
+                  {PRESETS.find((p) => p.key === preset)?.label} ▾
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {PRESETS.map((p) => (
+                  <DropdownMenuItem key={p.key} onClick={() => setPreset(p.key)}>
+                    {p.label}
+                  </DropdownMenuItem>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading && <tr><td colSpan={17} className="p-10 text-center text-muted-foreground">Loading…</td></tr>}
-              {!loading && pageRows.length === 0 && <tr><td colSpan={17} className="p-10 text-center text-muted-foreground">No shops match your filter.</td></tr>}
-              {pageRows.map(s => (
-                <tr key={s.shop_id} className="cursor-pointer border-b border-border/70 transition-colors last:border-0 hover:bg-secondary/50" onClick={() => setDrawerShop(s)}>
-                  <td className="px-3 py-2.5 font-semibold">{s.name}</td>
-                  <td className="px-3 py-2.5">{s.owner}</td>
-                  <td className="px-3 py-2.5">{s.pincode}</td>
-                  <td className="px-3 py-2.5">{s.city}</td>
-                  <td className="px-3 py-2.5"><span className={`rounded-full px-2.5 py-0.5 text-caption font-semibold ${s.status === "Open" ? "bg-primary-soft text-primary-ink" : "bg-secondary text-muted-foreground"}`}>{s.status}</span></td>
-                  <td className="px-3 py-2.5">{s.ordersToday}</td>
-                  <td className="px-3 py-2.5">{s.ordersWeek}</td>
-                  <td className="px-3 py-2.5">{s.ordersMonth}</td>
-                  <td className="px-3 py-2.5 font-semibold">{s.ordersTotal}</td>
-                  <td className="px-3 py-2.5 text-primary">{s.completed}</td>
-                  <td className="px-3 py-2.5 text-[oklch(0.5_0.12_70)]">{s.pending}</td>
-                  <td className="px-3 py-2.5 text-destructive">{s.cancelled}</td>
-                  <td className="px-3 py-2.5 font-bold">{rupees(s.grossRevenue)}</td>
-                  <td className="px-3 py-2.5">{rupees(s.shopEarnings)}</td>
-                  <td className="px-3 py-2.5">{rupees(s.platformCommission)}</td>
-                  <td className="px-3 py-2.5">{rupees(Math.round(s.aov))}</td>
-                  <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">{s.lastOrderAt ? new Date(s.lastOrderAt).toLocaleString() : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="flex items-center justify-between border-t border-border/70 p-3 text-small text-muted-foreground">
-          <span>{filteredShops.length} shops</span>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
-            <span className="px-2">Page {page} / {totalPages}</span>
-            <Button variant="ghost" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {preset === "custom" && (
+              <div className="flex items-center gap-1">
+                <Input
+                  type="date"
+                  value={custom.from}
+                  onChange={(e) => setCustom((c) => ({ ...c, from: e.target.value }))}
+                  className="w-[150px]"
+                />
+                <span className="text-muted-foreground">→</span>
+                <Input
+                  type="date"
+                  value={custom.to}
+                  onChange={(e) => setCustom((c) => ({ ...c, to: e.target.value }))}
+                  className="w-[150px]"
+                />
+              </div>
+            )}
+            <Button className="gap-2" onClick={exportCsv}>
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
           </div>
-        </div>
-      </section>
-    </div>
+        </header>
 
-    <ShopDetailDialog shop={drawerShop} onClose={() => setDrawerShop(null)} orders={orders} shops={shops} owners={owners} commission={commission} />
+        {/* KPI cards */}
+        <section className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4 xl:grid-cols-7">
+          <Kpi label="Total Platform Revenue" value={rupees(stats.grossRevenue)} accent />
+          <Kpi label="Shop Earnings" value={rupees(stats.shopEarnings)} />
+          <Kpi label="Platform Commission" value={rupees(stats.platformCommission)} />
+          <Kpi label="Net Revenue" value={rupees(stats.netRevenue)} />
+          <Kpi label="Delivery Charges" value={rupees(stats.deliveryCharges)} />
+          <Kpi label="Refunds" value={rupees(stats.refunds)} />
+          <Kpi label="Avg Order Value" value={rupees(Math.round(stats.aov))} />
+          <Kpi label="Total Orders" value={String(stats.totalOrders)} />
+          <Kpi label="Completed" value={String(stats.completed)} tone="success" />
+          <Kpi label="Pending" value={String(stats.pending)} tone="warn" />
+          <Kpi label="Cancelled" value={String(stats.cancelled)} tone="danger" />
+          <Kpi label="Returned" value={String(stats.returned)} />
+          <Kpi label="Active Shops" value={String(stats.activeShops)} />
+          <Kpi label="Customers" value={String(stats.customers)} />
+        </section>
+
+        {/* Charts */}
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <ChartCard title="Revenue & Orders Trend" className="lg:col-span-2">
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={timeSeries}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                <YAxis yAxisId="l" tick={{ fontSize: 11 }} />
+                <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Legend />
+                <Line
+                  yAxisId="l"
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#27a05a"
+                  strokeWidth={2.5}
+                  name="Revenue"
+                  dot={false}
+                />
+                <Line
+                  yAxisId="r"
+                  type="monotone"
+                  dataKey="orders"
+                  stroke="#f5b43c"
+                  strokeWidth={2.5}
+                  name="Orders"
+                  dot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartCard>
+          <ChartCard title="Order Status Distribution">
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie data={statusDist} dataKey="value" nameKey="name" outerRadius={90} label>
+                  {statusDist.map((_, i) => (
+                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </ChartCard>
+
+          <ChartCard title="Top 10 Shops by Revenue" className="lg:col-span-2">
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart
+                data={topByRevenue.map((s) => ({
+                  name: s.name,
+                  revenue: Math.round(s.grossRevenue),
+                }))}
+              >
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 10 }}
+                  interval={0}
+                  angle={-15}
+                  textAnchor="end"
+                  height={60}
+                />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Bar dataKey="revenue" fill="#27a05a" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+          <ChartCard title="Top 10 Shops by Orders">
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={topByOrders.map((s) => ({ name: s.name, orders: s.ordersTotal }))}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 10 }}
+                  interval={0}
+                  angle={-15}
+                  textAnchor="end"
+                  height={60}
+                />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Bar dataKey="orders" fill="#f5b43c" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        </section>
+
+        {/* Analytics highlights */}
+        <section className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-4">
+          <Highlight
+            icon={<TrendingUp className="text-primary" />}
+            title="Highest Revenue Shop"
+            value={topByRevenue[0]?.name ?? "—"}
+            sub={rupees(topByRevenue[0]?.grossRevenue ?? 0)}
+          />
+          <Highlight
+            icon={<TrendingDown className="text-destructive" />}
+            title="Lowest Revenue (active)"
+            value={worstByRevenue[0]?.name ?? "—"}
+            sub={rupees(worstByRevenue[0]?.grossRevenue ?? 0)}
+          />
+          <Highlight
+            icon={<TrendingUp className="text-primary" />}
+            title="Most Orders"
+            value={topByOrders[0]?.name ?? "—"}
+            sub={`${topByOrders[0]?.ordersTotal ?? 0} orders`}
+          />
+          <Highlight
+            icon={<TrendingDown className="text-destructive" />}
+            title="Most Cancellations"
+            value={mostCancellations[0]?.name ?? "—"}
+            sub={`${mostCancellations[0]?.cancelled ?? 0} cancelled`}
+          />
+        </section>
+
+        {/* Shop performance table */}
+        <section className="overflow-hidden rounded-xl border border-border/70 bg-card">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 p-4 md:p-5">
+            <h2 className="section-title">Shop performance</h2>
+            <div className="flex w-full items-center gap-2 sm:w-auto">
+              <div className="relative w-full sm:w-auto">
+                <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Search shop, owner, pincode..."
+                  className="w-full pl-10 sm:w-[260px]"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="md:hidden">
+            {loading && <div className="m-4 h-24 rounded-xl shimmer" />}
+            {!loading && pageRows.length === 0 && (
+              <div className="px-6 py-10 text-center text-body text-muted-foreground">
+                No shops match your filter.
+              </div>
+            )}
+            {pageRows.map((s) => (
+              <button
+                key={s.shop_id}
+                type="button"
+                onClick={() => setDrawerShop(s)}
+                className="press flex w-full items-center justify-between gap-3 border-b border-border/70 px-4 py-3 text-left last:border-0"
+              >
+                <div className="min-w-0">
+                  <div className="truncate text-subtitle font-semibold">{s.name}</div>
+                  <div className="mt-0.5 truncate text-small text-muted-foreground">
+                    {s.owner} · {s.city} · {s.ordersTotal} orders
+                  </div>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <span className="text-subtitle font-semibold">{rupees(s.grossRevenue)}</span>
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-caption font-semibold ${s.status === "Open" ? "bg-primary-soft text-primary-ink" : "bg-secondary text-muted-foreground"}`}
+                  >
+                    {s.status}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full text-sm">
+              <thead className="text-left text-small font-medium text-muted-foreground">
+                <tr className="border-b border-border/70">
+                  {[
+                    ["name", "Shop"],
+                    ["owner", "Owner"],
+                    ["pincode", "Pincode"],
+                    ["city", "City"],
+                    ["status", "Status"],
+                    ["ordersToday", "Today"],
+                    ["ordersWeek", "Week"],
+                    ["ordersMonth", "Month"],
+                    ["ordersTotal", "Total"],
+                    ["completed", "✓"],
+                    ["pending", "…"],
+                    ["cancelled", "✗"],
+                    ["grossRevenue", "Gross"],
+                    ["shopEarnings", "Earnings"],
+                    ["platformCommission", "Commission"],
+                    ["aov", "AOV"],
+                    ["lastOrderAt", "Last Order"],
+                  ].map(([k, label]) => (
+                    <th key={k} className="whitespace-nowrap px-3 py-3 text-left font-medium">
+                      <button
+                        className="inline-flex items-center gap-1 hover:text-primary"
+                        onClick={() => toggleSort(k as keyof ShopStat)}
+                      >
+                        {label}
+                        <ArrowUpDown className="h-3 w-3 opacity-50" />
+                      </button>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {loading && (
+                  <tr>
+                    <td colSpan={17} className="p-10 text-center text-muted-foreground">
+                      Loading…
+                    </td>
+                  </tr>
+                )}
+                {!loading && pageRows.length === 0 && (
+                  <tr>
+                    <td colSpan={17} className="p-10 text-center text-muted-foreground">
+                      No shops match your filter.
+                    </td>
+                  </tr>
+                )}
+                {pageRows.map((s) => (
+                  <tr
+                    key={s.shop_id}
+                    className="cursor-pointer border-b border-border/70 transition-colors last:border-0 hover:bg-secondary/50"
+                    onClick={() => setDrawerShop(s)}
+                  >
+                    <td className="px-3 py-2.5 font-semibold">{s.name}</td>
+                    <td className="px-3 py-2.5">{s.owner}</td>
+                    <td className="px-3 py-2.5">{s.pincode}</td>
+                    <td className="px-3 py-2.5">{s.city}</td>
+                    <td className="px-3 py-2.5">
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-caption font-semibold ${s.status === "Open" ? "bg-primary-soft text-primary-ink" : "bg-secondary text-muted-foreground"}`}
+                      >
+                        {s.status}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5">{s.ordersToday}</td>
+                    <td className="px-3 py-2.5">{s.ordersWeek}</td>
+                    <td className="px-3 py-2.5">{s.ordersMonth}</td>
+                    <td className="px-3 py-2.5 font-semibold">{s.ordersTotal}</td>
+                    <td className="px-3 py-2.5 text-primary">{s.completed}</td>
+                    <td className="px-3 py-2.5 text-[oklch(0.5_0.12_70)]">{s.pending}</td>
+                    <td className="px-3 py-2.5 text-destructive">{s.cancelled}</td>
+                    <td className="px-3 py-2.5 font-bold">{rupees(s.grossRevenue)}</td>
+                    <td className="px-3 py-2.5">{rupees(s.shopEarnings)}</td>
+                    <td className="px-3 py-2.5">{rupees(s.platformCommission)}</td>
+                    <td className="px-3 py-2.5">{rupees(Math.round(s.aov))}</td>
+                    <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                      {s.lastOrderAt ? new Date(s.lastOrderAt).toLocaleString() : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex items-center justify-between border-t border-border/70 p-3 text-small text-muted-foreground">
+            <span>{filteredShops.length} shops</span>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                Prev
+              </Button>
+              <span className="px-2">
+                Page {page} / {totalPages}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <ShopDetailDialog
+        shop={drawerShop}
+        onClose={() => setDrawerShop(null)}
+        orders={orders}
+        shops={shops}
+        owners={owners}
+        commission={commission}
+      />
     </>
   );
 }
 
-const PIE_COLORS = ["#27a05a", "#f5b43c", "#e5677d", "#4a9ee0", "#8b7be0", "#34b8a6", "#f08e5a", "#d98bc4", "#6cc3e0", "#8a94a6"];
+const PIE_COLORS = [
+  "#27a05a",
+  "#f5b43c",
+  "#e5677d",
+  "#4a9ee0",
+  "#8b7be0",
+  "#34b8a6",
+  "#f08e5a",
+  "#d98bc4",
+  "#6cc3e0",
+  "#8a94a6",
+];
 
-function Kpi({ label, value, accent, tone }: { label: string; value: string; accent?: boolean; tone?: "success" | "warn" | "danger" }) {
-  const toneCls = tone === "success" ? "text-primary" : tone === "warn" ? "text-[oklch(0.5_0.12_70)]" : tone === "danger" ? "text-destructive" : "";
+function Kpi({
+  label,
+  value,
+  accent,
+  tone,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+  tone?: "success" | "warn" | "danger";
+}) {
+  const toneCls =
+    tone === "success"
+      ? "text-primary"
+      : tone === "warn"
+        ? "text-[oklch(0.5_0.12_70)]"
+        : tone === "danger"
+          ? "text-destructive"
+          : "";
   return (
     <div className={`rounded-xl p-4 ${accent ? "bg-primary text-primary-foreground" : "bg-card"}`}>
       <div className={`text-small ${accent ? "opacity-90" : "text-muted-foreground"}`}>{label}</div>
@@ -480,7 +885,17 @@ function Kpi({ label, value, accent, tone }: { label: string; value: string; acc
   );
 }
 
-function Highlight({ icon, title, value, sub }: { icon: React.ReactNode; title: string; value: string; sub: string }) {
+function Highlight({
+  icon,
+  title,
+  value,
+  sub,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  value: string;
+  sub: string;
+}) {
   return (
     <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-4">
       <div className="grid h-10 w-10 place-items-center rounded-xl bg-secondary">{icon}</div>
@@ -493,7 +908,15 @@ function Highlight({ icon, title, value, sub }: { icon: React.ReactNode; title: 
   );
 }
 
-function ChartCard({ title, className = "", children }: { title: string; className?: string; children: React.ReactNode }) {
+function ChartCard({
+  title,
+  className = "",
+  children,
+}: {
+  title: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className={`rounded-xl border border-border/70 bg-card p-4 md:p-5 ${className}`}>
       <h3 className="section-title mb-4">{title}</h3>
@@ -503,36 +926,72 @@ function ChartCard({ title, className = "", children }: { title: string; classNa
 }
 
 function ShopDetailDialog({
-  shop, onClose, orders, shops, owners, commission,
+  shop,
+  onClose,
+  orders,
+  shops,
+  owners,
+  commission,
 }: {
-  shop: any; onClose: () => void; orders: OrderRow[]; shops: ShopRow[]; owners: Map<string, any>; commission: number;
+  shop: any;
+  onClose: () => void;
+  orders: OrderRow[];
+  shops: ShopRow[];
+  owners: Map<string, any>;
+  commission: number;
 }) {
   const detail = useMemo(() => {
     if (!shop) return null;
-    const s = shops.find(x => x.id === shop.shop_id);
-    const shopOrders = orders.filter(o => o.shop_id === shop.shop_id);
-    let gross = 0, delivery = 0, discounts = 0, taxes = 0, refunds = 0, completedGross = 0;
-    let completed = 0, pending = 0, cancelled = 0, returned = 0;
+    const s = shops.find((x) => x.id === shop.shop_id);
+    const shopOrders = orders.filter((o) => o.shop_id === shop.shop_id);
+    let gross = 0,
+      delivery = 0,
+      discounts = 0,
+      taxes = 0,
+      refunds = 0,
+      completedGross = 0;
+    let completed = 0,
+      pending = 0,
+      cancelled = 0;
+    const returned = 0;
     const customers = new Set<string>();
     const productMap = new Map<string, number>();
-    let fastest = Infinity, avgTime = 0, times: number[] = [];
+    const fastest = Infinity,
+      avgTime = 0,
+      times: number[] = [];
     for (const o of shopOrders) {
       gross += Number(o.total ?? 0);
       delivery += Number(o.delivery_fee ?? 0) + Number(o.fast_delivery_fee ?? 0);
       discounts += Number(o.discount ?? 0);
       taxes += Number(o.tax ?? 0);
       customers.add(o.user_id);
-      if (COMPLETED.has(o.status)) { completed++; completedGross += Number(o.total ?? 0); }
-      else if (CANCELLED_SET.has(o.status)) { cancelled++; if (o.payment_status === "refunded" || o.payment_status === "refund_initiated") refunds += Number(o.total ?? 0); }
-      else if (PENDING_SET.has(o.status)) pending++;
+      if (COMPLETED.has(o.status)) {
+        completed++;
+        completedGross += Number(o.total ?? 0);
+      } else if (CANCELLED_SET.has(o.status)) {
+        cancelled++;
+        if (o.payment_status === "refunded" || o.payment_status === "refund_initiated")
+          refunds += Number(o.total ?? 0);
+      } else if (PENDING_SET.has(o.status)) pending++;
     }
     const platformCommission = completedGross * commission;
     const shopEarnings = completedGross - platformCommission - refunds;
     const netRevenue = platformCommission + delivery;
     return {
-      s, shopOrders, gross, delivery, discounts, taxes, refunds,
-      completed, pending, cancelled, returned,
-      platformCommission, shopEarnings, netRevenue,
+      s,
+      shopOrders,
+      gross,
+      delivery,
+      discounts,
+      taxes,
+      refunds,
+      completed,
+      pending,
+      cancelled,
+      returned,
+      platformCommission,
+      shopEarnings,
+      netRevenue,
       customers: customers.size,
       owner: s?.owner_id ? owners.get(s.owner_id) : null,
     };
@@ -541,7 +1000,12 @@ function ShopDetailDialog({
   if (!shop || !detail) return null;
   const { s, owner } = detail;
   return (
-    <Dialog open={!!shop} onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog
+      open={!!shop}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold tracking-tight">{shop.name}</DialogTitle>
@@ -554,7 +1018,10 @@ function ShopDetailDialog({
               <KV k="Pincode" v={shop.pincode} />
               <KV k="City" v={shop.city} />
               <KV k="Address" v={s?.address ?? "—"} />
-              <KV k="Registered" v={s?.created_at ? new Date(s.created_at).toLocaleDateString() : "—"} />
+              <KV
+                k="Registered"
+                v={s?.created_at ? new Date(s.created_at).toLocaleDateString() : "—"}
+              />
               <KV k="Status" v={shop.status} />
             </Grid>
           </Section>
@@ -593,7 +1060,8 @@ function ShopDetailDialog({
           </Section>
 
           <div className="text-xs text-muted-foreground">
-            Product & delivery analytics use live order data; extend with `order_items` and delivery timing queries as your dataset grows.
+            Product & delivery analytics use live order data; extend with `order_items` and delivery
+            timing queries as your dataset grows.
           </div>
         </div>
       </DialogContent>

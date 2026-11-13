@@ -152,12 +152,7 @@ export function PhoneOtpForm({
       )}
 
       {!sent ? (
-        <Button
-          type="button"
-          onClick={send}
-          disabled={busy}
-          className="h-11 w-full rounded-xl"
-        >
+        <Button type="button" onClick={send} disabled={busy} className="h-11 w-full rounded-xl">
           {busy ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending…
@@ -168,12 +163,7 @@ export function PhoneOtpForm({
         </Button>
       ) : (
         <div className="space-y-2">
-          <Button
-            type="button"
-            onClick={verify}
-            disabled={busy}
-            className="h-11 w-full rounded-xl"
-          >
+          <Button type="button" onClick={verify} disabled={busy} className="h-11 w-full rounded-xl">
             {busy ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Verifying…

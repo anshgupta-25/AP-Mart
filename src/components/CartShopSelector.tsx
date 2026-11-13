@@ -1,12 +1,28 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Store, MapPin, Clock, Star, Zap, TrendingDown, Check, ChevronRight, Sparkles } from "lucide-react";
+import {
+  Store,
+  MapPin,
+  Clock,
+  Star,
+  Zap,
+  TrendingDown,
+  Check,
+  ChevronRight,
+  Sparkles,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { useDeliveryContext } from "@/hooks/useDeliveryContext";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { rupees } from "@/lib/format";
 import { toast } from "sonner";
@@ -53,8 +69,12 @@ export function CartShopSelector({
   });
 
   const shops = shopsQuery.data ?? [];
-  const cheapestId = shops.length ? shops.reduce((a, b) => (a.price <= b.price ? a : b)).shop_id : null;
-  const fastestId = shops.length ? shops.reduce((a, b) => (a.delivery_minutes <= b.delivery_minutes ? a : b)).shop_id : null;
+  const cheapestId = shops.length
+    ? shops.reduce((a, b) => (a.price <= b.price ? a : b)).shop_id
+    : null;
+  const fastestId = shops.length
+    ? shops.reduce((a, b) => (a.delivery_minutes <= b.delivery_minutes ? a : b)).shop_id
+    : null;
 
   // Auto-assign: pick nearest (or fastest if no distance) eligible shop when
   // cart has no shop yet, OR when the current shop is no longer eligible.
@@ -63,14 +83,13 @@ export function CartShopSelector({
     if (shops.length === 0) return;
     const eligible = shops.some((s) => s.shop_id === currentShopId);
     if (currentShopId && eligible) return;
-    const best =
-      shops.slice().sort((a, b) => {
-        const da = a.distance_km ?? Number.POSITIVE_INFINITY;
-        const db = b.distance_km ?? Number.POSITIVE_INFINITY;
-        if (da !== db) return da - db;
-        if (a.delivery_minutes !== b.delivery_minutes) return a.delivery_minutes - b.delivery_minutes;
-        return a.price - b.price;
-      })[0];
+    const best = shops.slice().sort((a, b) => {
+      const da = a.distance_km ?? Number.POSITIVE_INFINITY;
+      const db = b.distance_km ?? Number.POSITIVE_INFINITY;
+      if (da !== db) return da - db;
+      if (a.delivery_minutes !== b.delivery_minutes) return a.delivery_minutes - b.delivery_minutes;
+      return a.price - b.price;
+    })[0];
     if (best && best.shop_id !== currentShopId) {
       setAutoAssigned(true);
       changeShop(best.shop_id).catch(() => {});
@@ -118,7 +137,6 @@ export function CartShopSelector({
               <div className="text-meta font-semibold text-destructive">
                 Sorry, all shops selling these products are currently closed or out of stock.
               </div>
-
             ) : (
               <>
                 <div className="truncate text-body font-semibold">{displayName}</div>
@@ -187,11 +205,13 @@ export function CartShopSelector({
                               <TrendingDown className="h-3 w-3" /> Lowest
                             </span>
                           )}
-                          {s.shop_id === fastestId && shops.length > 1 && s.shop_id !== cheapestId && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-tint-sky px-2 py-0.5 text-caption font-medium text-foreground">
-                              <Zap className="h-3 w-3" /> Fastest
-                            </span>
-                          )}
+                          {s.shop_id === fastestId &&
+                            shops.length > 1 &&
+                            s.shop_id !== cheapestId && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-tint-sky px-2 py-0.5 text-caption font-medium text-foreground">
+                                <Zap className="h-3 w-3" /> Fastest
+                              </span>
+                            )}
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-3 text-caption text-muted-foreground">
                           {s.distance_km != null && (
@@ -206,13 +226,17 @@ export function CartShopSelector({
                           </span>
                         </div>
                         {s.shop_address && (
-                          <div className="mt-1 text-caption text-muted-foreground truncate">{s.shop_address}</div>
+                          <div className="mt-1 text-caption text-muted-foreground truncate">
+                            {s.shop_address}
+                          </div>
                         )}
                       </div>
                       <div className="text-right shrink-0">
                         <div className="text-body font-semibold">{rupees(s.price)}</div>
                         {s.mrp > s.price && (
-                          <div className="text-caption text-muted-foreground line-through">{rupees(s.mrp)}</div>
+                          <div className="text-caption text-muted-foreground line-through">
+                            {rupees(s.mrp)}
+                          </div>
                         )}
                       </div>
                     </div>

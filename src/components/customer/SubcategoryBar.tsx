@@ -33,7 +33,13 @@ export function SubcategoryBar({
   const items = subcategories ?? [];
   if (items.length === 0) return null;
 
-  const item = (active: boolean, key: string, label: string, onClick: () => void, icon: React.ReactNode) => (
+  const item = (
+    active: boolean,
+    key: string,
+    label: string,
+    onClick: () => void,
+    icon: React.ReactNode,
+  ) => (
     <button
       key={key}
       type="button"
@@ -67,7 +73,13 @@ export function SubcategoryBar({
 
   return (
     <div role="tablist" aria-label="Subcategories" className="flex flex-col">
-      {item(value === null, "all", "All", () => onChange(null), <span>{fallbackIcon ?? "🛍️"}</span>)}
+      {item(
+        value === null,
+        "all",
+        "All",
+        () => onChange(null),
+        <span>{fallbackIcon ?? "🛍️"}</span>,
+      )}
       {items.map((s) =>
         item(
           value === s.id,
@@ -75,7 +87,12 @@ export function SubcategoryBar({
           s.name,
           () => onChange(s.id),
           s.image_url ? (
-            <ProductImage src={s.image_url} alt={s.name} fit="contain" className="h-full w-full bg-transparent p-1" />
+            <ProductImage
+              src={s.image_url}
+              alt={s.name}
+              fit="contain"
+              className="h-full w-full bg-transparent p-1"
+            />
           ) : (
             <span>{s.icon ?? fallbackIcon ?? "🛍️"}</span>
           ),

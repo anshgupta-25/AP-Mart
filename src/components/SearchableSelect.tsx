@@ -53,10 +53,7 @@ export function SearchableSelect({
           <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0 ml-2" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        className="p-0 w-[--radix-popover-trigger-width]"
-        align="start"
-      >
+      <PopoverContent className="p-0 w-[--radix-popover-trigger-width]" align="start">
         <Command>
           <div className="flex items-center border-b px-3">
             <Search className="h-4 w-4 opacity-50 mr-2" />
@@ -75,10 +72,7 @@ export function SearchableSelect({
                   }}
                 >
                   <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === opt ? "opacity-100" : "opacity-0",
-                    )}
+                    className={cn("mr-2 h-4 w-4", value === opt ? "opacity-100" : "opacity-0")}
                   />
                   {opt}
                 </CommandItem>

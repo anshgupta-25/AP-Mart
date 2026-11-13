@@ -85,7 +85,8 @@ export function RouteMap({
     queryKey: ["live-route", sig],
     queryFn: async () => {
       if (valid.length < 2) return null;
-      const origin = valid[0]; const destination = valid[valid.length - 1];
+      const origin = valid[0];
+      const destination = valid[valid.length - 1];
       try {
         return await routeFn({ data: { origin, destination } });
       } catch {
@@ -131,7 +132,9 @@ export function RouteMap({
     if (valid.length >= 2) {
       let path: google.maps.LatLngLiteral[];
       if (routeQ.data?.polyline && g.maps.geometry?.encoding) {
-        path = g.maps.geometry.encoding.decodePath(routeQ.data.polyline).map((l) => ({ lat: l.lat(), lng: l.lng() }));
+        path = g.maps.geometry.encoding
+          .decodePath(routeQ.data.polyline)
+          .map((l) => ({ lat: l.lat(), lng: l.lng() }));
       } else {
         path = valid.map((p) => ({ lat: p.lat, lng: p.lng }));
       }
@@ -153,22 +156,31 @@ export function RouteMap({
 
   if (valid.length === 0) {
     return (
-      <div className={`${height} w-full rounded-xl bg-secondary grid place-items-center text-small text-muted-foreground ${className ?? ""}`}>
+      <div
+        className={`${height} w-full rounded-xl bg-secondary grid place-items-center text-small text-muted-foreground ${className ?? ""}`}
+      >
         No coordinates available
       </div>
     );
   }
 
-  const etaMin = routeQ.data?.etaSeconds != null ? Math.max(1, Math.round(routeQ.data.etaSeconds / 60)) : null;
+  const etaMin =
+    routeQ.data?.etaSeconds != null ? Math.max(1, Math.round(routeQ.data.etaSeconds / 60)) : null;
   const routeKm = routeQ.data?.distanceMeters != null ? routeQ.data.distanceMeters / 1000 : null;
 
   return (
     <div className={className}>
-      <div ref={containerRef} className={`${height} w-full overflow-hidden rounded-xl ${ready ? "" : "bg-secondary animate-pulse"}`} />
+      <div
+        ref={containerRef}
+        className={`${height} w-full overflow-hidden rounded-xl ${ready ? "" : "bg-secondary animate-pulse"}`}
+      />
       {valid.length > 1 && (
         <div className="mt-2 flex flex-wrap items-center gap-3 text-small text-muted-foreground">
           <span>
-            Distance: <span className="font-semibold text-foreground">{(routeKm ?? distanceKm).toFixed(2)} km</span>
+            Distance:{" "}
+            <span className="font-semibold text-foreground">
+              {(routeKm ?? distanceKm).toFixed(2)} km
+            </span>
           </span>
           {showEta && etaMin != null && (
             <span className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2 py-0.5 text-caption font-semibold text-primary-ink">

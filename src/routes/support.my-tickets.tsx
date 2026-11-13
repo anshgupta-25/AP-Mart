@@ -21,7 +21,8 @@ function Page() {
     queryKey: ["my-tickets", user?.id],
     queryFn: async () => {
       if (!user) return [];
-      const { data } = await (supabase as any).from("support_tickets")
+      const { data } = await (supabase as any)
+        .from("support_tickets")
         .select("id, ticket_number, title, category, status, created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
@@ -46,20 +47,31 @@ function Page() {
               <LifeBuoy className="h-5 w-5" />
             </div>
             <div className="mt-2.5 text-body font-semibold">No tickets yet</div>
-            <p className="mt-0.5 text-small text-muted-foreground">Need help? Raise a ticket and we'll get back to you.</p>
-            <Button onClick={() => setOpen(true)} className="mt-4 h-9 rounded-full px-5">New ticket</Button>
+            <p className="mt-0.5 text-small text-muted-foreground">
+              Need help? Raise a ticket and we'll get back to you.
+            </p>
+            <Button onClick={() => setOpen(true)} className="mt-4 h-9 rounded-full px-5">
+              New ticket
+            </Button>
           </div>
         ) : (
           <ul className="divide-y divide-border/60">
-            {tickets.data!.map(t => (
+            {tickets.data!.map((t) => (
               <li key={t.id}>
-                <Link to="/support/ticket/$id" params={{ id: t.id }} className="press block min-h-12 px-4 py-3">
+                <Link
+                  to="/support/ticket/$id"
+                  params={{ id: t.id }}
+                  className="press block min-h-12 px-4 py-3"
+                >
                   <div className="flex items-center justify-between gap-2">
                     <span className="truncate text-body font-medium">{t.title}</span>
-                    <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-caption font-semibold capitalize">{t.status.replace(/_/g, " ")}</span>
+                    <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-caption font-semibold capitalize">
+                      {t.status.replace(/_/g, " ")}
+                    </span>
                   </div>
                   <div className="mt-0.5 text-caption text-muted-foreground">
-                    {t.ticket_number} · {t.category.replace(/_/g, " ")} · {new Date(t.created_at).toLocaleString()}
+                    {t.ticket_number} · {t.category.replace(/_/g, " ")} ·{" "}
+                    {new Date(t.created_at).toLocaleString()}
                   </div>
                 </Link>
               </li>
@@ -68,7 +80,11 @@ function Page() {
         )}
       </div>
 
-      <SupportTicketForm open={open} onOpenChange={setOpen} onCreated={(id) => nav({ to: "/support/ticket/$id" as any, params: { id } as any })} />
+      <SupportTicketForm
+        open={open}
+        onOpenChange={setOpen}
+        onCreated={(id) => nav({ to: "/support/ticket/$id" as any, params: { id } as any })}
+      />
     </div>
   );
 }

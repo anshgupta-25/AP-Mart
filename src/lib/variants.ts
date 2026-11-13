@@ -126,4 +126,3 @@ export async function saveVariants(productId: string, drafts: VariantDraft[]) {
     if (error) throw error;
   }
 }
-

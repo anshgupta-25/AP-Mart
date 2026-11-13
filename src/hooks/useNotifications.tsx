@@ -1,7 +1,11 @@
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { refreshPushToken, disablePush, onForegroundMessage } from "@/integrations/firebase/messaging";
+import {
+  refreshPushToken,
+  disablePush,
+  onForegroundMessage,
+} from "@/integrations/firebase/messaging";
 import { toast } from "sonner";
 
 /**
@@ -25,7 +29,9 @@ export function useNotifications() {
     }
     if (registered.current === user.id) return;
     registered.current = user.id;
-    const t = setTimeout(() => { refreshPushToken(user.id); }, 1500);
+    const t = setTimeout(() => {
+      refreshPushToken(user.id);
+    }, 1500);
     return () => clearTimeout(t);
   }, [user]);
 
@@ -37,8 +43,12 @@ export function useNotifications() {
       const title = payload?.notification?.title ?? payload?.data?.title;
       if (!title) return;
       toast(title, { description: payload?.notification?.body ?? payload?.data?.body });
-    }).then((fn) => { unsubscribe = fn; });
-    return () => { unsubscribe?.(); };
+    }).then((fn) => {
+      unsubscribe = fn;
+    });
+    return () => {
+      unsubscribe?.();
+    };
   }, [user]);
 
   // Realtime in-app notifications
@@ -48,13 +58,20 @@ export function useNotifications() {
       .channel("notifications-" + user.id)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
         (payload) => {
           const n: any = payload.new;
           toast(n.title, { description: n.body ?? undefined });
-        }
+        },
       )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 }

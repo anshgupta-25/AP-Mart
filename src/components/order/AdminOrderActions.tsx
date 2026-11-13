@@ -5,11 +5,17 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Ban, Printer, RefreshCcw, Store, Truck, User, Undo2 } from "lucide-react";
 import { rupees } from "@/lib/format";
 import { optimisticPatch, patchOrderDetail } from "@/lib/optimistic";
-
 
 type Props = { order: any };
 
@@ -23,12 +29,22 @@ export function AdminOrderActions({ order }: Props) {
   });
   const partners = useQuery({
     queryKey: ["admin-partners-mini"],
-    queryFn: async () => ((await supabase.from("delivery_partners").select("id, name, phone, is_online")).data as any[]) ?? [],
+    queryFn: async () =>
+      ((await supabase.from("delivery_partners").select("id, name, phone, is_online"))
+        .data as any[]) ?? [],
   });
   const payment = useQuery({
     queryKey: ["admin-order-payment", order.id],
     queryFn: async () =>
-      (await supabase.from("payments").select("*").eq("order_id", order.id).order("created_at", { ascending: false }).limit(1).maybeSingle()).data as any,
+      (
+        await supabase
+          .from("payments")
+          .select("*")
+          .eq("order_id", order.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      ).data as any,
   });
 
   const [shopId, setShopId] = useState("");
@@ -55,7 +71,11 @@ export function AdminOrderActions({ order }: Props) {
     setBusy(true);
     // Optimistic: patch the order detail cache right away, roll back on error.
     const rollback = patch
-      ? optimisticPatch(qc, [["order-details", order.id], ["order-details"]], patchOrderDetail(patch))
+      ? optimisticPatch(
+          qc,
+          [["order-details", order.id], ["order-details"]],
+          patchOrderDetail(patch),
+        )
       : () => {};
     const { error } = await fn();
     setBusy(false);
@@ -67,7 +87,6 @@ export function AdminOrderActions({ order }: Props) {
     after?.();
   };
 
-
   const selectCls = "h-10 w-full rounded-xl border border-border bg-background px-2 text-sm";
 
   return (
@@ -76,16 +95,26 @@ export function AdminOrderActions({ order }: Props) {
 
       <div className="flex flex-wrap gap-2">
         <Button asChild size="sm" variant="secondary">
-          <Link to="/admin/shops"><Store className="h-3.5 w-3.5 mr-1" />View shop</Link>
+          <Link to="/admin/shops">
+            <Store className="h-3.5 w-3.5 mr-1" />
+            View shop
+          </Link>
         </Button>
         <Button asChild size="sm" variant="secondary">
-          <Link to="/admin/customers"><User className="h-3.5 w-3.5 mr-1" />View customer</Link>
+          <Link to="/admin/customers">
+            <User className="h-3.5 w-3.5 mr-1" />
+            View customer
+          </Link>
         </Button>
         <Button asChild size="sm" variant="secondary">
-          <Link to="/admin/delivery-partners"><Truck className="h-3.5 w-3.5 mr-1" />View rider</Link>
+          <Link to="/admin/delivery-partners">
+            <Truck className="h-3.5 w-3.5 mr-1" />
+            View rider
+          </Link>
         </Button>
         <Button size="sm" variant="secondary" onClick={() => window.print()}>
-          <Printer className="h-3.5 w-3.5 mr-1" />Print invoice
+          <Printer className="h-3.5 w-3.5 mr-1" />
+          Print invoice
         </Button>
       </div>
 
@@ -93,20 +122,42 @@ export function AdminOrderActions({ order }: Props) {
         {/* Reassign shop */}
         <Dialog open={openShop} onOpenChange={setOpenShop}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="secondary"><RefreshCcw className="h-3.5 w-3.5 mr-1" />Reassign shop</Button>
+            <Button size="sm" variant="secondary">
+              <RefreshCcw className="h-3.5 w-3.5 mr-1" />
+              Reassign shop
+            </Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Reassign shop</DialogTitle></DialogHeader>
-            <select className={selectCls} value={shopId} onChange={(e) => setShopId(e.target.value)}>
+            <DialogHeader>
+              <DialogTitle>Reassign shop</DialogTitle>
+            </DialogHeader>
+            <select
+              className={selectCls}
+              value={shopId}
+              onChange={(e) => setShopId(e.target.value)}
+            >
               <option value="">Select a shop…</option>
               {(shops.data ?? []).map((s: any) => (
-                <option key={s.id} value={s.id}>{s.name} — {s.pincode} {s.owner_name ? `(${s.owner_name})` : "(no owner)"}</option>
+                <option key={s.id} value={s.id}>
+                  {s.name} — {s.pincode} {s.owner_name ? `(${s.owner_name})` : "(no owner)"}
+                </option>
               ))}
             </select>
             <DialogFooter>
               <Button
                 disabled={!shopId || busy}
-                onClick={() => run(() => supabase.rpc("admin_reassign_shop", { _order_id: order.id, _shop_id: shopId }) as any, "Shop reassigned", () => setOpenShop(false), { shop_id: shopId, status: "awaiting_shop" })}
+                onClick={() =>
+                  run(
+                    () =>
+                      supabase.rpc("admin_reassign_shop", {
+                        _order_id: order.id,
+                        _shop_id: shopId,
+                      }) as any,
+                    "Shop reassigned",
+                    () => setOpenShop(false),
+                    { shop_id: shopId, status: "awaiting_shop" },
+                  )
+                }
               >
                 Reassign
               </Button>
@@ -117,20 +168,42 @@ export function AdminOrderActions({ order }: Props) {
         {/* Reassign rider */}
         <Dialog open={openRider} onOpenChange={setOpenRider}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="secondary"><Truck className="h-3.5 w-3.5 mr-1" />Reassign rider</Button>
+            <Button size="sm" variant="secondary">
+              <Truck className="h-3.5 w-3.5 mr-1" />
+              Reassign rider
+            </Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Reassign delivery partner</DialogTitle></DialogHeader>
-            <select className={selectCls} value={partnerId} onChange={(e) => setPartnerId(e.target.value)}>
+            <DialogHeader>
+              <DialogTitle>Reassign delivery partner</DialogTitle>
+            </DialogHeader>
+            <select
+              className={selectCls}
+              value={partnerId}
+              onChange={(e) => setPartnerId(e.target.value)}
+            >
               <option value="">Select a rider…</option>
               {(partners.data ?? []).map((p: any) => (
-                <option key={p.id} value={p.id}>{p.name} {p.phone ? `· ${p.phone}` : ""} {p.is_online ? "· online" : ""}</option>
+                <option key={p.id} value={p.id}>
+                  {p.name} {p.phone ? `· ${p.phone}` : ""} {p.is_online ? "· online" : ""}
+                </option>
               ))}
             </select>
             <DialogFooter>
               <Button
                 disabled={!partnerId || busy}
-                onClick={() => run(() => supabase.rpc("admin_reassign_partner", { _order_id: order.id, _partner_id: partnerId }) as any, "Rider reassigned", () => setOpenRider(false), { partner_id: partnerId })}
+                onClick={() =>
+                  run(
+                    () =>
+                      supabase.rpc("admin_reassign_partner", {
+                        _order_id: order.id,
+                        _partner_id: partnerId,
+                      }) as any,
+                    "Rider reassigned",
+                    () => setOpenRider(false),
+                    { partner_id: partnerId },
+                  )
+                }
               >
                 Reassign
               </Button>
@@ -146,29 +219,55 @@ export function AdminOrderActions({ order }: Props) {
           disabled={busy || order.status === "cancelled" || order.status === "delivered"}
           onClick={() => {
             if (!confirm("Cancel this order? Stock will be restored where applicable.")) return;
-            run(() => supabase.rpc("admin_update_order_status", { _order_id: order.id, _status: "cancelled" }) as any, "Order cancelled", undefined, { status: "cancelled" });
+            run(
+              () =>
+                supabase.rpc("admin_update_order_status", {
+                  _order_id: order.id,
+                  _status: "cancelled",
+                }) as any,
+              "Order cancelled",
+              undefined,
+              { status: "cancelled" },
+            );
           }}
         >
-          <Ban className="h-3.5 w-3.5 mr-1" />Cancel order
+          <Ban className="h-3.5 w-3.5 mr-1" />
+          Cancel order
         </Button>
 
         {/* Refund */}
         <Dialog open={openRefund} onOpenChange={setOpenRefund}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="secondary"><Undo2 className="h-3.5 w-3.5 mr-1" />Refund</Button>
+            <Button size="sm" variant="secondary">
+              <Undo2 className="h-3.5 w-3.5 mr-1" />
+              Refund
+            </Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Record refund</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Record refund</DialogTitle>
+            </DialogHeader>
             {payment.data ? (
               <div className="space-y-3 text-sm">
                 <div className="text-muted-foreground">
-                  Payment {payment.data.provider} · {String(payment.data.status).replace(/_/g, " ")} · {rupees(payment.data.amount)}
+                  Payment {payment.data.provider} · {String(payment.data.status).replace(/_/g, " ")}{" "}
+                  · {rupees(payment.data.amount)}
                 </div>
-                <Input value={refundAmount} onChange={(e) => setRefundAmount(e.target.value)} placeholder="Refund amount" />
-                <Input value={refundRef} onChange={(e) => setRefundRef(e.target.value)} placeholder="Refund reference ID" />
+                <Input
+                  value={refundAmount}
+                  onChange={(e) => setRefundAmount(e.target.value)}
+                  placeholder="Refund amount"
+                />
+                <Input
+                  value={refundRef}
+                  onChange={(e) => setRefundRef(e.target.value)}
+                  placeholder="Refund reference ID"
+                />
               </div>
             ) : (
-              <div className="text-sm text-muted-foreground">No payment record found for this order.</div>
+              <div className="text-sm text-muted-foreground">
+                No payment record found for this order.
+              </div>
             )}
             <DialogFooter>
               <Button

@@ -1,7 +1,25 @@
 import {
-  LayoutDashboard, ClipboardList, Route as RouteIcon, Wallet, Store, MapPin, Users, UserPlus,
-  Truck, BarChart, MessageSquareWarning, Bell, Settings, Package, Tag, Megaphone, Ticket,
-  AlertTriangle, LifeBuoy, TrendingUp, IndianRupee,
+  LayoutDashboard,
+  ClipboardList,
+  Route as RouteIcon,
+  Wallet,
+  Store,
+  MapPin,
+  Users,
+  UserPlus,
+  Truck,
+  BarChart,
+  MessageSquareWarning,
+  Bell,
+  Settings,
+  Package,
+  Tag,
+  Megaphone,
+  Ticket,
+  AlertTriangle,
+  LifeBuoy,
+  TrendingUp,
+  IndianRupee,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 

@@ -21,8 +21,11 @@ export function FcmDiagnostics() {
   const [busy, setBusy] = useState(false);
 
   async function refresh() {
-    const regs = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistrations() : [];
-    const sw = regs.find((r) => (r.active || r.installing || r.waiting)?.scriptURL.includes("firebase-messaging-sw"));
+    const regs =
+      "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistrations() : [];
+    const sw = regs.find((r) =>
+      (r.active || r.installing || r.waiting)?.scriptURL.includes("firebase-messaging-sw"),
+    );
     const token = await getCurrentToken();
     let storedTokens = 0;
     if (user) {
@@ -41,7 +44,9 @@ export function FcmDiagnostics() {
     });
   }
 
-  useEffect(() => { refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [user?.id]);
+  useEffect(() => {
+    refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [user?.id]);
 
   async function handleEnable() {
     if (!user) return;
@@ -50,9 +55,11 @@ export function FcmDiagnostics() {
     setBusy(false);
     const messages: Record<string, string> = {
       registered: "Push notifications enabled on this device.",
-      "not-configured": "Firebase Messaging is not connected yet — connect it in project integrations (include web push).",
+      "not-configured":
+        "Firebase Messaging is not connected yet — connect it in project integrations (include web push).",
       unsupported: "This browser does not support web push.",
-      "open-in-new-tab": "Open the app in its own browser tab to allow notifications — the preview iframe blocks the prompt.",
+      "open-in-new-tab":
+        "Open the app in its own browser tab to allow notifications — the preview iframe blocks the prompt.",
       denied: "Notifications are blocked. Allow them in your browser's site settings.",
       error: result.error ?? "Something went wrong.",
     };
@@ -84,13 +91,21 @@ export function FcmDiagnostics() {
 
       <dl className="grid grid-cols-1 gap-2 text-small sm:grid-cols-2">
         <Row label="Config">
-          {d?.configured ? <Badge>Ready</Badge> : <Badge variant="destructive">Missing web push keys</Badge>}
+          {d?.configured ? (
+            <Badge>Ready</Badge>
+          ) : (
+            <Badge variant="destructive">Missing web push keys</Badge>
+          )}
         </Row>
         <Row label="Permission">
-          <Badge variant={d?.permission === "granted" ? "default" : "secondary"}>{d?.permission ?? "—"}</Badge>
+          <Badge variant={d?.permission === "granted" ? "default" : "secondary"}>
+            {d?.permission ?? "—"}
+          </Badge>
         </Row>
         <Row label="Service worker">
-          <span className="truncate text-muted-foreground">{d?.swScript ? "registered" : "not registered"}</span>
+          <span className="truncate text-muted-foreground">
+            {d?.swScript ? "registered" : "not registered"}
+          </span>
         </Row>
         <Row label="Tokens stored for you">
           <span className="text-muted-foreground">{d?.storedTokens ?? 0}</span>
@@ -116,8 +131,8 @@ export function FcmDiagnostics() {
       </div>
 
       <p className="text-small leading-relaxed text-muted-foreground">
-        In-app notification history and realtime toasts continue to come from the database. Firebase only delivers
-        the system-level push.
+        In-app notification history and realtime toasts continue to come from the database. Firebase
+        only delivers the system-level push.
       </p>
     </div>
   );

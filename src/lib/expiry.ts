@@ -48,7 +48,7 @@ export function expiryStatus(
 ): {
   status: ExpiryStatus;
   days: number | null;
-  label: string;      // days-remaining label ("Expires in 5 Days", "Expired 2 Days Ago")
+  label: string; // days-remaining label ("Expires in 5 Days", "Expired 2 Days Ago")
   statusLabel: string; // Fresh / Near Expiry / Expired
   color: string;
   emoji: string;
@@ -72,8 +72,7 @@ export function expiryStatus(
 
   // Determine near-expiry threshold
   const shelf = shelfLifeDays(mfg ?? null, exp);
-  const nearExpiry =
-    shelf && shelf > 0 ? days / shelf <= 0.3 : days <= 7;
+  const nearExpiry = shelf && shelf > 0 ? days / shelf <= 0.3 : days <= 7;
 
   if (nearExpiry) {
     return {

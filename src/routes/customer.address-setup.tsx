@@ -114,7 +114,8 @@ function AddressSetupPage() {
     const pin = normalizePincode(form.pincode);
     const cityV = normalizePlace(form.city);
     const stateV = normalizePlace(form.state);
-    if (!form.name.trim() || !form.phone.trim()) return toast.error("Please add your name and phone number");
+    if (!form.name.trim() || !form.phone.trim())
+      return toast.error("Please add your name and phone number");
     if (!form.house_no.trim()) return toast.error("Please add your house / flat number");
     if (!form.line1.trim()) return toast.error("Please add your street / area");
     if (!cityV || !stateV) return toast.error("Please add your city and state");
@@ -128,7 +129,9 @@ function AddressSetupPage() {
       phone: form.phone.trim(),
       house_no: form.house_no.trim(),
       building: form.building.trim() || null,
-      line1: [form.house_no.trim(), form.building.trim(), form.line1.trim()].filter(Boolean).join(", "),
+      line1: [form.house_no.trim(), form.building.trim(), form.line1.trim()]
+        .filter(Boolean)
+        .join(", "),
       line2: form.building.trim() || null,
       landmark: form.landmark.trim() || null,
       city: cityV,
@@ -173,7 +176,11 @@ function AddressSetupPage() {
                 disabled={locating}
                 className="h-11 w-full rounded-xl"
               >
-                {locating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Crosshair className="mr-2 h-4 w-4" />}
+                {locating ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Crosshair className="mr-2 h-4 w-4" />
+                )}
                 Use current location
               </Button>
               <Button
@@ -215,14 +222,31 @@ function AddressSetupPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="Full name" value={form.name} onChange={(v) => set("name", v)} />
-              <Field label="Phone" value={form.phone} onChange={(v) => set("phone", v)} inputMode="tel" />
-              <Field label="House / Flat no." value={form.house_no} onChange={(v) => set("house_no", v)} />
-              <Field label="Building / Society" value={form.building} onChange={(v) => set("building", v)} />
+              <Field
+                label="Phone"
+                value={form.phone}
+                onChange={(v) => set("phone", v)}
+                inputMode="tel"
+              />
+              <Field
+                label="House / Flat no."
+                value={form.house_no}
+                onChange={(v) => set("house_no", v)}
+              />
+              <Field
+                label="Building / Society"
+                value={form.building}
+                onChange={(v) => set("building", v)}
+              />
               <div className="col-span-2">
                 <Field label="Street / Area" value={form.line1} onChange={(v) => set("line1", v)} />
               </div>
               <div className="col-span-2">
-                <Field label="Landmark (optional)" value={form.landmark} onChange={(v) => set("landmark", v)} />
+                <Field
+                  label="Landmark (optional)"
+                  value={form.landmark}
+                  onChange={(v) => set("landmark", v)}
+                />
               </div>
               <Field label="City" value={form.city} onChange={(v) => set("city", v)} />
               <Field label="State" value={form.state} onChange={(v) => set("state", v)} />
@@ -259,11 +283,7 @@ function AddressSetupPage() {
               </p>
             )}
 
-            <Button
-              onClick={save}
-              disabled={saving}
-              className="h-11 w-full rounded-xl"
-            >
+            <Button onClick={save} disabled={saving} className="h-11 w-full rounded-xl">
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save address and continue
             </Button>

@@ -43,7 +43,9 @@ export function SubcategoryManager({
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("subcategories")
-        .select("id, category_id, name, slug, image_url, icon, display_order, is_active, is_featured")
+        .select(
+          "id, category_id, name, slug, image_url, icon, display_order, is_active, is_featured",
+        )
         .eq("category_id", categoryId)
         .order("display_order")
         .order("name");
@@ -237,7 +239,11 @@ function SubcategoryForm({
         <div className="space-y-3">
           <div>
             <Label className="text-xs font-bold">Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Cooking Oil" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Cooking Oil"
+            />
           </div>
           <div>
             <Label className="text-xs font-bold">Slug</Label>

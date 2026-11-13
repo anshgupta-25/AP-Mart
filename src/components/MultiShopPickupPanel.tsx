@@ -5,7 +5,13 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Navigation2, CheckCircle2, Package, MapPin, Phone, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { rupees } from "@/lib/format";
@@ -30,15 +36,27 @@ export function MultiShopPickupPanel({
   onAllPickedUp,
 }: {
   parentId: string;
-  parent: { order_number: string; total: number; shop_count: number; delivery_type: string | null; fast_delivery_fee: number | null };
+  parent: {
+    order_number: string;
+    total: number;
+    shop_count: number;
+    delivery_type: string | null;
+    fast_delivery_fee: number | null;
+  };
   onAllPickedUp: () => void;
 }) {
   const qc = useQueryClient();
 
-  const { data: stops, isLoading, refetch } = useQuery({
+  const {
+    data: stops,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["parent-stops", parentId],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("partner_parent_pickup_stops", { _parent_id: parentId });
+      const { data, error } = await supabase.rpc("partner_parent_pickup_stops", {
+        _parent_id: parentId,
+      });
       if (error) throw error;
       return (data ?? []) as Stop[];
     },
@@ -48,14 +66,23 @@ export function MultiShopPickupPanel({
   useEffect(() => {
     const ch = supabase
       .channel(`parent-${parentId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `parent_order_id=eq.${parentId}` }, () => {
-        qc.invalidateQueries({ queryKey: ["parent-stops", parentId] });
-      })
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders", filter: `parent_order_id=eq.${parentId}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["parent-stops", parentId] });
+        },
+      )
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, [parentId, qc]);
 
-  const totalItems = useMemo(() => (stops ?? []).reduce((n, s) => n + Number(s.items_count || 0), 0), [stops]);
+  const totalItems = useMemo(
+    () => (stops ?? []).reduce((n, s) => n + Number(s.items_count || 0), 0),
+    [stops],
+  );
   const done = (stops ?? []).filter((s) => s.pickup_verified_at).length;
   const nextIdx = (stops ?? []).findIndex((s) => !s.pickup_verified_at);
   const allDone = stops && stops.length > 0 && nextIdx === -1;
@@ -70,8 +97,12 @@ export function MultiShopPickupPanel({
     <div className="space-y-2.5">
       <Card className="rounded-xl border-0 bg-tint-mint p-4 shadow-none">
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <Badge className="gap-1"><Truck className="h-3 w-3" /> Multi-shop delivery</Badge>
-          <span className="text-small font-medium text-foreground/70">Order {parent.order_number}</span>
+          <Badge className="gap-1">
+            <Truck className="h-3 w-3" /> Multi-shop delivery
+          </Badge>
+          <span className="text-small font-medium text-foreground/70">
+            Order {parent.order_number}
+          </span>
         </div>
         <div className="mt-3 grid grid-cols-3 gap-3 text-center">
           <Stat label="Shops" value={String(parent.shop_count)} />
@@ -79,7 +110,11 @@ export function MultiShopPickupPanel({
           <Stat label="Payout" value={rupees(parent.total)} />
         </div>
         <div className="mt-3 text-small text-foreground/70">
-          Progress: <span className="font-semibold text-foreground">{done}/{stops?.length ?? 0}</span> pickups completed
+          Progress:{" "}
+          <span className="font-semibold text-foreground">
+            {done}/{stops?.length ?? 0}
+          </span>{" "}
+          pickups completed
         </div>
       </Card>
 
@@ -100,11 +135,15 @@ export function MultiShopPickupPanel({
           >
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="rounded-full">Stop {s.seq}</Badge>
+                <Badge variant="secondary" className="rounded-full">
+                  Stop {s.seq}
+                </Badge>
                 <span className="text-body font-semibold">{s.shop_name}</span>
               </div>
               {done ? (
-                <Badge className="gap-1"><CheckCircle2 className="h-3 w-3" /> Picked up</Badge>
+                <Badge className="gap-1">
+                  <CheckCircle2 className="h-3 w-3" /> Picked up
+                </Badge>
               ) : (
                 <Badge variant="secondary">{String(s.status).replace(/_/g, " ")}</Badge>
               )}
@@ -114,9 +153,13 @@ export function MultiShopPickupPanel({
               <span>{s.shop_address ?? "—"}</span>
             </div>
             <div className="mt-1.5 flex items-center gap-1.5 text-small text-muted-foreground">
-              <Package className="h-3.5 w-3.5" /> {s.items_count} item{s.items_count === 1 ? "" : "s"}
+              <Package className="h-3.5 w-3.5" /> {s.items_count} item
+              {s.items_count === 1 ? "" : "s"}
               {s.shop_phone && (
-                <a href={`tel:${s.shop_phone}`} className="ml-3 inline-flex items-center gap-1 font-medium text-primary">
+                <a
+                  href={`tel:${s.shop_phone}`}
+                  className="ml-3 inline-flex items-center gap-1 font-medium text-primary"
+                >
                   <Phone className="h-3 w-3" /> {s.shop_phone}
                 </a>
               )}
@@ -137,7 +180,12 @@ export function MultiShopPickupPanel({
                     <Navigation2 className="h-3.5 w-3.5 mr-1" /> Navigate
                   </Button>
                 )}
-                <PickupOtpDialog childId={s.child_id} shopName={s.shop_name} onDone={refetch} disabled={!isNext} />
+                <PickupOtpDialog
+                  childId={s.child_id}
+                  shopName={s.shop_name}
+                  onDone={refetch}
+                  disabled={!isNext}
+                />
               </div>
             )}
           </Card>
@@ -156,7 +204,17 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function PickupOtpDialog({ childId, shopName, onDone, disabled }: { childId: string; shopName: string; onDone: () => void; disabled?: boolean }) {
+function PickupOtpDialog({
+  childId,
+  shopName,
+  onDone,
+  disabled,
+}: {
+  childId: string;
+  shopName: string;
+  onDone: () => void;
+  disabled?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [otp, setOtp] = useState("");
   const [busy, setBusy] = useState(false);
@@ -164,7 +222,10 @@ function PickupOtpDialog({ childId, shopName, onDone, disabled }: { childId: str
   const submit = async () => {
     if (otp.trim().length < 4) return toast.error("Enter the OTP from the shopkeeper");
     setBusy(true);
-    const { error } = await supabase.rpc("rider_verify_pickup", { _child_id: childId, _otp: otp.trim() });
+    const { error } = await supabase.rpc("rider_verify_pickup", {
+      _child_id: childId,
+      _otp: otp.trim(),
+    });
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success(`Picked up from ${shopName}`);
@@ -184,9 +245,18 @@ function PickupOtpDialog({ childId, shopName, onDone, disabled }: { childId: str
         <DialogHeader>
           <DialogTitle>Verify pickup — {shopName}</DialogTitle>
         </DialogHeader>
-        <p className="text-small text-muted-foreground">Ask the shopkeeper for the 4-digit OTP shown on their order screen.</p>
-        <Input value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="OTP" inputMode="numeric" />
-        <Button onClick={submit} disabled={busy} className="h-11 w-full rounded-xl">Confirm pickup</Button>
+        <p className="text-small text-muted-foreground">
+          Ask the shopkeeper for the 4-digit OTP shown on their order screen.
+        </p>
+        <Input
+          value={otp}
+          onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          placeholder="OTP"
+          inputMode="numeric"
+        />
+        <Button onClick={submit} disabled={busy} className="h-11 w-full rounded-xl">
+          Confirm pickup
+        </Button>
       </DialogContent>
     </Dialog>
   );

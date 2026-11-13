@@ -11,7 +11,11 @@ import { toast } from "sonner";
 type Updater = (prev: unknown) => unknown;
 
 /** Apply an updater to every cached query matching the given key prefixes. Returns a rollback fn. */
-export function optimisticPatch(qc: QueryClient, keys: readonly unknown[][], updater: Updater): () => void {
+export function optimisticPatch(
+  qc: QueryClient,
+  keys: readonly unknown[][],
+  updater: Updater,
+): () => void {
   const snapshots: Array<[readonly unknown[], unknown]> = [];
   for (const key of keys) {
     for (const [k, data] of qc.getQueriesData({ queryKey: key as any })) {
@@ -40,7 +44,9 @@ export const removeRow =
 export const patchObject =
   (patch: Record<string, unknown>): Updater =>
   (prev) =>
-    prev && typeof prev === "object" && !Array.isArray(prev) ? { ...(prev as object), ...patch } : prev;
+    prev && typeof prev === "object" && !Array.isArray(prev)
+      ? { ...(prev as object), ...patch }
+      : prev;
 
 /** Patch a nested object under `order` (shape used by useOrderDetails). */
 export const patchOrderDetail =

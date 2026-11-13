@@ -1,4 +1,10 @@
-import { createFileRoute, Link, Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Navigate,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Bell, User } from "lucide-react";
 
@@ -18,7 +24,10 @@ function AdminShell() {
 
   useEffect(() => {
     if (loading || rolesLoading) return;
-    if (!user) { navigate({ to: "/login", replace: true }); return; }
+    if (!user) {
+      navigate({ to: "/login", replace: true });
+      return;
+    }
     if (!isAdmin) navigate({ to: "/customer/home", replace: true });
   }, [user, loading, rolesLoading, isAdmin, navigate]);
 
@@ -29,10 +38,18 @@ function AdminShell() {
       nav={ADMIN_PORTAL_NAV}
       trailing={
         <>
-          <Link to="/admin/notifications" aria-label="Notifications" className="press grid h-9 w-9 place-items-center rounded-full bg-card shadow-soft">
+          <Link
+            to="/admin/notifications"
+            aria-label="Notifications"
+            className="press grid h-9 w-9 place-items-center rounded-full bg-card shadow-soft"
+          >
             <Bell className="h-[18px] w-[18px]" />
           </Link>
-          <Link to="/admin/settings" aria-label="Account" className="press grid h-9 w-9 place-items-center rounded-full bg-card shadow-soft">
+          <Link
+            to="/admin/settings"
+            aria-label="Account"
+            className="press grid h-9 w-9 place-items-center rounded-full bg-card shadow-soft"
+          >
             <User className="h-[18px] w-[18px]" />
           </Link>
         </>

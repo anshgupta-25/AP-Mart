@@ -56,7 +56,12 @@ export function ImageInput({
     try {
       // New product uploads always go to `products`; `product-images` is legacy.
       const target = bucket === "product-images" ? "products" : bucket;
-      const stored = await uploadImage({ bucket: target, file, maxBytes: 5 * 1024 * 1024, maxEdge });
+      const stored = await uploadImage({
+        bucket: target,
+        file,
+        maxBytes: 5 * 1024 * 1024,
+        maxEdge,
+      });
       onChange(stored.ref);
       setPreviewUrl(null); // the saved reference renders immediately via StorageImg
       toast.success("Uploaded");

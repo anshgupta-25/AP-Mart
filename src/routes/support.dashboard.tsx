@@ -5,7 +5,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Inbox, AlertCircle, CheckCircle2, Timer, Phone, MapPin, Store, User, Loader2, ExternalLink } from "lucide-react";
+import {
+  Inbox,
+  AlertCircle,
+  CheckCircle2,
+  Timer,
+  Phone,
+  MapPin,
+  Store,
+  User,
+  Loader2,
+  ExternalLink,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/support/dashboard")({
@@ -26,11 +37,15 @@ function Page() {
   const qc = useQueryClient();
 
   useEffect(() => {
-    const ch = supabase.channel("support-dash").on("postgres_changes",
-      { event: "*", schema: "public", table: "support_tickets" },
-      () => qc.invalidateQueries({ queryKey: ["support-dash-complaints"] })
-    ).subscribe();
-    return () => { supabase.removeChannel(ch); };
+    const ch = supabase
+      .channel("support-dash")
+      .on("postgres_changes", { event: "*", schema: "public", table: "support_tickets" }, () =>
+        qc.invalidateQueries({ queryKey: ["support-dash-complaints"] }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, [qc]);
 
   const data = useQuery({
@@ -41,12 +56,12 @@ function Page() {
       const rows: any[] = data ?? [];
       return {
         total: rows.length,
-        open: rows.filter(r => ["open","assigned","in_progress"].includes(r.status)).length,
-        unassigned: rows.filter(r => r.status === "open" && !r.assigned_to).length,
-        resolved: rows.filter(r => r.status === "resolved").length,
-        mine: rows.filter(r => r.assigned_to === user?.id && r.status !== "closed").slice(0, 10),
-        queue: rows.filter(r => !r.assigned_to && r.status === "open").slice(0, 10),
-        active: rows.filter(r => r.status !== "resolved" && r.status !== "closed").slice(0, 30),
+        open: rows.filter((r) => ["open", "assigned", "in_progress"].includes(r.status)).length,
+        unassigned: rows.filter((r) => r.status === "open" && !r.assigned_to).length,
+        resolved: rows.filter((r) => r.status === "resolved").length,
+        mine: rows.filter((r) => r.assigned_to === user?.id && r.status !== "closed").slice(0, 10),
+        queue: rows.filter((r) => !r.assigned_to && r.status === "open").slice(0, 10),
+        active: rows.filter((r) => r.status !== "resolved" && r.status !== "closed").slice(0, 30),
       };
     },
     refetchInterval: 30000,
@@ -59,10 +74,30 @@ function Page() {
       <h1 className="large-title">Support overview</h1>
 
       <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Stat tint="bg-tint-sky" icon={<Inbox className="h-[18px] w-[18px]" />} label="Total" value={data.data?.total ?? 0} />
-        <Stat tint="bg-tint-sun" icon={<Timer className="h-[18px] w-[18px]" />} label="Open" value={data.data?.open ?? 0} />
-        <Stat tint="bg-tint-rose" icon={<AlertCircle className="h-[18px] w-[18px]" />} label="Unassigned" value={data.data?.unassigned ?? 0} />
-        <Stat tint="bg-tint-mint" icon={<CheckCircle2 className="h-[18px] w-[18px]" />} label="Resolved" value={data.data?.resolved ?? 0} />
+        <Stat
+          tint="bg-tint-sky"
+          icon={<Inbox className="h-[18px] w-[18px]" />}
+          label="Total"
+          value={data.data?.total ?? 0}
+        />
+        <Stat
+          tint="bg-tint-sun"
+          icon={<Timer className="h-[18px] w-[18px]" />}
+          label="Open"
+          value={data.data?.open ?? 0}
+        />
+        <Stat
+          tint="bg-tint-rose"
+          icon={<AlertCircle className="h-[18px] w-[18px]" />}
+          label="Unassigned"
+          value={data.data?.unassigned ?? 0}
+        />
+        <Stat
+          tint="bg-tint-mint"
+          icon={<CheckCircle2 className="h-[18px] w-[18px]" />}
+          label="Resolved"
+          value={data.data?.resolved ?? 0}
+        />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
@@ -70,12 +105,26 @@ function Page() {
         <TicketList title="Unassigned queue" items={data.data?.queue ?? []} onDone={invalidate} />
       </section>
 
-      <TicketList title="All active complaints" items={data.data?.active ?? []} onDone={invalidate} />
+      <TicketList
+        title="All active complaints"
+        items={data.data?.active ?? []}
+        onDone={invalidate}
+      />
     </div>
   );
 }
 
-function Stat({ icon, label, value, tint }: { icon: React.ReactNode; label: string; value: number; tint: string }) {
+function Stat({
+  icon,
+  label,
+  value,
+  tint,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  tint: string;
+}) {
   return (
     <div className={`rounded-xl p-3.5 ${tint}`}>
       <div className="text-foreground/60">{icon}</div>
@@ -89,7 +138,8 @@ function TicketList({ title, items, onDone }: { title: string; items: any[]; onD
   return (
     <div className="overflow-hidden rounded-xl border border-border/70 bg-card">
       <div className="hairline-b px-4 py-3 section-title">
-        {title} <span className="text-small font-normal text-muted-foreground">({items.length})</span>
+        {title}{" "}
+        <span className="text-small font-normal text-muted-foreground">({items.length})</span>
       </div>
       {items.length === 0 ? (
         <div className="p-6 text-center text-small text-muted-foreground">Nothing here.</div>
@@ -101,7 +151,9 @@ function TicketList({ title, items, onDone }: { title: string; items: any[]; onD
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="truncate text-body font-medium">{t.title}</span>
-                    <span className={`text-caption capitalize rounded-full px-2 py-0.5 font-semibold ${STATUS_TONE[t.status] ?? "bg-secondary"}`}>
+                    <span
+                      className={`text-caption capitalize rounded-full px-2 py-0.5 font-semibold ${STATUS_TONE[t.status] ?? "bg-secondary"}`}
+                    >
                       {t.status.replace(/_/g, " ")}
                     </span>
                     <span className="text-caption capitalize rounded-full bg-secondary px-2 py-0.5 font-semibold">
@@ -109,8 +161,7 @@ function TicketList({ title, items, onDone }: { title: string; items: any[]; onD
                     </span>
                   </div>
                   <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-small text-muted-foreground">
-                    <span>{t.ticket_number}</span>·
-                    <span>{t.category.replace(/_/g, " ")}</span>·
+                    <span>{t.ticket_number}</span>·<span>{t.category.replace(/_/g, " ")}</span>·
                     <span>{new Date(t.created_at).toLocaleString()}</span>
                   </div>
                 </div>
@@ -129,7 +180,9 @@ function TicketList({ title, items, onDone }: { title: string; items: any[]; onD
               </header>
 
               {t.description && (
-                <p className="whitespace-pre-wrap text-small leading-relaxed text-foreground/80">{t.description}</p>
+                <p className="whitespace-pre-wrap text-small leading-relaxed text-foreground/80">
+                  {t.description}
+                </p>
               )}
 
               <div className="grid gap-2 text-small sm:grid-cols-2">
@@ -158,7 +211,10 @@ function TicketList({ title, items, onDone }: { title: string; items: any[]; onD
                     </div>
                     <div className="font-semibold">{t.shop_name || "—"}</div>
                     {t.shop_phone && (
-                      <a href={`tel:${t.shop_phone}`} className="flex items-center gap-1 text-primary">
+                      <a
+                        href={`tel:${t.shop_phone}`}
+                        className="flex items-center gap-1 text-primary"
+                      >
                         <Phone className="h-3 w-3" /> {t.shop_phone}
                       </a>
                     )}
@@ -192,28 +248,52 @@ function ResolveButton({ ticketId, onDone }: { ticketId: string; onDone: () => v
       _notes: notes.trim() || null,
     });
     setBusy(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Ticket resolved. User notified.");
-    setOpen(false); setNotes("");
+    setOpen(false);
+    setNotes("");
     onDone();
   };
 
   if (!open) {
     return (
-      <Button size="sm" onClick={() => setOpen(true)}
-        className="h-8 gap-1 rounded-full px-3.5 text-small">
+      <Button
+        size="sm"
+        onClick={() => setOpen(true)}
+        className="h-8 gap-1 rounded-full px-3.5 text-small"
+      >
         <CheckCircle2 className="h-3.5 w-3.5" /> Resolve
       </Button>
     );
   }
   return (
     <div className="mt-2 w-full space-y-2 rounded-xl bg-primary-soft p-3">
-      <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)}
-        placeholder="Resolution notes (optional) — sent to user" />
+      <Textarea
+        rows={2}
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="Resolution notes (optional) — sent to user"
+      />
       <div className="flex justify-end gap-2">
-        <Button size="sm" variant="ghost" onClick={() => { setOpen(false); setNotes(""); }}>Cancel</Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            setOpen(false);
+            setNotes("");
+          }}
+        >
+          Cancel
+        </Button>
         <Button size="sm" onClick={resolve} disabled={busy} className="gap-1">
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+          {busy ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <CheckCircle2 className="h-3.5 w-3.5" />
+          )}
           Mark resolved
         </Button>
       </div>

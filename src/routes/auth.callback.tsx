@@ -82,13 +82,16 @@ function AuthCallbackPage() {
 
         // 3. Retrieve and verify the active session
         setMessage("Verifying user session…");
-        let { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        let session = sessionData.session;
 
         if (sessionError || !session?.user) {
           // If session is still propagating from hash or storage, wait briefly for auth event
           session = await new Promise((resolve) => {
             const timer = setTimeout(() => resolve(null), 3000);
-            const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+            const {
+              data: { subscription },
+            } = supabase.auth.onAuthStateChange((event, s) => {
               if (s?.user) {
                 clearTimeout(timer);
                 subscription.unsubscribe();
@@ -149,9 +152,7 @@ function AuthCallbackPage() {
 
         // Check if there was a saved return route
         const savedNext =
-          sessionStorage.getItem("flashbasket.auth.next") ||
-          searchParams.get("next") ||
-          null;
+          sessionStorage.getItem("flashbasket.auth.next") || searchParams.get("next") || null;
         sessionStorage.removeItem("flashbasket.auth.next");
 
         if (isMounted) {
@@ -203,9 +204,7 @@ function AuthCallbackPage() {
 
         {status === "loading" && (
           <div className="space-y-3">
-            <h1 className="text-subtitle font-semibold text-foreground">
-              Signing you in…
-            </h1>
+            <h1 className="text-subtitle font-semibold text-foreground">Signing you in…</h1>
             <p className="text-meta text-muted-foreground">{message}</p>
             <div className="flex justify-center py-4">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -218,9 +217,7 @@ function AuthCallbackPage() {
             <div className="flex justify-center text-primary">
               <CheckCircle2 className="h-8 w-8" />
             </div>
-            <h1 className="text-subtitle font-semibold text-foreground">
-              Welcome back!
-            </h1>
+            <h1 className="text-subtitle font-semibold text-foreground">Welcome back!</h1>
             <p className="text-meta text-muted-foreground">{message}</p>
           </div>
         )}
@@ -230,9 +227,7 @@ function AuthCallbackPage() {
             <div className="flex justify-center text-destructive">
               <AlertCircle className="h-8 w-8" />
             </div>
-            <h1 className="text-subtitle font-semibold text-foreground">
-              Sign-in error
-            </h1>
+            <h1 className="text-subtitle font-semibold text-foreground">Sign-in error</h1>
             <p className="text-meta text-muted-foreground">{message}</p>
             <Button
               type="button"

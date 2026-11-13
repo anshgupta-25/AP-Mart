@@ -6,9 +6,22 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
-import { Search, Phone, MapPin, Store, User, CheckCircle2, Loader2, ExternalLink } from "lucide-react";
+import {
+  Search,
+  Phone,
+  MapPin,
+  Store,
+  User,
+  CheckCircle2,
+  Loader2,
+  ExternalLink,
+} from "lucide-react";
 import { TICKET_CATEGORIES } from "@/components/SupportTicketForm";
 import { toast } from "sonner";
 
@@ -17,8 +30,8 @@ export const Route = createFileRoute("/support/tickets")({
   component: Page,
 });
 
-const STATUSES = ["all","open","assigned","in_progress","resolved","closed"] as const;
-const ROLES = ["all","customer","shopkeeper","delivery"] as const;
+const STATUSES = ["all", "open", "assigned", "in_progress", "resolved", "closed"] as const;
+const ROLES = ["all", "customer", "shopkeeper", "delivery"] as const;
 
 const STATUS_TONE: Record<string, string> = {
   open: "bg-tint-sun text-foreground",
@@ -36,11 +49,15 @@ function Page() {
   const [q, setQ] = useState("");
 
   useEffect(() => {
-    const ch = supabase.channel("support-tickets-list").on("postgres_changes",
-      { event: "*", schema: "public", table: "support_tickets" },
-      () => qc.invalidateQueries({ queryKey: ["support-tickets-list"] })
-    ).subscribe();
-    return () => { supabase.removeChannel(ch); };
+    const ch = supabase
+      .channel("support-tickets-list")
+      .on("postgres_changes", { event: "*", schema: "public", table: "support_tickets" }, () =>
+        qc.invalidateQueries({ queryKey: ["support-tickets-list"] }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, [qc]);
 
   const tickets = useQuery({
@@ -53,13 +70,14 @@ function Page() {
     refetchInterval: 30000,
   });
 
-  const filtered = (tickets.data ?? []).filter(t =>
-    (status === "all" || t.status === status) &&
-    (role === "all" || t.role_at_creation === role) &&
-    (cat === "all" || t.category === cat) &&
-    (!q.trim() ||
-      t.title.toLowerCase().includes(q.toLowerCase()) ||
-      t.ticket_number.toLowerCase().includes(q.toLowerCase()))
+  const filtered = (tickets.data ?? []).filter(
+    (t) =>
+      (status === "all" || t.status === status) &&
+      (role === "all" || t.role_at_creation === role) &&
+      (cat === "all" || t.category === cat) &&
+      (!q.trim() ||
+        t.title.toLowerCase().includes(q.toLowerCase()) ||
+        t.ticket_number.toLowerCase().includes(q.toLowerCase())),
   );
 
   return (
@@ -69,21 +87,48 @@ function Page() {
       <div className="grid gap-2.5 md:grid-cols-4">
         <div className="relative">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="pl-10" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title or number" />
+          <Input
+            className="pl-10"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search title or number"
+          />
         </div>
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
-          <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+          <SelectTrigger>
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUSES.map((s) => (
+              <SelectItem key={s} value={s}>
+                {s}
+              </SelectItem>
+            ))}
+          </SelectContent>
         </Select>
         <Select value={role} onValueChange={setRole}>
-          <SelectTrigger><SelectValue placeholder="Role" /></SelectTrigger>
-          <SelectContent>{ROLES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+          <SelectTrigger>
+            <SelectValue placeholder="Role" />
+          </SelectTrigger>
+          <SelectContent>
+            {ROLES.map((s) => (
+              <SelectItem key={s} value={s}>
+                {s}
+              </SelectItem>
+            ))}
+          </SelectContent>
         </Select>
         <Select value={cat} onValueChange={setCat}>
-          <SelectTrigger><SelectValue placeholder="Category" /></SelectTrigger>
+          <SelectTrigger>
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">all</SelectItem>
-            {TICKET_CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+            {TICKET_CATEGORIES.map((c) => (
+              <SelectItem key={c.value} value={c.value}>
+                {c.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -105,7 +150,9 @@ function Page() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="truncate text-body font-medium">{t.title}</span>
-                    <span className={`text-caption capitalize rounded-full px-2 py-0.5 font-semibold ${STATUS_TONE[t.status] ?? "bg-secondary"}`}>
+                    <span
+                      className={`text-caption capitalize rounded-full px-2 py-0.5 font-semibold ${STATUS_TONE[t.status] ?? "bg-secondary"}`}
+                    >
                       {t.status.replace(/_/g, " ")}
                     </span>
                     <span className="text-caption capitalize rounded-full bg-secondary px-2 py-0.5 font-semibold">
@@ -113,8 +160,7 @@ function Page() {
                     </span>
                   </div>
                   <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-small text-muted-foreground">
-                    <span>{t.ticket_number}</span>·
-                    <span>{t.category.replace(/_/g, " ")}</span>·
+                    <span>{t.ticket_number}</span>·<span>{t.category.replace(/_/g, " ")}</span>·
                     <span>{new Date(t.created_at).toLocaleString()}</span>
                   </div>
                 </div>
@@ -127,7 +173,10 @@ function Page() {
                     <ExternalLink className="h-3.5 w-3.5" /> Open
                   </Link>
                   {t.status !== "resolved" && t.status !== "closed" && (
-                    <ResolveButton ticketId={t.id} onDone={() => qc.invalidateQueries({ queryKey: ["support-tickets-list"] })} />
+                    <ResolveButton
+                      ticketId={t.id}
+                      onDone={() => qc.invalidateQueries({ queryKey: ["support-tickets-list"] })}
+                    />
                   )}
                 </div>
               </header>
@@ -150,9 +199,7 @@ function Page() {
                   {(t.address_line || t.city || t.pincode) && (
                     <div className="flex items-start gap-1 text-muted-foreground">
                       <MapPin className="h-3 w-3 mt-0.5 shrink-0" />
-                      <span>
-                        {[t.address_line, t.city, t.pincode].filter(Boolean).join(", ")}
-                      </span>
+                      <span>{[t.address_line, t.city, t.pincode].filter(Boolean).join(", ")}</span>
                     </div>
                   )}
                 </div>
@@ -164,7 +211,10 @@ function Page() {
                     </div>
                     <div className="font-semibold">{t.shop_name || "—"}</div>
                     {t.shop_phone && (
-                      <a href={`tel:${t.shop_phone}`} className="flex items-center gap-1 text-primary">
+                      <a
+                        href={`tel:${t.shop_phone}`}
+                        className="flex items-center gap-1 text-primary"
+                      >
                         <Phone className="h-3 w-3" /> {t.shop_phone}
                       </a>
                     )}
@@ -198,28 +248,52 @@ function ResolveButton({ ticketId, onDone }: { ticketId: string; onDone: () => v
       _notes: notes.trim() || null,
     });
     setBusy(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Ticket resolved. User notified.");
-    setOpen(false); setNotes("");
+    setOpen(false);
+    setNotes("");
     onDone();
   };
 
   if (!open) {
     return (
-      <Button size="sm" onClick={() => setOpen(true)}
-        className="h-8 gap-1 rounded-full px-3.5 text-small">
+      <Button
+        size="sm"
+        onClick={() => setOpen(true)}
+        className="h-8 gap-1 rounded-full px-3.5 text-small"
+      >
         <CheckCircle2 className="h-3.5 w-3.5" /> Resolve
       </Button>
     );
   }
   return (
     <div className="mt-2 w-full space-y-2 rounded-xl bg-primary-soft p-3">
-      <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)}
-        placeholder="Resolution notes (optional) — sent to user" />
+      <Textarea
+        rows={2}
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="Resolution notes (optional) — sent to user"
+      />
       <div className="flex justify-end gap-2">
-        <Button size="sm" variant="ghost" onClick={() => { setOpen(false); setNotes(""); }}>Cancel</Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            setOpen(false);
+            setNotes("");
+          }}
+        >
+          Cancel
+        </Button>
         <Button size="sm" onClick={resolve} disabled={busy} className="gap-1">
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+          {busy ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <CheckCircle2 className="h-3.5 w-3.5" />
+          )}
           Mark resolved
         </Button>
       </div>

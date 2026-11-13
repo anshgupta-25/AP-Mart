@@ -31,7 +31,14 @@ export function useEligibleShops(params: {
 }) {
   const { productId, variantId, pincode, lat, lng, enabled = true } = params;
   return useQuery({
-    queryKey: ["eligible-shops", productId, variantId ?? null, pincode ?? null, lat ?? null, lng ?? null],
+    queryKey: [
+      "eligible-shops",
+      productId,
+      variantId ?? null,
+      pincode ?? null,
+      lat ?? null,
+      lng ?? null,
+    ],
     enabled: !!productId && enabled,
     queryFn: async () => {
       const { data, error } = await (supabase as any).rpc("list_eligible_shops_for_product", {
@@ -110,16 +117,24 @@ export function ShopPicker({
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-3 text-caption text-muted-foreground">
                   {s.distance_km != null && (
-                    <span className="inline-flex items-center gap-0.5"><MapPin className="h-3 w-3" />{s.distance_km} km</span>
+                    <span className="inline-flex items-center gap-0.5">
+                      <MapPin className="h-3 w-3" />
+                      {s.distance_km} km
+                    </span>
                   )}
-                  <span className="inline-flex items-center gap-0.5"><Clock className="h-3 w-3" />{s.delivery_minutes} min</span>
+                  <span className="inline-flex items-center gap-0.5">
+                    <Clock className="h-3 w-3" />
+                    {s.delivery_minutes} min
+                  </span>
                   {!compact && s.shop_address && <span className="truncate">{s.shop_address}</span>}
                 </div>
               </div>
               <div className="text-right shrink-0">
                 <div className="text-body font-semibold">{rupees(s.price)}</div>
                 {s.mrp > s.price && (
-                  <div className="text-caption text-muted-foreground line-through">{rupees(s.mrp)}</div>
+                  <div className="text-caption text-muted-foreground line-through">
+                    {rupees(s.mrp)}
+                  </div>
                 )}
               </div>
             </div>
@@ -131,7 +146,10 @@ export function ShopPicker({
                 className="h-8 rounded-full px-4"
               >
                 {active ? (
-                  <><Check className="h-3 w-3 mr-1" />Selected</>
+                  <>
+                    <Check className="h-3 w-3 mr-1" />
+                    Selected
+                  </>
                 ) : (
                   "Select shop"
                 )}

@@ -14,11 +14,17 @@ declare global {
 const BROWSER_KEY = import.meta.env.VITE_GOOGLE_MAPS_BROWSER_KEY as string | undefined;
 const CHANNEL = import.meta.env.VITE_GOOGLE_MAPS_TRACKING_ID as string | undefined;
 
-export function loadGoogleMaps(libraries: ReadonlyArray<"places" | "geometry" | "marker" | "routes"> = ["places", "geometry"]): Promise<typeof google> {
-  if (typeof window === "undefined") return Promise.reject(new Error("loadGoogleMaps must be called in the browser"));
+export function loadGoogleMaps(
+  libraries: ReadonlyArray<"places" | "geometry" | "marker" | "routes"> = ["places", "geometry"],
+): Promise<typeof google> {
+  if (typeof window === "undefined")
+    return Promise.reject(new Error("loadGoogleMaps must be called in the browser"));
   if (window.google?.maps) return Promise.resolve(window.google);
   if (window.__gmapsPromise) return window.__gmapsPromise;
-  if (!BROWSER_KEY) return Promise.reject(new Error("Google Maps browser key missing (set VITE_GOOGLE_MAPS_BROWSER_KEY in .env)."));
+  if (!BROWSER_KEY)
+    return Promise.reject(
+      new Error("Google Maps browser key missing (set VITE_GOOGLE_MAPS_BROWSER_KEY in .env)."),
+    );
 
   window.__gmapsPromise = new Promise<typeof google>((resolve, reject) => {
     window.__gmapsInit = () => {
@@ -50,6 +56,8 @@ export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: numb
   const R = 6371;
   const dLat = toRad(lat2 - lat1);
   const dLng = toRad(lng2 - lng1);
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(a));
 }

@@ -55,7 +55,9 @@ export function useSubcategories(categoryId?: string | null, activeOnly = false)
     queryFn: async (): Promise<Subcategory[]> => {
       let q = (supabase as any)
         .from("subcategories")
-        .select("id, category_id, name, slug, image_url, icon, display_order, is_active, is_featured")
+        .select(
+          "id, category_id, name, slug, image_url, icon, display_order, is_active, is_featured",
+        )
         .eq("category_id", categoryId)
         .order("display_order")
         .order("name");
@@ -68,7 +70,11 @@ export function useSubcategories(categoryId?: string | null, activeOnly = false)
 }
 
 export function slugifySubcategory(s: string) {
-  return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  return s
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 }
 
 /** All active subcategories across several categories (multi-category product form). */
@@ -81,7 +87,9 @@ export function useSubcategoriesForCategories(categoryIds: string[], activeOnly 
     queryFn: async (): Promise<Subcategory[]> => {
       let q = (supabase as any)
         .from("subcategories")
-        .select("id, category_id, name, slug, image_url, icon, display_order, is_active, is_featured")
+        .select(
+          "id, category_id, name, slug, image_url, icon, display_order, is_active, is_featured",
+        )
         .in("category_id", ids)
         .order("display_order")
         .order("name");

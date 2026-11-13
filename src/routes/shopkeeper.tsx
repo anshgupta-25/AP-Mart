@@ -1,4 +1,10 @@
-import { createFileRoute, Link, Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Navigate,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, User } from "lucide-react";
@@ -19,7 +25,10 @@ function ShopkeeperShell() {
 
   useEffect(() => {
     if (loading || rolesLoading) return;
-    if (!user) { navigate({ to: "/login", replace: true }); return; }
+    if (!user) {
+      navigate({ to: "/login", replace: true });
+      return;
+    }
     const r: string[] = roles ?? [];
     if (!r.includes("shopkeeper") && !r.includes("admin")) {
       if (r.includes("delivery")) navigate({ to: "/delivery/dashboard", replace: true });
@@ -36,7 +45,11 @@ function ShopkeeperShell() {
       trailing={
         <div className="flex items-center gap-2">
           <NotificationBell userId={user?.id} />
-          <Link to="/shopkeeper/settings" aria-label="Account" className="press grid h-9 w-9 place-items-center rounded-full bg-card shadow-soft">
+          <Link
+            to="/shopkeeper/settings"
+            aria-label="Account"
+            className="press grid h-9 w-9 place-items-center rounded-full bg-card shadow-soft"
+          >
             <User className="h-[18px] w-[18px]" />
           </Link>
         </div>
@@ -71,11 +84,17 @@ function NotificationBell({ userId }: { userId?: string }) {
         () => qc.invalidateQueries({ queryKey: ["shopkeeper-notification-unread", userId] }),
       )
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, [userId, qc]);
 
   return (
-    <Link to="/shopkeeper/notifications" aria-label="Notifications" className="press relative grid h-9 w-9 place-items-center rounded-full bg-card shadow-soft">
+    <Link
+      to="/shopkeeper/notifications"
+      aria-label="Notifications"
+      className="press relative grid h-9 w-9 place-items-center rounded-full bg-card shadow-soft"
+    >
       <Bell className="h-[18px] w-[18px]" />
       {count > 0 && (
         <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-micro font-semibold grid place-items-center ring-2 ring-card">

@@ -74,9 +74,6 @@ export function useDeliveryContext(): DeliveryContext & {
     },
   });
 
-
-
-
   const pincode =
     (addr.data?.pincode as string | undefined) ??
     (profile.data?.pincode as string | undefined) ??
@@ -88,8 +85,8 @@ export function useDeliveryContext(): DeliveryContext & {
   const addressLabel = addr.data
     ? `${addr.data.line1}, ${addr.data.city}`
     : profile.data?.city && profile.data?.state
-    ? `${profile.data.city}, ${profile.data.state}`
-    : null;
+      ? `${profile.data.city}, ${profile.data.state}`
+      : null;
 
   /** Re-fetch everything that depends on the delivery address. */
   const refresh = useCallback(() => {

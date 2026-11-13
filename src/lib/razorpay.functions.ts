@@ -75,12 +75,14 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
 export const verifyRazorpayPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      orderId: z.string().uuid(),
-      razorpayOrderId: z.string().min(1),
-      razorpayPaymentId: z.string().min(1),
-      razorpaySignature: z.string().min(1),
-    }).parse(input),
+    z
+      .object({
+        orderId: z.string().uuid(),
+        razorpayOrderId: z.string().min(1),
+        razorpayPaymentId: z.string().min(1),
+        razorpaySignature: z.string().min(1),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -106,7 +108,8 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
         })
         .eq("provider_order_id", data.razorpayOrderId);
       await supabaseAdmin.from("notifications").insert({
-        user_id: userId, title: "Payment failed",
+        user_id: userId,
+        title: "Payment failed",
         body: "We couldn't verify your payment. Please try again.",
         category: "payment",
       });
@@ -121,7 +124,9 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
       });
       const d = await r.json();
       if (r.ok) method = d.method ?? null;
-    } catch {}
+    } catch {
+      // Best effort: storage may be unavailable or the step is optional.
+    }
 
     // Update payments row
     const { error: payErr } = await supabaseAdmin
@@ -163,11 +168,13 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
 export const recordPaymentFailure = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      razorpayOrderId: z.string().min(1),
-      code: z.string().optional(),
-      description: z.string().optional(),
-    }).parse(input),
+    z
+      .object({
+        razorpayOrderId: z.string().min(1),
+        code: z.string().optional(),
+        description: z.string().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -197,10 +204,12 @@ export const recordPaymentFailure = createServerFn({ method: "POST" })
 export const refundPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      paymentId: z.string().uuid(),
-      amount: z.number().positive().optional(), // optional partial; defaults to full
-    }).parse(input),
+    z
+      .object({
+        paymentId: z.string().uuid(),
+        amount: z.number().positive().optional(), // optional partial; defaults to full
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context; // user-scoped client respects RLS for admin check

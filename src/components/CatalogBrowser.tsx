@@ -124,7 +124,8 @@ export function CatalogDialogContent({
           AP Mart Catalog
         </DialogTitle>
         <DialogDescription>
-          Pick a product that already exists on AP Mart and add it to your shop with your own price and stock.
+          Pick a product that already exists on AP Mart and add it to your shop with your own price
+          and stock.
         </DialogDescription>
       </DialogHeader>
 
@@ -134,23 +135,50 @@ export function CatalogDialogContent({
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={q}
-              onChange={(e) => { setQ(e.target.value); setPage(0); }}
+              onChange={(e) => {
+                setQ(e.target.value);
+                setPage(0);
+              }}
               placeholder="Search catalog by name or brand..."
               className="pl-9"
             />
           </div>
-          <Select value={categoryId} onValueChange={(v) => { setCategoryId(v); setPage(0); }}>
-            <SelectTrigger className="sm:w-44"><SelectValue placeholder="All categories" /></SelectTrigger>
+          <Select
+            value={categoryId}
+            onValueChange={(v) => {
+              setCategoryId(v);
+              setPage(0);
+            }}
+          >
+            <SelectTrigger className="sm:w-44">
+              <SelectValue placeholder="All categories" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All categories</SelectItem>
-              {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              {categories.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
-          <Select value={brand} onValueChange={(v) => { setBrand(v); setPage(0); }}>
-            <SelectTrigger className="sm:w-40"><SelectValue placeholder="All brands" /></SelectTrigger>
+          <Select
+            value={brand}
+            onValueChange={(v) => {
+              setBrand(v);
+              setPage(0);
+            }}
+          >
+            <SelectTrigger className="sm:w-40">
+              <SelectValue placeholder="All brands" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All brands</SelectItem>
-              {(brands.data ?? []).map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+              {(brands.data ?? []).map((b) => (
+                <SelectItem key={b} value={b}>
+                  {b}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -163,15 +191,25 @@ export function CatalogDialogContent({
           </div>
         ) : (rows.data ?? []).length === 0 ? (
           <div className="py-10 text-center text-sm text-muted-foreground">
-            No catalog products match your filters. Use <span className="font-semibold">Add Product</span> to create a new one.
+            No catalog products match your filters. Use{" "}
+            <span className="font-semibold">Add Product</span> to create a new one.
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {(rows.data ?? []).map((p) => (
-              <div key={p.id} className="flex flex-col gap-3 rounded-xl border border-border/70 bg-card p-3">
+              <div
+                key={p.id}
+                className="flex flex-col gap-3 rounded-xl border border-border/70 bg-card p-3"
+              >
                 <div className="flex gap-3">
                   {p.image ? (
-                    <StorageImg loading="lazy" decoding="async" src={p.image} alt={p.name} className="h-16 w-16 rounded-xl object-cover shrink-0" />
+                    <StorageImg
+                      loading="lazy"
+                      decoding="async"
+                      src={p.image}
+                      alt={p.name}
+                      className="h-16 w-16 rounded-xl object-cover shrink-0"
+                    />
                   ) : (
                     <div className="h-16 w-16 rounded-xl bg-secondary grid place-items-center shrink-0">
                       <Package className="h-5 w-5 text-muted-foreground" />
@@ -185,7 +223,12 @@ export function CatalogDialogContent({
                     {(p.category_names ?? []).length > 0 && (
                       <div className="mt-1 flex flex-wrap gap-1">
                         {(p.category_names ?? []).slice(0, 2).map((c) => (
-                          <span key={c} className="text-caption px-2 py-0.5 rounded-full bg-primary-soft text-primary-ink font-medium">{c}</span>
+                          <span
+                            key={c}
+                            className="text-caption px-2 py-0.5 rounded-full bg-primary-soft text-primary-ink font-medium"
+                          >
+                            {c}
+                          </span>
                         ))}
                       </div>
                     )}
@@ -196,7 +239,9 @@ export function CatalogDialogContent({
                     <CheckCircle2 className="h-4 w-4 text-primary" /> Already in your shop
                   </div>
                 ) : (
-                  <Button size="sm" className="w-full" onClick={() => setSelected(p)}>Add to My Shop</Button>
+                  <Button size="sm" className="w-full" onClick={() => setSelected(p)}>
+                    Add to My Shop
+                  </Button>
                 )}
               </div>
             ))}
@@ -205,12 +250,24 @@ export function CatalogDialogContent({
 
         {pages > 1 && (
           <div className="flex items-center justify-between pt-1">
-            <span className="text-xs text-muted-foreground">Page {page + 1} of {pages}</span>
+            <span className="text-xs text-muted-foreground">
+              Page {page + 1} of {pages}
+            </span>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page === 0}
+                onClick={() => setPage((p) => p - 1)}
+              >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" disabled={page + 1 >= pages} onClick={() => setPage((p) => p + 1)}>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page + 1 >= pages}
+                onClick={() => setPage((p) => p + 1)}
+              >
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -222,8 +279,16 @@ export function CatalogDialogContent({
 }
 
 function AddToShopForm({
-  shopId, product, onBack, onDone,
-}: { shopId: string; product: CatalogRow; onBack: () => void; onDone: () => void }) {
+  shopId,
+  product,
+  onBack,
+  onDone,
+}: {
+  shopId: string;
+  product: CatalogRow;
+  onBack: () => void;
+  onDone: () => void;
+}) {
   const [price, setPrice] = useState<number>(Number(product.price) || 0);
   const [mrp, setMrp] = useState<number>(Number(product.mrp) || 0);
   const [retail, setRetail] = useState<number>(0);
@@ -281,15 +346,25 @@ function AddToShopForm({
     <>
       <DialogHeader>
         <DialogTitle>Add to my shop</DialogTitle>
-        <DialogDescription>Only your shop-specific details are needed — the product itself already exists.</DialogDescription>
+        <DialogDescription>
+          Only your shop-specific details are needed — the product itself already exists.
+        </DialogDescription>
       </DialogHeader>
 
       <div className="space-y-3">
         <div className="flex items-center gap-3 rounded-2xl bg-secondary p-3">
           {product.image ? (
-            <StorageImg loading="lazy" decoding="async" src={product.image} alt={product.name} className="h-12 w-12 rounded-lg object-cover" />
+            <StorageImg
+              loading="lazy"
+              decoding="async"
+              src={product.image}
+              alt={product.name}
+              className="h-12 w-12 rounded-lg object-cover"
+            />
           ) : (
-            <div className="h-12 w-12 rounded-lg bg-card grid place-items-center"><Package className="h-4 w-4 text-muted-foreground" /></div>
+            <div className="h-12 w-12 rounded-lg bg-card grid place-items-center">
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </div>
           )}
           <div className="flex-1 min-w-0">
             <div className="truncate text-body font-semibold">{product.name}</div>
@@ -298,12 +373,16 @@ function AddToShopForm({
               {product.mrp ? ` · MRP ${rupees(Number(product.mrp))}` : ""}
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={onBack}>Change</Button>
+          <Button variant="ghost" size="sm" onClick={onBack}>
+            Change
+          </Button>
         </div>
 
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="text-meta font-medium">Selling price ₹ <span className="text-destructive">*</span></label>
+            <label className="text-meta font-medium">
+              Selling price ₹ <span className="text-destructive">*</span>
+            </label>
             <Input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} />
           </div>
           <div>
@@ -312,13 +391,19 @@ function AddToShopForm({
           </div>
           <div>
             <label className="text-meta font-medium">Retail ₹</label>
-            <Input type="number" value={retail} onChange={(e) => setRetail(Number(e.target.value))} />
+            <Input
+              type="number"
+              value={retail}
+              onChange={(e) => setRetail(Number(e.target.value))}
+            />
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="text-meta font-medium">Stock <span className="text-destructive">*</span></label>
+            <label className="text-meta font-medium">
+              Stock <span className="text-destructive">*</span>
+            </label>
             <Input type="number" value={stock} onChange={(e) => setStock(Number(e.target.value))} />
           </div>
           <div>
@@ -334,7 +419,12 @@ function AddToShopForm({
         <DateRangeFields mfg={mfgDate} exp={expDate} onMfg={setMfgDate} onExp={setExpDate} />
 
         <div className="pt-2 border-t border-border">
-          <MultiImageInput value={images} onChange={setImages} label="Your product images (optional)" required={false} />
+          <MultiImageInput
+            value={images}
+            onChange={setImages}
+            label="Your product images (optional)"
+            required={false}
+          />
         </div>
 
         <div className="pt-2 border-t border-border">
@@ -343,8 +433,12 @@ function AddToShopForm({
       </div>
 
       <DialogFooter>
-        <Button variant="outline" onClick={onBack}>Back</Button>
-        <Button disabled={saving} onClick={save}>{saving ? "Adding..." : "Add to my shop"}</Button>
+        <Button variant="outline" onClick={onBack}>
+          Back
+        </Button>
+        <Button disabled={saving} onClick={save}>
+          {saving ? "Adding..." : "Add to my shop"}
+        </Button>
       </DialogFooter>
     </>
   );

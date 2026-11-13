@@ -7,7 +7,11 @@ export const Route = createFileRoute("/super-admin/analytics")({
   head: () => ({
     meta: [
       { title: "Revenue & Global Analytics — AP Mart" },
-      { name: "description", content: "Platform-wide revenue, order volume and growth analytics for AP Mart system owners." },
+      {
+        name: "description",
+        content:
+          "Platform-wide revenue, order volume and growth analytics for AP Mart system owners.",
+      },
       { property: "og:title", content: "Revenue & Global Analytics — AP Mart" },
       { property: "og:description", content: "Platform-wide revenue and order analytics." },
       { property: "og:type", content: "website" },
@@ -48,7 +52,9 @@ function AnalyticsPage() {
     const d = new Date((o as any).placed_at).toISOString().slice(0, 10);
     byDay.set(d, (byDay.get(d) ?? 0) + Number((o as any).total ?? 0));
   }
-  const days = Array.from(byDay.entries()).sort(([a], [b]) => (a < b ? -1 : 1)).slice(-14);
+  const days = Array.from(byDay.entries())
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .slice(-14);
   const peak = Math.max(1, ...days.map(([, v]) => v));
 
   const stats = [
@@ -59,20 +65,28 @@ function AnalyticsPage() {
   ];
 
   if (isLoading) {
-    return <div className="grid place-items-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+    return (
+      <div className="grid place-items-center py-16">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-5">
       <div>
         <h1 className="large-title">Revenue &amp; global analytics</h1>
-        <p className="mt-0.5 text-small text-muted-foreground">Everything that happened across every shop in the last 30 days.</p>
+        <p className="mt-0.5 text-small text-muted-foreground">
+          Everything that happened across every shop in the last 30 days.
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-2.5 md:gap-4 lg:grid-cols-4">
         {stats.map((s, i) => (
           <div key={s.label} className="rounded-xl border border-border/70 bg-card p-3.5">
-            <span className={`mb-2.5 grid h-9 w-9 place-items-center rounded-lg ${["bg-tint-mint text-primary-ink","bg-tint-sky text-[oklch(0.42_0.1_235)]","bg-tint-sun text-[oklch(0.45_0.1_75)]","bg-tint-violet text-[oklch(0.42_0.1_290)]"][i % 4]}`}>
+            <span
+              className={`mb-2.5 grid h-9 w-9 place-items-center rounded-lg ${["bg-tint-mint text-primary-ink", "bg-tint-sky text-[oklch(0.42_0.1_235)]", "bg-tint-sun text-[oklch(0.45_0.1_75)]", "bg-tint-violet text-[oklch(0.42_0.1_290)]"][i % 4]}`}
+            >
               <s.icon className="h-[17px] w-[17px]" />
             </span>
             <div className="text-small text-muted-foreground">{s.label}</div>

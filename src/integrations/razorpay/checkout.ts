@@ -1,5 +1,9 @@
 // Loads the Razorpay Checkout script and opens the modal.
-declare global { interface Window { Razorpay?: any } }
+declare global {
+  interface Window {
+    Razorpay?: any;
+  }
+}
 
 let loadPromise: Promise<void> | null = null;
 
@@ -25,7 +29,11 @@ export interface OpenCheckoutOpts {
   razorpayOrderId: string;
   orderNumber: string;
   prefill?: { name?: string; email?: string; contact?: string };
-  onSuccess: (resp: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => void;
+  onSuccess: (resp: {
+    razorpay_payment_id: string;
+    razorpay_order_id: string;
+    razorpay_signature: string;
+  }) => void;
   onFailure: (err: { code?: string; description?: string }) => void;
   onDismiss?: () => void;
 }

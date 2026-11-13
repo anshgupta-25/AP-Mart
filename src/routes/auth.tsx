@@ -31,7 +31,12 @@ async function redirectByRole(navigate: ReturnType<typeof useNavigate>, userId: 
 }
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Sign in — AP Mart" }, { name: "description", content: "Sign in or create your AP Mart account with mobile OTP." }] }),
+  head: () => ({
+    meta: [
+      { title: "Sign in — AP Mart" },
+      { name: "description", content: "Sign in or create your AP Mart account with mobile OTP." },
+    ],
+  }),
   component: AuthShell,
 });
 
@@ -111,7 +116,9 @@ function AuthPage() {
 
       <div className="flex items-start justify-center px-4 pb-10 pt-8 md:items-center md:p-12">
         <div className="w-full max-w-md">
-          <Link to="/" className="mb-4 flex justify-center lg:hidden"><Logo size="md" /></Link>
+          <Link to="/" className="mb-4 flex justify-center lg:hidden">
+            <Logo size="md" />
+          </Link>
           <div className="text-center">
             <h2 className="large-title">Welcome to AP Mart</h2>
             <p className="mt-1 text-meta text-muted-foreground">Sign in or create an account</p>
@@ -138,8 +145,20 @@ function AuthPage() {
 
               <TabsContent value="login" className="mt-4">
                 <form onSubmit={onLogin} className="space-y-4">
-                  <Field id="li-email" label="Email" type="email" value={li.email} onChange={(v) => setLi({ ...li, email: v })} />
-                  <Field id="li-password" label="Password" type="password" value={li.password} onChange={(v) => setLi({ ...li, password: v })} />
+                  <Field
+                    id="li-email"
+                    label="Email"
+                    type="email"
+                    value={li.email}
+                    onChange={(v) => setLi({ ...li, email: v })}
+                  />
+                  <Field
+                    id="li-password"
+                    label="Password"
+                    type="password"
+                    value={li.password}
+                    onChange={(v) => setLi({ ...li, password: v })}
+                  />
                   <Button type="submit" disabled={loading} className="h-11 w-full rounded-xl">
                     {loading ? "Signing in…" : "Sign in"}
                   </Button>
@@ -148,9 +167,26 @@ function AuthPage() {
 
               <TabsContent value="signup" className="mt-4">
                 <form onSubmit={onSignup} className="space-y-4">
-                  <Field id="su-name" label="Full name" value={su.name} onChange={(v) => setSu({ ...su, name: v })} />
-                  <Field id="su-email" label="Email" type="email" value={su.email} onChange={(v) => setSu({ ...su, email: v })} />
-                  <Field id="su-password" label="Password (min 6)" type="password" value={su.password} onChange={(v) => setSu({ ...su, password: v })} />
+                  <Field
+                    id="su-name"
+                    label="Full name"
+                    value={su.name}
+                    onChange={(v) => setSu({ ...su, name: v })}
+                  />
+                  <Field
+                    id="su-email"
+                    label="Email"
+                    type="email"
+                    value={su.email}
+                    onChange={(v) => setSu({ ...su, email: v })}
+                  />
+                  <Field
+                    id="su-password"
+                    label="Password (min 6)"
+                    type="password"
+                    value={su.password}
+                    onChange={(v) => setSu({ ...su, password: v })}
+                  />
                   <Button type="submit" disabled={loading} className="h-11 w-full rounded-xl">
                     {loading ? "Creating…" : "Create account"}
                   </Button>
@@ -159,8 +195,12 @@ function AuthPage() {
             </Tabs>
 
             <div className="relative my-5">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border/70" /></div>
-              <div className="relative flex justify-center"><span className="bg-card px-3 text-small text-muted-foreground">or</span></div>
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border/70" />
+              </div>
+              <div className="relative flex justify-center">
+                <span className="bg-card px-3 text-small text-muted-foreground">or</span>
+              </div>
             </div>
 
             <Button
@@ -178,7 +218,10 @@ function AuthPage() {
               ) : (
                 <>
                   <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden>
-                    <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.24 1.4-1.7 4.1-5.5 4.1-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.7 3.4 14.6 2.4 12 2.4 6.7 2.4 2.5 6.6 2.5 12s4.2 9.6 9.5 9.6c5.5 0 9.1-3.8 9.1-9.3 0-.6-.1-1.1-.2-1.6H12z" />
+                    <path
+                      fill="#EA4335"
+                      d="M12 10.2v3.9h5.5c-.24 1.4-1.7 4.1-5.5 4.1-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.7 3.4 14.6 2.4 12 2.4 6.7 2.4 2.5 6.6 2.5 12s4.2 9.6 9.5 9.6c5.5 0 9.1-3.8 9.1-9.3 0-.6-.1-1.1-.2-1.6H12z"
+                    />
                   </svg>
                   Continue with Google
                 </>
@@ -194,11 +237,32 @@ function AuthPage() {
   );
 }
 
-function Field({ id, label, type = "text", value, onChange, required = true }: { id: string; label: string; type?: string; value: string; onChange: (v: string) => void; required?: boolean }) {
+function Field({
+  id,
+  label,
+  type = "text",
+  value,
+  onChange,
+  required = true,
+}: {
+  id: string;
+  label: string;
+  type?: string;
+  value: string;
+  onChange: (v: string) => void;
+  required?: boolean;
+}) {
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} type={type} required={required} value={value} onChange={(e) => onChange(e.target.value)} className="h-11 rounded-xl" />
+      <Input
+        id={id}
+        type={type}
+        required={required}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-11 rounded-xl"
+      />
     </div>
   );
 }
