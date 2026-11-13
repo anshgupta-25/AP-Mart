@@ -51,7 +51,6 @@ function ResetPasswordPage() {
       return;
     }
 
-    const wantsRecovery = get("type") === "recovery" || !!get("code") || !!get("token_hash");
     let settled = false;
     const accept = () => {
       settled = true;
@@ -59,32 +58,27 @@ function ResetPasswordPage() {
       setReady(true);
     };
 
-    // Only a PASSWORD_RECOVERY event (or a link that carried recovery params)
-    // authorises a password change — an ordinary signed-in session does not.
+    // The Supabase client consumes the link (hash token or ?code=) on its own and
+    // emits PASSWORD_RECOVERY. That can happen before this page mounts, so also
+    // accept the recovery session it already created.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") accept();
     });
 
-    // PKCE-style links arrive as ?code=…; exchange it explicitly.
-    const code = params.get("code");
-    if (code) {
-      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-        if (error) {
-          console.error("[ResetPassword] code exchange failed:", error.message);
-          setLinkError("This reset link is invalid or has expired. Request a new one.");
-          setReady(true);
-        }
-      });
-    }
+    const check = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) accept();
+    };
+    void check();
 
-    const timer = window.setTimeout(
-      () => {
-        if (!settled && !code) setReady(true); // no recovery event arrived → invalid link
-      },
-      wantsRecovery ? 4000 : 800,
-    );
+    // No session after the client has had time to process the link → invalid link.
+    const timer = window.setTimeout(async () => {
+      if (settled) return;
+      await check();
+      if (!settled) setReady(true);
+    }, 2500);
 
     return () => {
       window.clearTimeout(timer);
