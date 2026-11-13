@@ -144,6 +144,11 @@ export function TicketsList({
 
   const all = tickets.data ?? [];
   const query = q.trim().toLowerCase();
+  // Until the database migration adds assigned_to to the admin list, assignment is unknown:
+  // don't call every ticket "Unassigned".
+  const showAssignment = !isAdmin
+    ? false
+    : all.length === 0 || all.some((t) => t.assigned_to !== undefined);
 
   // Role/category/search narrow the list first; status tab counts reflect those filters.
   const narrowed = useMemo(
@@ -196,21 +201,26 @@ export function TicketsList({
       </header>
 
       {isAdmin && (
-        <div className="grid grid-cols-3 gap-2.5">
+        <div className={cn("grid gap-2.5", showAssignment ? "grid-cols-3" : "grid-cols-2")}>
           <StatTile
             label="Pending"
             value={openCount}
             dot="bg-amber-500"
             loading={tickets.isLoading}
           />
-          <StatTile
-            label="Unassigned"
-            value={unassignedCount}
-            dot="bg-destructive"
-            loading={tickets.isLoading}
-            active={unassignedOnly}
-            onClick={() => setUnassignedOnly((v) => !v)}
-          />
+          {showAssignment && (
+            <StatTile
+              label="Unassigned"
+              value={unassignedCount}
+              dot="bg-destructive"
+              loading={tickets.isLoading}
+              active={unassignedOnly}
+              onClick={() => {
+                setUnassignedOnly((v) => !v);
+                setStatus("all");
+              }}
+            />
+          )}
           <StatTile
             label="Resolved"
             value={resolvedCount}
@@ -312,7 +322,21 @@ export function TicketsList({
       </div>
 
       {/* List */}
-      {tickets.isLoading ? (
+      {tickets.isError ? (
+        <div className="flex flex-col items-center rounded-2xl border border-border/60 bg-card px-6 py-10 text-center">
+          <div className="text-[14px] font-semibold">Couldn&apos;t load tickets</div>
+          <p className="mt-1 max-w-xs text-[12.5px] text-muted-foreground">
+            {tickets.error instanceof Error ? tickets.error.message : "Please try again."}
+          </p>
+          <button
+            type="button"
+            onClick={() => tickets.refetch()}
+            className="press mt-4 h-8 rounded-full bg-secondary px-3.5 text-[12.5px] font-medium"
+          >
+            Retry
+          </button>
+        </div>
+      ) : tickets.isLoading ? (
         <div className="space-y-px overflow-hidden rounded-2xl border border-border/60 bg-card">
           {[0, 1, 2].map((i) => (
             <div key={i} className="h-[72px] shimmer opacity-60" />
@@ -366,7 +390,7 @@ export function TicketsList({
                         title={t.status.replace(/_/g, " ")}
                       />
                       <span className="truncate text-[13.5px] font-medium">{t.title}</span>
-                      {isAdmin && !isDoneStatus(t.status) && (
+                      {showAssignment && !isDoneStatus(t.status) && (
                         <span
                           className={cn(
                             "ml-auto max-w-[7rem] shrink-0 truncate rounded-full px-2 py-0.5 text-[10.5px] font-medium",
@@ -383,7 +407,7 @@ export function TicketsList({
                       <span
                         className={cn(
                           "shrink-0 text-[11.5px] tabular-nums text-muted-foreground",
-                          !(isAdmin && !isDoneStatus(t.status)) && "ml-auto",
+                          !(showAssignment && !isDoneStatus(t.status)) && "ml-auto",
                         )}
                       >
                         {timeAgo(t.created_at)}

@@ -354,17 +354,20 @@ export function TicketView({ id }: { id: string }) {
                 <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
-                {user && t.assigned_to !== user.id && (
-                  <>
-                    <DropdownMenuItem
-                      className="text-[13px] font-medium text-primary"
-                      onSelect={() => assign(user.id)}
-                    >
-                      Assign to me
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </>
-                )}
+                {/* The server only lets support agents be assigned, so hide this for admins who are not agents */}
+                {user &&
+                  t.assigned_to !== user.id &&
+                  (agents.data ?? []).some((a) => a.user_id === user.id) && (
+                    <>
+                      <DropdownMenuItem
+                        className="text-[13px] font-medium text-primary"
+                        onSelect={() => assign(user.id)}
+                      >
+                        Assign to me
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                 <DropdownMenuLabel className="text-[11px] font-medium text-muted-foreground">
                   Agents
                 </DropdownMenuLabel>
