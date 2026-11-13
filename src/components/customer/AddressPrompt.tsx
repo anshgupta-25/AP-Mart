@@ -14,9 +14,12 @@ import { dismissAddressPrompt, isAddressPromptDismissed } from "@/lib/addressPro
  * Checkout still requires an address.
  */
 function useNeedsAddress() {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const { hasAddress, ready } = useDeliveryContext();
-  return { user, needsAddress: !!user && ready && !hasAddress };
+  // Shopkeeper and delivery accounts are redirected out of the storefront; never prompt them.
+  const r: string[] = roles ?? [];
+  const staff = r.includes("shopkeeper") || r.includes("delivery");
+  return { user, needsAddress: !!user && !staff && ready && !hasAddress };
 }
 
 export function AddressPromptSheet() {
