@@ -186,6 +186,8 @@ async function handler({ request }: { request: Request }) {
             token,
             notification: { title: notification.title, body: notification.body ?? "" },
             data: payloadData,
+            // Android app (native FCM): deliver promptly; the app opens data.url on tap.
+            android: { priority: "HIGH" },
             webpush: {
               fcm_options: link ? { link } : undefined,
               notification: { icon: "/icon-192.png" },

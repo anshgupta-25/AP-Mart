@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">FlashBasket</string>
-    <string name="title_activity_main">FlashBasket</string>
-    <string name="package_name">com.flashbasket.app</string>
-    <string name="custom_url_scheme">com.flashbasket.app</string>
+    <string name="app_name">AP Mart</string>
+    <string name="title_activity_main">AP Mart</string>
+    <string name="package_name">com.apmart.app</string>
+    <string name="custom_url_scheme">com.apmart.app</string>
 </resources>

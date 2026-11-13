@@ -41,6 +41,7 @@ storage-dry-run-report.json
 .env.*
 !.env.example
 !.env.migration.example
+!.env.mobile.example
 build-error.txt
 *.local
 .lovable/
@@ -59,3 +60,6 @@ android/app/src/main/assets/public/
 android/app/src/main/assets/capacitor.config.json
 android/app/src/main/assets/capacitor.plugins.json
 android/app/src/main/res/xml/config.xml
+
+# Firebase Android config (download from Firebase console; keep local)
+android/app/google-services.json

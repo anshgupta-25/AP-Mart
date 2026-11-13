@@ -59,6 +59,9 @@ function AuthPage() {
       if (result.error) {
         setGoogleLoading(false);
         toast.error(result.error.message || "Google sign-in failed");
+      } else if (!result.redirected) {
+        // App: the sign-in browser has closed (deep link handles success).
+        setGoogleLoading(false);
       }
     } catch (err: any) {
       setGoogleLoading(false);

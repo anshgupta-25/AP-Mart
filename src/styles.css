@@ -228,3 +228,16 @@
   100% { transform: translateX(-50%); }
 }
 .animate-marquee { animation: marquee 18s linear infinite; }
+
+/* Android app (Capacitor WebView): backdrop blur and long-running decorative
+   animations are expensive on mid/low-end phones. Use solid surfaces instead. */
+.native-app [class*="backdrop-blur"] {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.native-app [class*="backdrop-blur"][class*="bg-background/"] {
+  background-color: var(--background) !important;
+}
+.native-app [class*="backdrop-blur"][class*="bg-card/"] {
+  background-color: var(--card) !important;
+}

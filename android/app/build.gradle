@@ -1,17 +1,17 @@
 apply plugin: 'com.android.application'
 
 def releaseSigningProperties = [
-    storeFile: providers.gradleProperty('FLASHBASKET_UPLOAD_STORE_FILE').orNull,
-    storePassword: providers.gradleProperty('FLASHBASKET_UPLOAD_STORE_PASSWORD').orNull,
-    keyAlias: providers.gradleProperty('FLASHBASKET_UPLOAD_KEY_ALIAS').orNull,
-    keyPassword: providers.gradleProperty('FLASHBASKET_UPLOAD_KEY_PASSWORD').orNull
+    storeFile: providers.gradleProperty('APMART_UPLOAD_STORE_FILE').orNull,
+    storePassword: providers.gradleProperty('APMART_UPLOAD_STORE_PASSWORD').orNull,
+    keyAlias: providers.gradleProperty('APMART_UPLOAD_KEY_ALIAS').orNull,
+    keyPassword: providers.gradleProperty('APMART_UPLOAD_KEY_PASSWORD').orNull
 ]
 def releaseSigningConfigured = releaseSigningProperties.values().every { it?.trim() } &&
     releaseSigningProperties.storeFile &&
     rootProject.file(releaseSigningProperties.storeFile).isFile()
 
 android {
-    namespace = "com.flashbasket.app"
+    namespace = "com.apmart.app"
     compileSdk = rootProject.ext.compileSdkVersion
     signingConfigs {
         release {
@@ -24,7 +24,7 @@ android {
         }
     }
     defaultConfig {
-        applicationId "com.flashbasket.app"
+        applicationId "com.apmart.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

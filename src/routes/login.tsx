@@ -13,6 +13,7 @@ import { describeAuthError } from "@/lib/authErrors";
 import { LogoMark } from "@/components/Logo";
 import { DevLoginPanel } from "@/components/DevLoginPanel";
 import { cn } from "@/lib/utils";
+import { publicSiteOrigin } from "@/lib/api-base";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>): { next?: string } =>
@@ -94,7 +95,9 @@ function LoginPage() {
         setGoogleLoading(false);
         return toast.error(result.error.message || "Google sign-in failed");
       }
-      // If redirected to Google OAuth consent page, browser navigates away
+      // Web: the page navigates away to Google. App: the sign-in browser has
+      // closed (deep link handles success), so re-enable the button.
+      if (!result.redirected) setGoogleLoading(false);
     } catch (err: any) {
       setGoogleLoading(false);
       toast.error(err?.message || "Google sign-in failed");
@@ -105,7 +108,7 @@ function LoginPage() {
     const target = email || window.prompt("Enter your email to receive a reset link") || "";
     if (!target) return;
     const { error } = await supabase.auth.resetPasswordForEmail(target, {
-      redirectTo: window.location.origin + "/reset-password",
+      redirectTo: publicSiteOrigin() + "/reset-password",
     });
     if (error) toast.error(error.message);
     else toast.success("Password reset link sent — check your inbox");
