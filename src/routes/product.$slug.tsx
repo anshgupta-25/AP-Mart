@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-import { Clock, Star, ShieldCheck, Truck, Minus, Plus, ChevronLeft, ChevronRight, X, Store } from "lucide-react";
+import { Clock, Star, ShieldCheck, Truck, Minus, Plus, ChevronLeft, ChevronRight, ChevronDown, ArrowLeft, X, Store } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +10,8 @@ import { ShopPicker, useEligibleShops, type EligibleShop } from "@/components/Sh
 import { Button } from "@/components/ui/button";
 import { rupees } from "@/lib/format";
 import { resolvePricing } from "@/lib/pricing";
+import { useCustomerProducts } from "@/hooks/useCustomerProducts";
+import { ProductRail } from "@/components/customer/ProductRail";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductImage } from "@/components/ProductImage";
@@ -153,13 +154,20 @@ function ProductPage() {
     return baseShops.find((s) => s.shop_id === selectedShop.shop_id) ?? selectedShop;
   }, [baseShops, selectedShop]);
 
+  const similar = useCustomerProducts({
+    categoryId: (product.data as any)?.category_id ?? null,
+    limit: 14,
+    key: `similar:${slug}`,
+    enabled: !!(product.data as any)?.category_id,
+  });
+
   const [conflict, setConflict] = useState<{ productId: string; variantId: string | null; shopId: string } | null>(null);
   const [priceChange, setPriceChange] = useState<{ oldPrice: number; newPrice: number } | null>(null);
 
 
 
-  if (product.isLoading) return <div className="mx-auto max-w-7xl px-4 py-10"><Skeleton className="h-96" /></div>;
-  if (!product.data) return <div className="mx-auto max-w-7xl px-4 py-20 text-center">Product not found.</div>;
+  if (product.isLoading) return <div className="mx-auto max-w-6xl px-4 py-6"><Skeleton className="aspect-square w-full rounded-2xl" /></div>;
+  if (!product.data) return <div className="mx-auto max-w-6xl px-4 py-20 text-center text-meta text-muted-foreground">Product not found.</div>;
 
   const p = product.data;
 
@@ -244,42 +252,65 @@ function ProductPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6">
-      <Link to="/products" className="text-sm text-muted-foreground hover:underline">← All products</Link>
+    <div className="mx-auto max-w-6xl px-4 pb-44 pt-3 md:pb-10 md:pt-5">
+      <Link to="/products" className="press inline-flex items-center gap-1 text-meta font-medium text-muted-foreground">
+        <ArrowLeft className="h-3.5 w-3.5" /> All products
+      </Link>
 
-      <div className="mt-4 grid md:grid-cols-2 gap-8">
-        <motion.div
-          key={`${selected?.id ?? "base"}-${selectedShop?.shop_id ?? "none"}`}
-          initial={{ opacity: 0, scale: 0.97 }}
-          animate={{ opacity: 1, scale: 1 }}
-        >
+      <div className="mt-3 grid gap-5 md:grid-cols-2 md:gap-10">
+        <div>
           <ProductGallery name={p.name} images={effImages} />
-        </motion.div>
+        </div>
 
         <div>
-          <div className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground">
-            <Clock className="h-3 w-3" /> Delivery in {effDeliveryMinutes} mins
+          {p.brand && <div className="eyebrow">{p.brand}</div>}
+          <h1 className="mt-0.5 text-subtitle font-semibold leading-[1.25] tracking-tight">{p.name}</h1>
+          <div className="mt-1.5 inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-small font-medium text-foreground/80">
+            {effUnit}
           </div>
-          <h1 className="mt-2 font-display text-3xl md:text-4xl font-extrabold">{p.name}</h1>
-          {p.brand && <div className="text-muted-foreground mt-1">{p.brand}</div>}
-          <div className="text-sm text-muted-foreground">{effUnit}</div>
 
-          <div className="mt-3 flex items-center gap-2 flex-wrap">
-            <div className="inline-flex items-center gap-1 rounded-md bg-success/20 text-success-foreground px-2 py-1 text-xs font-semibold">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-1 rounded-full bg-tint-sun px-2 py-0.5 text-caption font-semibold text-accent-foreground">
               <Star className="h-3 w-3 fill-current" /> {p.rating}
             </div>
             {selectedShop && (
-              <div className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-xs font-semibold">
-                <Store className="h-3 w-3" /> {selectedShop.shop_name}
+              <div className="inline-flex items-center gap-1 text-small text-muted-foreground">
+                <Clock className="h-3 w-3" /> About {effDeliveryMinutes} min from this shop
               </div>
             )}
           </div>
 
-          {hasVariants && (
-            <div className="mt-5">
-              <div className="text-xs font-bold uppercase text-muted-foreground tracking-wide mb-2">
-                Choose an option
+          <div className="mt-4 flex items-center gap-2.5">
+            <div className="text-page font-bold leading-none tracking-tight">{rupees(effPrice)}</div>
+            {effMrp > effPrice && (
+              <>
+                <div className="text-meta text-muted-foreground line-through">{rupees(effMrp)}</div>
+                <div className="rounded-full bg-primary-soft px-2 py-0.5 text-caption font-semibold text-primary-ink">
+                  {discount}% OFF
+                </div>
+              </>
+            )}
+          </div>
+          <div className="mt-1 text-caption text-muted-foreground">Inclusive of all taxes</div>
+
+          {selectedShop && (
+            <div className="mt-4 flex items-center gap-3 rounded-xl border border-border/70 bg-card px-3 py-2.5">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-tint-mint text-primary-ink">
+                <Store className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1 leading-tight">
+                <div className="text-caption text-muted-foreground">Sold by</div>
+                <div className="truncate text-meta font-semibold">{selectedShop.shop_name}</div>
               </div>
+              {shopSelectionEnabled && eligibleShops.length > 1 && (
+                <span className="text-caption font-medium text-muted-foreground">{eligibleShops.length} shops</span>
+              )}
+            </div>
+          )}
+
+          {hasVariants && (
+            <div className="mt-4">
+              <div className="eyebrow mb-2">Choose an option</div>
               <div className="flex flex-wrap gap-2">
                 {variants.map((v) => {
                   const active = selected?.id === v.id;
@@ -297,21 +328,21 @@ function ProductPage() {
                       type="button"
                       disabled={oos}
                       onClick={() => setSelectedId(v.id)}
-                      className={`rounded-xl border-2 px-3 py-2 text-left transition ${
-                        active ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                      className={`press rounded-xl px-3 py-2 text-left transition ${
+                        active ? "bg-primary-soft ring-1 ring-primary" : "border border-border/70 bg-card"
                       } ${oos ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                      <div className="text-sm font-bold">
+                      <div className="text-meta font-semibold">
                         {v.size}
                         {v.unit ? ` ${v.unit}` : ""}
                       </div>
-                      <div className="mt-0.5 flex items-center gap-1 text-xs">
-                        <span className="font-extrabold text-foreground">{rupees(vp.price)}</span>
+                      <div className="mt-0.5 flex items-center gap-1 text-caption">
+                        <span className="font-semibold text-foreground">{rupees(vp.price)}</span>
                         {vp.mrp > vp.price && (
                           <span className="text-muted-foreground line-through">{rupees(vp.mrp)}</span>
                         )}
                         {vp.discount > 0 && (
-                          <span className="font-bold text-success">{vp.discount}% off</span>
+                          <span className="font-semibold text-primary">{vp.discount}% off</span>
                         )}
                         {oos && <span className="ml-1 text-destructive">Out</span>}
                       </div>
@@ -323,54 +354,45 @@ function ProductPage() {
             </div>
           )}
 
-          <div className="mt-4 flex items-end gap-3">
-            <div className="text-3xl font-bold">{rupees(effPrice)}</div>
-            {effMrp > effPrice && (
-              <>
-                <div className="text-lg text-muted-foreground line-through">{rupees(effMrp)}</div>
-                <div className="rounded-md gradient-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
-                  {discount}% OFF
-                </div>
-              </>
-            )}
-          </div>
-          <div className="text-xs text-muted-foreground">(Inclusive of all taxes)</div>
-
-          <div className="mt-6 flex gap-3">
+          <div className="bar-blur hairline-t fixed inset-x-0 bottom-[calc(60px+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 px-4 py-2.5 md:static md:z-auto md:mt-6 md:bg-transparent md:p-0 md:shadow-none">
+            <div className="shrink-0 leading-tight md:hidden">
+              <div className="text-subtitle font-bold">{rupees(effPrice)}</div>
+              {effMrp > effPrice && (
+                <div className="text-caption text-muted-foreground line-through">{rupees(effMrp)}</div>
+              )}
+            </div>
             {allShopsClosed ? (
-              <Button disabled size="lg" className="rounded-xl h-12">Currently Unavailable</Button>
+              <Button disabled className="h-11 flex-1 rounded-xl md:flex-none">Currently unavailable</Button>
             ) : effStock <= 0 ? (
-              <Button disabled size="lg" className="rounded-xl">Out of stock</Button>
+              <Button disabled className="h-11 flex-1 rounded-xl md:flex-none">Out of stock</Button>
             ) : line ? (
-              <div className="flex items-center gap-1 rounded-xl gradient-primary text-primary-foreground">
-                <button onClick={() => setQty(line.id, line.quantity - 1)} className="h-12 w-12 grid place-items-center"><Minus /></button>
-                <span className="w-12 text-center font-bold">{line.quantity}</span>
-                <button onClick={() => setQty(line.id, line.quantity + 1)} className="h-12 w-12 grid place-items-center"><Plus /></button>
+              <div className="flex h-11 flex-1 items-center justify-between rounded-xl bg-primary text-primary-foreground md:w-40 md:flex-none">
+                <button onClick={() => setQty(line.id, line.quantity - 1)} className="grid h-11 w-12 place-items-center" aria-label="Decrease"><Minus className="h-4 w-4" /></button>
+                <span className="w-8 text-center text-body font-semibold">{line.quantity}</span>
+                <button onClick={() => setQty(line.id, line.quantity + 1)} className="grid h-11 w-12 place-items-center" aria-label="Increase"><Plus className="h-4 w-4" /></button>
               </div>
             ) : (
-              <Button size="lg" onClick={handleAdd} className="rounded-xl gradient-primary text-primary-foreground font-bold h-12 px-8 shadow-glow">
+              <Button onClick={handleAdd} className="h-11 flex-1 rounded-xl px-8 md:flex-none">
                 Add to cart
               </Button>
             )}
-            <Link to="/customer/cart" className="inline-flex items-center rounded-xl border-2 border-foreground px-6 font-bold hover:bg-foreground hover:text-background transition">
+            <Link to="/customer/cart" className="press hidden h-11 items-center rounded-xl bg-secondary px-4 text-body font-semibold md:inline-flex">
               Go to cart
             </Link>
           </div>
 
           {allShopsClosed && (
-            <div className="mt-4 rounded-2xl border-2 border-destructive/30 bg-destructive/5 p-4 text-sm font-semibold text-destructive">
+            <div className="mt-4 rounded-xl bg-destructive/10 p-3 text-meta font-medium text-destructive">
               Sorry, all shops selling this product are currently closed.
             </div>
           )}
 
           {/* Available shops picker */}
           {shopSelectionEnabled && eligibleShops.length > 1 && (
-            <div className="mt-8">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-display text-xl font-bold flex items-center gap-2">
-                  <Store className="h-5 w-5 text-primary" /> Available shops
-                </h3>
-                <span className="text-xs text-muted-foreground">{eligibleShops.length} shops</span>
+            <div className="mt-6">
+              <div className="mb-2.5 flex items-center justify-between">
+                <h3 className="section-title">Available shops</h3>
+                <span className="text-small text-muted-foreground">{eligibleShops.length} nearby</span>
               </div>
               <ShopPicker
                 shops={eligibleShops}
@@ -382,26 +404,35 @@ function ProductPage() {
           )}
 
           {shopSelectionEnabled && !allShopsClosed && eligibleShops.length === 0 && delivery.pincode && !eligibleQ.isLoading && (
-            <div className="mt-6 rounded-2xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+            <div className="mt-5 rounded-xl bg-secondary p-3 text-meta text-muted-foreground">
               No shop in your area ({delivery.pincode}) currently has this item in stock.
             </div>
           )}
 
 
-          <div className="mt-8 grid grid-cols-3 gap-2">
-            <Perk icon={<Clock className="h-4 w-4" />} title="Super fast" sub={`${effDeliveryMinutes} min delivery`} />
-            <Perk icon={<Truck className="h-4 w-4" />} title="Free shipping" sub="Above ₹199" />
-            <Perk icon={<ShieldCheck className="h-4 w-4" />} title="100% authentic" sub="Quality assured" />
+          <div className="mt-6 divide-y divide-border/60 overflow-hidden rounded-xl border border-border/70 bg-card">
+            <Perk icon={<Store className="h-4 w-4" />} title="Sold by local shops" sub="Stocked and packed by stores near you" />
+            <Perk icon={<Truck className="h-4 w-4" />} title="Delivered to your door" sub="Free delivery on orders above ₹199" />
+            <Perk icon={<ShieldCheck className="h-4 w-4" />} title="Quality assured" sub="Fresh and authentic products" />
           </div>
 
           {p.description && (
-            <div className="mt-8">
-              <h3 className="font-display text-xl font-bold">Product details</h3>
-              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{p.description}</p>
-            </div>
+            <details className="group mt-3 rounded-xl border border-border/70 bg-card px-3.5 py-3">
+              <summary className="flex cursor-pointer list-none items-center justify-between text-body font-semibold">
+                Product details
+                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+              </summary>
+              <p className="mt-2 text-meta leading-relaxed text-muted-foreground">{p.description}</p>
+            </details>
           )}
         </div>
       </div>
+
+      {similar.data && similar.data.filter((x) => x.id !== p.id).length > 0 && (
+        <div className="-mx-4 mt-8">
+          <ProductRail title="Similar products" products={similar.data.filter((x) => x.id !== p.id)} />
+        </div>
+      )}
 
       <AlertDialog open={!!priceChange} onOpenChange={(v) => !v && setPriceChange(null)}>
         <AlertDialogContent>
@@ -452,10 +483,12 @@ function ProductPage() {
 
 function Perk({ icon, title, sub }: { icon: React.ReactNode; title: string; sub: string }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-3 text-center shadow-card">
-      <div className="grid place-items-center text-primary">{icon}</div>
-      <div className="text-xs font-bold mt-1">{title}</div>
-      <div className="text-[10px] text-muted-foreground">{sub}</div>
+    <div className="flex items-center gap-3 px-3.5 py-2.5">
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-tint-mint text-primary-ink">{icon}</span>
+      <div className="min-w-0">
+        <div className="text-meta font-semibold leading-tight">{title}</div>
+        <div className="mt-0.5 text-small text-muted-foreground">{sub}</div>
+      </div>
     </div>
   );
 }
@@ -478,7 +511,7 @@ function ProductGallery({ images, name }: { images: string[]; name: string }) {
 
   if (images.length === 0) {
     return (
-      <div className="rounded-3xl bg-card border border-border shadow-card overflow-hidden aspect-square grid place-items-center text-8xl">
+      <div className="grid aspect-[5/4] place-items-center overflow-hidden rounded-2xl bg-secondary/60 text-6xl">
         🛒
       </div>
     );
@@ -489,9 +522,9 @@ function ProductGallery({ images, name }: { images: string[]; name: string }) {
 
   return (
     <>
-      <div className="rounded-3xl bg-card border border-border shadow-card overflow-hidden relative">
+      <div className="relative overflow-hidden rounded-2xl bg-secondary/60">
         <div
-          className="relative aspect-square cursor-zoom-in select-none"
+          className="relative aspect-[5/4] cursor-zoom-in select-none"
           onClick={() => setZoom(true)}
           onTouchStart={(e) => setTouchX(e.touches[0].clientX)}
           onTouchEnd={(e) => {
@@ -501,13 +534,13 @@ function ProductGallery({ images, name }: { images: string[]; name: string }) {
             setTouchX(null);
           }}
         >
-          <ProductImage src={images[safeIdx]} alt={name} className="absolute inset-0 h-full w-full" eager />
+          <ProductImage src={images[safeIdx]} alt={name} fit="contain" className="absolute inset-0 h-full w-full bg-transparent p-4" eager />
           {images.length > 1 && (
             <>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); go(-1); }}
-                className="hidden md:grid place-items-center absolute left-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-background/80 hover:bg-background"
+                className="absolute left-3 top-1/2 hidden h-8 w-8 bg-card -translate-y-1/2 place-items-center rounded-full md:grid"
                 aria-label="Previous image"
               >
                 <ChevronLeft className="h-5 w-5" />
@@ -515,18 +548,18 @@ function ProductGallery({ images, name }: { images: string[]; name: string }) {
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); go(1); }}
-                className="hidden md:grid place-items-center absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-background/80 hover:bg-background"
+                className="absolute right-3 top-1/2 hidden h-8 w-8 bg-card -translate-y-1/2 place-items-center rounded-full md:grid"
                 aria-label="Next image"
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+              <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5">
                 {images.map((_, i) => (
                   <button
                     key={i}
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setIdx(i); }}
-                    className={`h-1.5 rounded-full transition-all ${i === safeIdx ? "w-6 bg-primary" : "w-1.5 bg-background/70"}`}
+                    className={`h-1.5 rounded-full transition-all ${i === safeIdx ? "w-5 bg-foreground" : "w-1.5 bg-foreground/20"}`}
                     aria-label={`Go to image ${i + 1}`}
                   />
                 ))}
@@ -535,13 +568,13 @@ function ProductGallery({ images, name }: { images: string[]; name: string }) {
           )}
         </div>
         {images.length > 1 && (
-          <div className="flex gap-2 p-2 overflow-x-auto border-t border-border">
+          <div className="scrollbar-hide flex gap-2 overflow-x-auto px-3 pb-3">
             {images.map((url, i) => (
               <button
                 key={url + i}
                 type="button"
                 onClick={() => setIdx(i)}
-                className={`shrink-0 h-14 w-14 rounded-lg overflow-hidden border-2 transition ${i === safeIdx ? "border-primary" : "border-transparent opacity-70 hover:opacity-100"}`}
+                className={`shrink-0 h-12 w-12 rounded-lg overflow-hidden bg-card ring-2 transition ${i === safeIdx ? "ring-primary" : "ring-transparent opacity-70 hover:opacity-100"}`}
               >
                 <ProductImage src={url} alt="" className="h-full w-full" fallbackClassName="text-lg" />
               </button>

@@ -113,18 +113,17 @@ export function OffersManager({
   });
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="font-display text-xl font-bold">Offers</h2>
-          <p className="text-xs text-muted-foreground">
+          <h2 className="large-title">Offers</h2>
+          <p className="mt-1 text-body text-muted-foreground">
             {lockedScope === "shop"
               ? "Promotions shown on the storefront for your shop's customers."
               : "Promotional banners shown on the home page."}
           </p>
         </div>
         <Button
-          size="sm"
           onClick={() =>
             setEditing(
               emptyForm({
@@ -134,47 +133,48 @@ export function OffersManager({
             )
           }
         >
-          <Plus className="h-4 w-4 mr-1" /> New offer
+          <Plus className="mr-1.5 h-4 w-4" /> New offer
         </Button>
       </div>
 
       {list.isLoading ? (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-20 rounded-xl" />
+            <Skeleton key={i} className="h-24 rounded-xl" />
           ))}
         </div>
       ) : list.data?.length === 0 ? (
-        <div className="text-center py-12 rounded-2xl border border-dashed border-border text-sm text-muted-foreground">
-          No offers yet. Create one to get started.
+        <div className="rounded-xl bg-card px-6 py-12 text-center border border-border/70">
+          <div className="text-body font-semibold">No offers yet</div>
+          <p className="mt-1 text-body text-muted-foreground">Create one to promote your shop.</p>
         </div>
       ) : (
-        <div className="grid gap-2">
+        <div className="grid gap-3">
           {list.data!.map((o) => (
             <div
               key={o.id}
-              className="flex gap-3 items-center rounded-2xl border border-border bg-card p-2 shadow-card"
+              className="flex items-center gap-3.5 rounded-xl bg-card p-3 border border-border/70"
             >
               <StorageImg
                 src={o.image_url}
                 alt=""
-                className="h-16 w-24 rounded-lg object-cover bg-muted"
+                className="h-16 w-24 rounded-xl bg-secondary object-cover"
                 onError={(e) => ((e.target as HTMLImageElement).style.opacity = "0.3")}
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-bold text-sm truncate">{o.title}</p>
-                  <span className="text-[10px] font-bold uppercase rounded-full bg-secondary px-2 py-0.5">
+                  <p className="truncate text-body font-semibold">{o.title}</p>
+                  <span className="rounded-full bg-secondary px-2.5 py-0.5 text-caption font-semibold capitalize text-muted-foreground">
                     {o.scope}
                   </span>
                   {!o.is_active && (
-                    <span className="text-[10px] font-bold rounded-full bg-destructive/15 text-destructive px-2 py-0.5">
+                    <span className="rounded-full bg-tint-rose px-2.5 py-0.5 text-caption font-semibold text-destructive">
                       Inactive
                     </span>
                   )}
                 </div>
-                {o.subtitle && <p className="text-xs text-muted-foreground truncate">{o.subtitle}</p>}
-                <p className="text-[11px] text-muted-foreground truncate">{o.link_url || "—"}</p>
+                {o.subtitle && <p className="truncate text-meta text-muted-foreground">{o.subtitle}</p>}
+                <p className="truncate text-small text-muted-foreground">{o.link_url || "—"}</p>
               </div>
               <div className="flex gap-1">
                 <Button size="icon" variant="ghost" onClick={() => setEditing(o)}>
@@ -194,16 +194,16 @@ export function OffersManager({
       )}
 
       {editing && (
-        <div className="fixed inset-0 z-50 bg-foreground/50 backdrop-blur-sm grid place-items-center p-4">
-          <div className="bg-card rounded-2xl border border-border w-full max-w-lg shadow-glow max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b border-border">
-              <h3 className="font-bold">{editing.id ? "Edit offer" : "New offer"}</h3>
+        <div className="fixed inset-0 z-50 grid place-items-end bg-foreground/40 p-0 sm:place-items-center sm:p-4">
+          <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-card shadow-float sm:rounded-2xl">
+            <div className="hairline-b flex items-center justify-between px-4 py-4">
+              <h3 className="section-title">{editing.id ? "Edit offer" : "New offer"}</h3>
               <Button size="icon" variant="ghost" onClick={() => setEditing(null)}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
             <form
-              className="p-4 space-y-3"
+              className="space-y-4 p-4"
               onSubmit={(e) => {
                 e.preventDefault();
                 if (!editing.title || !editing.image_url) {
@@ -254,10 +254,10 @@ export function OffersManager({
                         key={s}
                         type="button"
                         onClick={() => setEditing({ ...editing, scope: s })}
-                        className={`px-3 py-1.5 rounded-full text-xs font-bold border ${
+                        className={`press h-9 rounded-full px-4 text-meta font-semibold ${
                           editing.scope === s
-                            ? "gradient-primary text-primary-foreground border-transparent"
-                            : "border-border bg-card"
+                            ? "bg-foreground text-background"
+                            : "bg-secondary"
                         }`}
                       >
                         {s === "global" ? "Global (home page)" : "Per-shop"}
@@ -269,7 +269,7 @@ export function OffersManager({
               {editing.scope === "shop" && !lockedScope && shops && (
                 <Field label="Shop">
                   <select
-                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                    className="h-11 w-full rounded-xl bg-secondary px-3.5 text-body outline-none focus:ring-4 focus:ring-ring/15"
                     value={editing.shop_id ?? ""}
                     onChange={(e) => setEditing({ ...editing, shop_id: e.target.value || null })}
                     required
@@ -298,21 +298,21 @@ export function OffersManager({
                     checked={editing.is_active}
                     onCheckedChange={(v) => setEditing({ ...editing, is_active: v })}
                   />
-                  <Label className="text-sm">Active</Label>
+                  <Label className="text-body font-medium">Active</Label>
                 </div>
               </div>
 
               {editing.image_url && (
-                <div className="rounded-xl overflow-hidden border border-border">
+                <div className="overflow-hidden rounded-xl">
                   <StorageImg loading="lazy" decoding="async" src={editing.image_url} alt="" className="w-full h-32 object-cover" />
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="ghost" onClick={() => setEditing(null)}>
+              <div className="flex gap-2 pt-2">
+                <Button type="button" variant="secondary" className="h-11 flex-1 rounded-xl" onClick={() => setEditing(null)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={upsert.isPending}>
+                <Button type="submit" className="h-11 flex-[2] rounded-xl" disabled={upsert.isPending}>
                   {upsert.isPending ? "Saving…" : "Save offer"}
                 </Button>
               </div>
@@ -326,8 +326,8 @@ export function OffersManager({
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1">
-      <Label className="text-xs font-bold">{label}</Label>
+    <div className="space-y-1.5">
+      <Label className="text-meta font-medium text-foreground/80">{label}</Label>
       {children}
     </div>
   );

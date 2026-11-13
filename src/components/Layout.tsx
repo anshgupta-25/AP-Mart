@@ -1,17 +1,27 @@
-import { Outlet, useRouterState, Link } from "@tanstack/react-router";
-import { Header } from "./Header";
-import { BottomNav } from "./BottomNav";
+import { Outlet, useRouterState } from "@tanstack/react-router";
+import { StorefrontShell } from "./shell/StorefrontShell";
 import { Toaster } from "./ui/sonner";
 import { useNotifications } from "@/hooks/useNotifications";
 
-const DEMO_PREFIXES = ["/customer", "/shopkeeper", "/delivery", "/admin", "/login", "/signup", "/app", "/checkout", "/orders", "/support", "/staff-login"];
+// Paths that render their own chrome (portals, auth screens) or none at all.
+const OWN_CHROME_PREFIXES = ["/customer", "/shopkeeper", "/delivery", "/admin", "/login", "/signup", "/app", "/support", "/staff-login", "/super-admin", "/superadmin", "/reset-password", "/auth"];
+
+function PublicFooter() {
+  return (
+    <footer className="hidden border-t border-border bg-card md:block">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5 text-xs text-muted-foreground">
+        <div>© {new Date().getFullYear()} AP Mart. Groceries from shops near you.</div>
+      </div>
+    </footer>
+  );
+}
 
 export function Layout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   useNotifications();
-  const isDemo = DEMO_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/") || pathname === p);
+  const ownChrome = OWN_CHROME_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
-  if (isDemo) {
+  if (ownChrome) {
     return (
       <div className="min-h-screen flex flex-col">
         <Outlet />
@@ -20,28 +30,13 @@ export function Layout() {
     );
   }
 
+  const checkout = pathname === "/checkout" || pathname.startsWith("/checkout/");
   return (
-    <div className="min-h-screen flex flex-col pb-16 md:pb-0">
-      <Header />
-      <main className="flex-1">
+    <>
+      <StorefrontShell hideTabs={checkout} footer={<PublicFooter />}>
         <Outlet />
-      </main>
-      <footer className="mt-16 border-t border-border bg-secondary/30">
-        <div className="mx-auto max-w-7xl px-4 py-8 text-sm text-muted-foreground">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>© {new Date().getFullYear()} AP Mart. Groceries delivered at lightning speed.</div>
-            <div className="flex gap-4">
-              <span className="cursor-default">About</span>
-              <span className="cursor-default">Help</span>
-              <span className="cursor-default">Privacy</span>
-              <span className="cursor-default">Terms</span>
-
-            </div>
-          </div>
-        </div>
-      </footer>
-      <BottomNav />
+      </StorefrontShell>
       <Toaster richColors closeButton position="top-center" />
-    </div>
+    </>
   );
 }

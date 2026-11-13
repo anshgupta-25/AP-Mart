@@ -93,19 +93,21 @@ function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
+    <div className="flex min-h-screen items-start justify-center bg-background px-4 pb-10 pt-safe md:items-center">
       <div className="w-full max-w-md">
-        <Link to="/" className="flex justify-center mb-6"><Logo /></Link>
-        <div className="rounded-3xl border border-border bg-card p-6 md:p-8 shadow-card">
-          <h1 className="font-display text-3xl font-extrabold">Join AP Mart</h1>
-          <p className="text-sm text-muted-foreground mt-1">Create your account to start ordering.</p>
+        <Link to="/" className="mb-4 mt-6 flex justify-center"><Logo size="md" /></Link>
+        <div className="text-center">
+          <h1 className="large-title">Create your account</h1>
+          <p className="mt-1 text-meta text-muted-foreground">Order from local shops near you.</p>
+        </div>
 
+        <div className="mt-6 rounded-xl border border-border/70 bg-card p-4 md:p-6">
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={handleGoogle}
             disabled={submitting || googleLoading}
-            className="w-full h-11 rounded-xl font-bold gap-2 mt-5"
+            className="h-11 w-full gap-2 rounded-xl"
           >
             {googleLoading ? (
               <>
@@ -122,22 +124,22 @@ function SignupPage() {
             )}
           </Button>
 
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-            <div className="relative flex justify-center text-[10px] uppercase tracking-wider"><span className="bg-card px-2 text-muted-foreground">or</span></div>
+          <div className="relative my-5">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border/70" /></div>
+            <div className="relative flex justify-center"><span className="bg-card px-3 text-small text-muted-foreground">or</span></div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
-            <div>
-              <Label>Full name</Label>
-              <Input required value={fullName} onChange={(e) => setFullName(e.target.value)} className="h-11 rounded-xl mt-1" />
+            <div className="space-y-1.5">
+              <Label className="text-meta font-medium">Full name</Label>
+              <Input required value={fullName} onChange={(e) => setFullName(e.target.value)} className="h-11" />
             </div>
-            <div>
-              <Label>Email</Label>
-              <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 rounded-xl mt-1" />
+            <div className="space-y-1.5">
+              <Label className="text-meta font-medium">Email</Label>
+              <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-11" />
             </div>
-            <div>
-              <Label>Phone number</Label>
+            <div className="space-y-1.5">
+              <Label className="text-meta font-medium">Phone number</Label>
               <Input
                 type="tel"
                 required
@@ -145,11 +147,11 @@ function SignupPage() {
                 placeholder="+91 98765 43210"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="h-11 rounded-xl mt-1"
+                className="h-11"
               />
             </div>
-            <div>
-              <Label>State</Label>
+            <div className="space-y-1.5">
+              <Label className="text-meta font-medium">State</Label>
               <SearchableSelect
                 value={state}
                 onChange={(v) => {
@@ -163,8 +165,8 @@ function SignupPage() {
                 disabled={locationsQ.isLoading}
               />
             </div>
-            <div>
-              <Label>City</Label>
+            <div className="space-y-1.5">
+              <Label className="text-meta font-medium">City</Label>
               <SearchableSelect
                 value={city}
                 onChange={(v) => {
@@ -177,8 +179,8 @@ function SignupPage() {
                 disabled={!state}
               />
             </div>
-            <div>
-              <Label>PIN Code</Label>
+            <div className="space-y-1.5">
+              <Label className="text-meta font-medium">PIN code</Label>
               <SearchableSelect
                 value={pincode}
                 onChange={setPincode}
@@ -188,36 +190,36 @@ function SignupPage() {
                 disabled={!city}
               />
             </div>
-            <div>
-              <Label>Password</Label>
-              <div className="relative mt-1">
+            <div className="space-y-1.5">
+              <Label className="text-meta font-medium">Password</Label>
+              <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
                   required
                   minLength={6}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 rounded-xl pr-11"
+                  className="h-11 pr-11"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
                   aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
-            <Button type="submit" disabled={submitting} className="w-full h-11 rounded-xl gradient-primary text-primary-foreground font-bold">
+            <Button type="submit" disabled={submitting} className="mt-2 h-11 w-full rounded-xl">
               {submitting ? "Creating account…" : "Create account"}
             </Button>
           </form>
-
-          <p className="text-xs text-muted-foreground mt-5 text-center">
-            Already have an account? <Link to="/login" className="text-primary font-semibold">Sign in</Link>
-          </p>
         </div>
+
+        <p className="mt-5 text-center text-meta text-muted-foreground">
+          Already have an account? <Link to="/login" className="font-semibold text-primary">Log in</Link>
+        </p>
       </div>
     </div>
   );

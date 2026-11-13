@@ -71,20 +71,20 @@ export function AdminOrderActions({ order }: Props) {
   const selectCls = "h-10 w-full rounded-xl border border-border bg-background px-2 text-sm";
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-      <div className="font-bold text-sm">Admin actions</div>
+    <div className="space-y-3 rounded-xl border border-border/70 bg-card p-4">
+      <div className="section-title">Admin actions</div>
 
       <div className="flex flex-wrap gap-2">
-        <Button asChild size="sm" variant="outline" className="rounded-xl">
+        <Button asChild size="sm" variant="secondary">
           <Link to="/admin/shops"><Store className="h-3.5 w-3.5 mr-1" />View shop</Link>
         </Button>
-        <Button asChild size="sm" variant="outline" className="rounded-xl">
+        <Button asChild size="sm" variant="secondary">
           <Link to="/admin/customers"><User className="h-3.5 w-3.5 mr-1" />View customer</Link>
         </Button>
-        <Button asChild size="sm" variant="outline" className="rounded-xl">
+        <Button asChild size="sm" variant="secondary">
           <Link to="/admin/delivery-partners"><Truck className="h-3.5 w-3.5 mr-1" />View rider</Link>
         </Button>
-        <Button size="sm" variant="outline" className="rounded-xl" onClick={() => window.print()}>
+        <Button size="sm" variant="secondary" onClick={() => window.print()}>
           <Printer className="h-3.5 w-3.5 mr-1" />Print invoice
         </Button>
       </div>
@@ -93,7 +93,7 @@ export function AdminOrderActions({ order }: Props) {
         {/* Reassign shop */}
         <Dialog open={openShop} onOpenChange={setOpenShop}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline" className="rounded-xl"><RefreshCcw className="h-3.5 w-3.5 mr-1" />Reassign shop</Button>
+            <Button size="sm" variant="secondary"><RefreshCcw className="h-3.5 w-3.5 mr-1" />Reassign shop</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Reassign shop</DialogTitle></DialogHeader>
@@ -117,7 +117,7 @@ export function AdminOrderActions({ order }: Props) {
         {/* Reassign rider */}
         <Dialog open={openRider} onOpenChange={setOpenRider}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline" className="rounded-xl"><Truck className="h-3.5 w-3.5 mr-1" />Reassign rider</Button>
+            <Button size="sm" variant="secondary"><Truck className="h-3.5 w-3.5 mr-1" />Reassign rider</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Reassign delivery partner</DialogTitle></DialogHeader>
@@ -155,7 +155,7 @@ export function AdminOrderActions({ order }: Props) {
         {/* Refund */}
         <Dialog open={openRefund} onOpenChange={setOpenRefund}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline" className="rounded-xl"><Undo2 className="h-3.5 w-3.5 mr-1" />Refund</Button>
+            <Button size="sm" variant="secondary"><Undo2 className="h-3.5 w-3.5 mr-1" />Refund</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Record refund</DialogTitle></DialogHeader>
@@ -164,8 +164,8 @@ export function AdminOrderActions({ order }: Props) {
                 <div className="text-muted-foreground">
                   Payment {payment.data.provider} · {String(payment.data.status).replace(/_/g, " ")} · {rupees(payment.data.amount)}
                 </div>
-                <Input value={refundAmount} onChange={(e) => setRefundAmount(e.target.value)} placeholder="Refund amount" className="rounded-xl" />
-                <Input value={refundRef} onChange={(e) => setRefundRef(e.target.value)} placeholder="Refund reference ID" className="rounded-xl" />
+                <Input value={refundAmount} onChange={(e) => setRefundAmount(e.target.value)} placeholder="Refund amount" />
+                <Input value={refundRef} onChange={(e) => setRefundRef(e.target.value)} placeholder="Refund reference ID" />
               </div>
             ) : (
               <div className="text-sm text-muted-foreground">No payment record found for this order.</div>

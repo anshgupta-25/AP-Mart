@@ -67,9 +67,10 @@ function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 flex items-start md:items-center justify-center p-0 md:p-6">
-      <div className="w-full max-w-md bg-card md:rounded-3xl md:border md:border-border md:shadow-xl p-6 md:p-8">
-        <h1 className="font-display text-2xl font-extrabold text-foreground text-center">Set a new password</h1>
+    <div className="flex min-h-screen items-start justify-center bg-background px-4 pb-10 pt-safe md:items-center">
+      <div className="w-full max-w-md pt-12 md:pt-0">
+        <h1 className="large-title text-center">Set a new password</h1>
+        <div className="mt-6 rounded-xl border border-border/70 bg-card p-4 md:p-6">
 
         {!ready ? (
           <div className="mt-8 flex justify-center">
@@ -77,23 +78,23 @@ function ResetPasswordPage() {
           </div>
         ) : done ? (
           <div className="mt-6 text-center space-y-3">
-            <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
+            <CheckCircle2 className="mx-auto h-9 w-9 text-primary" />
             <p className="text-sm text-muted-foreground">Your password has been updated. Redirecting you to sign in…</p>
           </div>
         ) : !valid ? (
           <div className="mt-6 text-center space-y-4">
-            <ShieldAlert className="mx-auto h-12 w-12 text-amber-500" />
+            <ShieldAlert className="mx-auto h-9 w-9 text-warning-foreground" />
             <p className="text-sm text-muted-foreground">
               This reset link is invalid or has expired. Request a new one from the sign-in screen.
             </p>
-            <Button asChild className="w-full h-12 rounded-xl font-bold">
+            <Button asChild className="h-11 w-full rounded-xl">
               <Link to="/login">Back to sign in</Link>
             </Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="mt-6 space-y-3">
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type={show ? "text" : "password"}
                 required
@@ -101,19 +102,19 @@ function ResetPasswordPage() {
                 placeholder="New password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-12 rounded-xl pl-10 pr-10"
+                className="h-11 pl-11 pr-11"
               />
               <button
                 type="button"
                 aria-label={show ? "Hide password" : "Show password"}
                 onClick={() => setShow((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type={show ? "text" : "password"}
                 required
@@ -121,19 +122,20 @@ function ResetPasswordPage() {
                 placeholder="Confirm new password"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
-                className="h-12 rounded-xl pl-10"
+                className="h-11 pl-11"
               />
             </div>
-            <p className="text-[11px] text-muted-foreground">Use at least 8 characters.</p>
+            <p className="text-caption text-muted-foreground">Use at least 8 characters.</p>
             <Button
               type="submit"
               disabled={busy}
-              className="w-full h-12 rounded-xl bg-[#16a34a] hover:bg-[#15803d] text-white font-bold text-base shadow-md"
+              className="h-11 w-full rounded-xl"
             >
               {busy ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Updating…</>) : "Update password"}
             </Button>
           </form>
         )}
+        </div>
       </div>
     </div>
   );

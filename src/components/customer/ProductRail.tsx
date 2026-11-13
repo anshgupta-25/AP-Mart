@@ -1,10 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { ChevronRight } from "lucide-react";
 import { ProductCard, type ProductCardData } from "@/components/ProductCard";
 
 export function ProductRail({
   title,
-  emoji,
   subtitle,
   to = "/products",
   loading,
@@ -17,30 +15,25 @@ export function ProductRail({
   loading?: boolean;
   products?: ProductCardData[];
 }) {
+  if (!loading && (!products || products.length === 0)) return null;
   return (
-    <section className="space-y-3">
-      <div className="px-4 flex items-end justify-between gap-3">
+    <section className="cv-auto space-y-3">
+      <div className="flex items-end justify-between gap-3 px-4">
         <div className="min-w-0">
-          <h2 className="font-display text-[17px] font-extrabold leading-tight flex items-center gap-1.5">
-            {emoji && <span className="text-xl">{emoji}</span>}
-            <span className="truncate">{title}</span>
-          </h2>
-          {subtitle && <p className="text-[11px] text-muted-foreground truncate">{subtitle}</p>}
+          <h2 className="section-title truncate">{title}</h2>
+          {subtitle && <p className="mt-0.5 truncate text-small text-muted-foreground">{subtitle}</p>}
         </div>
-        <Link
-          to={to as any}
-          className="shrink-0 inline-flex items-center gap-0.5 text-[12px] font-bold text-primary"
-        >
-          See all <ChevronRight className="h-3.5 w-3.5" />
+        <Link to={to as any} className="press shrink-0 text-meta font-semibold text-primary">
+          See all
         </Link>
       </div>
-      <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-1 px-4 pb-1 snap-x">
+      <div className="scrollbar-hide flex snap-x scroll-px-4 gap-2.5 overflow-x-auto px-4 pb-4">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="w-[150px] shrink-0 aspect-[3/4] rounded-2xl shimmer" />
+              <div key={i} className="h-[200px] w-[128px] shrink-0 rounded-xl shimmer" />
             ))
           : products?.map((p) => (
-              <div key={p.id} className="w-[150px] shrink-0 snap-start">
+              <div key={p.id} className="w-[128px] shrink-0 snap-start">
                 <ProductCard product={p} />
               </div>
             ))}

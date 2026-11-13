@@ -2,8 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { RoleShell } from "@/components/RoleShell";
-import { ADMIN_NAV } from "./admin.dashboard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -141,222 +139,218 @@ function Page() {
 
 
   return (
-    <RoleShell role="admin" nav={ADMIN_NAV} requireRoles={["admin"]}>
-      <div className="p-4 md:p-6 space-y-6">
-        <header className="flex flex-col sm:flex-row sm:items-start gap-3">
-          <div className="flex-1 min-w-0">
-            <h1 className="font-display text-2xl sm:text-3xl font-extrabold flex items-center gap-2">
-              <Truck className="h-6 w-6 sm:h-7 sm:w-7 text-primary shrink-0" /> Delivery Management
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">Add or remove delivery boys, reassign live orders, and monitor performance.</p>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 shrink-0 w-full sm:w-auto">
-            <Button asChild variant="outline" className="w-full sm:w-auto whitespace-nowrap">
-              <Link to="/admin/delivery-pricing"><Truck className="h-4 w-4 mr-1" />Delivery Pricing</Link>
-            </Button>
-            <Dialog open={addOpen} onOpenChange={setAddOpen}>
-              <DialogTrigger asChild>
-                <Button className="w-full sm:w-auto shrink-0 whitespace-nowrap"><UserPlus className="h-4 w-4 mr-1" />Add delivery boy</Button>
-              </DialogTrigger>
-              <AddPartnerDialog shops={shops.data ?? []} onDone={() => { setAddOpen(false); qc.invalidateQueries({ queryKey: ["admin-partners"] }); }} />
-            </Dialog>
-          </div>
-        </header>
+    <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-4 md:px-6 md:py-6">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end">
+        <div className="min-w-0 flex-1">
+          <h1 className="large-title">Delivery team</h1>
+          <p className="mt-0.5 text-meta text-muted-foreground">Add or remove delivery boys, reassign live orders, and monitor performance.</p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0 w-full sm:w-auto">
+          <Button asChild variant="secondary" className="w-full whitespace-nowrap sm:w-auto">
+            <Link to="/admin/delivery-pricing"><Truck className="h-4 w-4 mr-1" />Delivery Pricing</Link>
+          </Button>
+          <Dialog open={addOpen} onOpenChange={setAddOpen}>
+            <DialogTrigger asChild>
+              <Button className="w-full sm:w-auto shrink-0 whitespace-nowrap"><UserPlus className="h-4 w-4 mr-1" />Add delivery boy</Button>
+            </DialogTrigger>
+            <AddPartnerDialog shops={shops.data ?? []} onDone={() => { setAddOpen(false); qc.invalidateQueries({ queryKey: ["admin-partners"] }); }} />
+          </Dialog>
+        </div>
+      </header>
 
-        <section className="grid md:grid-cols-3 gap-3">
-          <Stat label="Online partners" value={String((partners.data ?? []).filter((p: any) => p.is_online).length)} />
-          <Stat label="Active deliveries" value={String((orders.data ?? []).filter((o: any) => o.status === "out_for_delivery").length)} />
-          <Stat label="Awaiting pickup" value={String((orders.data ?? []).filter((o: any) => o.status === "packed").length)} />
-        </section>
+      <section className="grid grid-cols-3 gap-3 md:gap-4">
+        <Stat label="Online partners" value={String((partners.data ?? []).filter((p: any) => p.is_online).length)} />
+        <Stat label="Active deliveries" value={String((orders.data ?? []).filter((o: any) => o.status === "out_for_delivery").length)} />
+        <Stat label="Awaiting pickup" value={String((orders.data ?? []).filter((o: any) => o.status === "packed").length)} />
+      </section>
 
-        <section>
-          <h2 className="font-bold mb-3 flex items-center gap-2"><Radio className="h-4 w-4 text-primary" />Live partner monitor</h2>
-          {liveByShop.length === 0 && (
-            <div className="text-sm text-muted-foreground">No delivery partners yet.</div>
-          )}
-          <div className="space-y-4">
-            {liveByShop.map(([shopId, g]) => (
-              <div key={shopId} className="rounded-2xl border border-border bg-card">
-                <div className="px-4 py-2 border-b border-border bg-secondary/30 font-bold text-sm">{g.shop_name}</div>
-                <div className="divide-y divide-border">
-                  {g.rows.map((r) => {
-                    const m = partnerStatusMeta(r.availability_status, r.is_online);
-                    return (
-                      <div key={r.partner_id} className="px-4 py-3 flex flex-wrap items-center gap-3 justify-between">
-                        <div className="min-w-0">
-                          <div className="font-semibold truncate">{r.name}{r.vehicle ? <span className="text-muted-foreground font-normal"> · {r.vehicle}</span> : null}</div>
-                          <div className="text-xs text-muted-foreground">{r.phone ?? "—"}</div>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs">
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase font-bold ${m.cls}`}>{m.label}</span>
-                          {r.current_order_number && <span>Order <span className="font-bold">{r.current_order_number}</span></span>}
-                          {r.eta_minutes != null && <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="h-3 w-3" />ETA {r.eta_minutes} min</span>}
-                          <span className="text-muted-foreground">Updated {timeAgo(r.status_updated_at)}</span>
-                        </div>
+      <section>
+        <h2 className="section-title mb-3 flex items-center gap-2"><Radio className="h-[18px] w-[18px] text-primary" />Live partner monitor</h2>
+        {liveByShop.length === 0 && (
+          <div className="rounded-xl border border-border/70 bg-card px-6 py-10 text-center text-body text-muted-foreground">No delivery partners yet.</div>
+        )}
+        <div className="space-y-4">
+          {liveByShop.map(([shopId, g]) => (
+            <div key={shopId} className="overflow-hidden rounded-xl border border-border/70 bg-card">
+              <div className="eyebrow border-b border-border/70 px-4 py-3">{g.shop_name}</div>
+              <div>
+                {g.rows.map((r) => {
+                  const m = partnerStatusMeta(r.availability_status, r.is_online);
+                  return (
+                    <div key={r.partner_id} className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 px-4 py-3 last:border-0">
+                      <div className="min-w-0">
+                        <div className="truncate font-medium">{r.name}{r.vehicle ? <span className="text-muted-foreground font-normal"> · {r.vehicle}</span> : null}</div>
+                        <div className="text-xs text-muted-foreground">{r.phone ?? "—"}</div>
                       </div>
-                    );
-                  })}
-                </div>
+                      <div className="flex flex-wrap items-center gap-3 text-small">
+                        <span className={`rounded-full px-2.5 py-0.5 text-caption font-semibold ${m.cls}`}>{m.label}</span>
+                        {r.current_order_number && <span>Order <span className="font-bold">{r.current_order_number}</span></span>}
+                        {r.eta_minutes != null && <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="h-3 w-3" />ETA {r.eta_minutes} min</span>}
+                        <span className="text-muted-foreground">Updated {timeAgo(r.status_updated_at)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
-        </section>
+            </div>
+          ))}
+        </div>
+      </section>
 
 
 
-        <section>
-          <h2 className="font-bold mb-3 flex items-center gap-2"><Activity className="h-4 w-4 text-primary" />Live orders</h2>
-          <div className="space-y-3">
-            {(orders.data ?? []).map((o: any) => {
-              const p = partnerById(o.partner_id);
-              return (
-                <div key={o.id} className="rounded-2xl border border-border bg-card p-4 flex flex-wrap items-center gap-3 justify-between">
+      <section>
+        <h2 className="section-title mb-3 flex items-center gap-2"><Activity className="h-[18px] w-[18px] text-primary" />Live orders</h2>
+        <div className="space-y-3">
+          {(orders.data ?? []).map((o: any) => {
+            const p = partnerById(o.partner_id);
+            return (
+              <div key={o.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 bg-card p-4">
+                <div className="min-w-0">
+                  <div className="text-subtitle font-semibold">{o.order_number} <span className="font-normal text-muted-foreground">• {rupees(o.total)}</span></div>
+                  <div className="text-small capitalize text-muted-foreground">{o.status.replace(/_/g, " ")} · {(o.address as any)?.line1}, {(o.address as any)?.city}</div>
+                  <div className="text-xs mt-1">
+                    {p ? (
+                      <span className="inline-flex items-center gap-1">
+                        <Circle className={`h-2 w-2 ${p.is_online ? "fill-primary text-primary" : "fill-muted text-muted"}`} />
+                        <span className="font-medium">{p.name}</span> · {p.phone ?? "—"}
+                      </span>
+                    ) : <span className="font-semibold text-[oklch(0.5_0.12_70)]">Unassigned</span>}
+                  </div>
+                </div>
+                <Select onValueChange={(v) => reassign(o.id, v)}>
+                  <SelectTrigger className="h-11 w-full rounded-xl border-0 bg-secondary sm:w-48"><SelectValue placeholder={p ? "Reassign" : "Assign partner"} /></SelectTrigger>
+                  <SelectContent>
+                    {(partners.data ?? []).map((pp: any) => (
+                      <SelectItem key={pp.id} value={pp.id}>{pp.name} {pp.is_online ? "🟢" : "⚫"}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            );
+          })}
+          {(orders.data?.length ?? 0) === 0 && <div className="rounded-xl border border-border/70 bg-card px-6 py-10 text-center text-body text-muted-foreground">No active deliveries.</div>}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="section-title mb-3 flex items-center gap-2"><BarChart3 className="h-[18px] w-[18px] text-primary" />Roster &amp; performance</h2>
+
+        {/* Desktop table */}
+        <div className="hidden overflow-x-auto rounded-xl border border-border/70 bg-card md:block">
+          <table className="w-full text-sm">
+            <thead className="text-left text-small font-medium text-muted-foreground">
+              <tr className="border-b border-border/70">
+                <th className="px-3 py-3 text-left">Partner</th>
+                <th className="text-left px-3 py-2">Phone</th>
+                <th className="text-left px-3 py-2">Shop</th>
+                <th className="text-left px-3 py-2">Status</th>
+                <th className="text-right px-3 py-2">Active</th>
+                <th className="text-right px-3 py-2">Today</th>
+                <th className="text-right px-3 py-2">7d</th>
+                <th className="text-right px-3 py-2">30d</th>
+                <th className="text-right px-3 py-2">Avg min</th>
+                <th className="text-right px-3 py-2">On-time</th>
+                <th className="text-right px-3 py-2">Rating</th>
+                <th className="px-3 py-2">Transfer</th>
+                <th className="px-3 py-2" />
+              </tr>
+            </thead>
+            <tbody>
+              {(perf.data ?? []).map((r: any) => {
+                const pp = partnerById(r.partner_id);
+                return (
+                  <tr key={r.partner_id} className="border-b border-border/70 last:border-0 hover:bg-secondary/50">
+                    <td className="px-3 py-2.5 font-medium">{r.name}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{pp?.phone ?? "—"}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{shopName(pp?.shop_id ?? null)}</td>
+                    <td className="px-3 py-2">{r.is_online ? <span className="font-semibold text-primary">Online</span> : <span className="text-muted-foreground">Offline</span>}</td>
+                    <td className="px-3 py-2 text-right">{pp?.active_order_count ?? 0}</td>
+                    <td className="px-3 py-2 text-right">{r.orders_today}</td>
+                    <td className="px-3 py-2 text-right">{r.orders_7d}</td>
+                    <td className="px-3 py-2 text-right">{r.orders_30d}</td>
+                    <td className="px-3 py-2 text-right">{Number(r.avg_minutes_30d).toFixed(1)}</td>
+                    <td className="px-3 py-2 text-right">{Number(r.on_time_pct_30d).toFixed(0)}%</td>
+                    <td className="px-3 py-2 text-right">{Number(r.rating).toFixed(1)}</td>
+                    <td className="px-3 py-2">
+                      <Select value={pp?.shop_id ?? ""} onValueChange={(v) => transferPartner(r.partner_id, v)}>
+                        <SelectTrigger className="h-9 w-36 rounded-xl border-0 bg-secondary"><SelectValue placeholder="Transfer to…" /></SelectTrigger>
+                        <SelectContent>
+                          {(shops.data ?? []).map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      <Button size="icon" variant="ghost" onClick={() => setConfirmDel(r)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
+              {(perf.data?.length ?? 0) === 0 && <tr><td colSpan={13} className="px-3 py-10 text-center text-muted-foreground">No data yet.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile cards */}
+        <div className="space-y-3 md:hidden">
+          {(perf.data ?? []).map((r: any) => {
+            const pp = partnerById(r.partner_id);
+            return (
+              <div key={r.partner_id} className="rounded-xl border border-border/70 bg-card p-4">
+                <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="font-bold">{o.order_number} <span className="text-muted-foreground font-normal">• {rupees(o.total)}</span></div>
-                    <div className="text-xs text-muted-foreground">{o.status.replace(/_/g, " ")} · {(o.address as any)?.line1}, {(o.address as any)?.city}</div>
-                    <div className="text-xs mt-1">
-                      {p ? (
-                        <span className="inline-flex items-center gap-1">
-                          <Circle className={`h-2 w-2 ${p.is_online ? "fill-green-500 text-green-500" : "fill-muted text-muted"}`} />
-                          <span className="font-semibold">{p.name}</span> · {p.phone ?? "—"}
-                        </span>
-                      ) : <span className="text-yellow-600 font-semibold">Unassigned</span>}
+                    <div className="truncate text-subtitle font-semibold">{r.name}</div>
+                    <div className="text-xs text-muted-foreground">{pp?.phone ?? "No phone"}</div>
+                    <div className="text-xs text-muted-foreground">Shop: {shopName(pp?.shop_id ?? null)}</div>
+                    <div className="mt-1 text-xs">
+                      {r.is_online
+                        ? <span className="inline-flex items-center gap-1 font-semibold text-primary"><Circle className="h-2 w-2 fill-primary text-primary" />Online</span>
+                        : <span className="text-muted-foreground">Offline</span>}
+                      <span className="ml-2 rounded-full bg-secondary px-2.5 py-0.5 text-caption font-medium text-muted-foreground">{pp?.active_order_count ?? 0} active</span>
                     </div>
                   </div>
-                  <Select onValueChange={(v) => reassign(o.id, v)}>
-                    <SelectTrigger className="w-44 rounded-xl"><SelectValue placeholder={p ? "Reassign" : "Assign partner"} /></SelectTrigger>
+                  <Button size="icon" variant="ghost" onClick={() => setConfirmDel(r)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mt-3 text-center">
+                  <MiniStat label="Today" value={String(r.orders_today)} />
+                  <MiniStat label="7d" value={String(r.orders_7d)} />
+                  <MiniStat label="30d" value={String(r.orders_30d)} />
+                  <MiniStat label="Avg min" value={Number(r.avg_minutes_30d).toFixed(1)} />
+                  <MiniStat label="On-time" value={`${Number(r.on_time_pct_30d).toFixed(0)}%`} />
+                  <MiniStat label="Rating" value={Number(r.rating).toFixed(1)} />
+                </div>
+                <div className="mt-3">
+                  <Select value={pp?.shop_id ?? ""} onValueChange={(v) => transferPartner(r.partner_id, v)}>
+                    <SelectTrigger className="h-11 rounded-xl border-0 bg-secondary"><SelectValue placeholder="Transfer to shop…" /></SelectTrigger>
                     <SelectContent>
-                      {(partners.data ?? []).map((pp: any) => (
-                        <SelectItem key={pp.id} value={pp.id}>{pp.name} {pp.is_online ? "🟢" : "⚫"}</SelectItem>
-                      ))}
+                      {(shops.data ?? []).map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-              );
-            })}
-            {(orders.data?.length ?? 0) === 0 && <div className="text-sm text-muted-foreground">No active deliveries.</div>}
-          </div>
-        </section>
+              </div>
+            );
+          })}
+          {(perf.data?.length ?? 0) === 0 && <div className="rounded-xl border border-border/70 bg-card px-6 py-10 text-center text-body text-muted-foreground">No data yet.</div>}
+        </div>
+      </section>
 
-        <section>
-          <h2 className="font-bold mb-3 flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" />Partner roster &amp; performance</h2>
-
-          {/* Desktop table */}
-          <div className="hidden md:block overflow-x-auto rounded-2xl border border-border">
-            <table className="w-full text-sm">
-              <thead className="bg-secondary/40 text-xs uppercase">
-                <tr>
-                  <th className="text-left px-3 py-2">Partner</th>
-                  <th className="text-left px-3 py-2">Phone</th>
-                  <th className="text-left px-3 py-2">Shop</th>
-                  <th className="text-left px-3 py-2">Status</th>
-                  <th className="text-right px-3 py-2">Active</th>
-                  <th className="text-right px-3 py-2">Today</th>
-                  <th className="text-right px-3 py-2">7d</th>
-                  <th className="text-right px-3 py-2">30d</th>
-                  <th className="text-right px-3 py-2">Avg min</th>
-                  <th className="text-right px-3 py-2">On-time</th>
-                  <th className="text-right px-3 py-2">Rating</th>
-                  <th className="px-3 py-2">Transfer</th>
-                  <th className="px-3 py-2" />
-                </tr>
-              </thead>
-              <tbody>
-                {(perf.data ?? []).map((r: any) => {
-                  const pp = partnerById(r.partner_id);
-                  return (
-                    <tr key={r.partner_id} className="border-t border-border">
-                      <td className="px-3 py-2 font-semibold">{r.name}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{pp?.phone ?? "—"}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{shopName(pp?.shop_id ?? null)}</td>
-                      <td className="px-3 py-2">{r.is_online ? <span className="text-green-600 font-bold">Online</span> : <span className="text-muted-foreground">Offline</span>}</td>
-                      <td className="px-3 py-2 text-right">{pp?.active_order_count ?? 0}</td>
-                      <td className="px-3 py-2 text-right">{r.orders_today}</td>
-                      <td className="px-3 py-2 text-right">{r.orders_7d}</td>
-                      <td className="px-3 py-2 text-right">{r.orders_30d}</td>
-                      <td className="px-3 py-2 text-right">{Number(r.avg_minutes_30d).toFixed(1)}</td>
-                      <td className="px-3 py-2 text-right">{Number(r.on_time_pct_30d).toFixed(0)}%</td>
-                      <td className="px-3 py-2 text-right">{Number(r.rating).toFixed(1)}</td>
-                      <td className="px-3 py-2">
-                        <Select value={pp?.shop_id ?? ""} onValueChange={(v) => transferPartner(r.partner_id, v)}>
-                          <SelectTrigger className="h-8 w-36 rounded-xl"><SelectValue placeholder="Transfer to…" /></SelectTrigger>
-                          <SelectContent>
-                            {(shops.data ?? []).map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        <Button size="icon" variant="ghost" onClick={() => setConfirmDel(r)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {(perf.data?.length ?? 0) === 0 && <tr><td colSpan={13} className="px-3 py-6 text-center text-muted-foreground">No data yet.</td></tr>}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile cards */}
-          <div className="md:hidden space-y-3">
-            {(perf.data ?? []).map((r: any) => {
-              const pp = partnerById(r.partner_id);
-              return (
-                <div key={r.partner_id} className="rounded-2xl border border-border bg-card p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="font-bold truncate">{r.name}</div>
-                      <div className="text-xs text-muted-foreground">{pp?.phone ?? "No phone"}</div>
-                      <div className="text-xs text-muted-foreground">Shop: {shopName(pp?.shop_id ?? null)}</div>
-                      <div className="mt-1 text-xs">
-                        {r.is_online
-                          ? <span className="inline-flex items-center gap-1 text-green-600 font-bold"><Circle className="h-2 w-2 fill-green-500 text-green-500" />Online</span>
-                          : <span className="text-muted-foreground">Offline</span>}
-                        <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase font-bold">{pp?.active_order_count ?? 0} active</span>
-                      </div>
-                    </div>
-                    <Button size="icon" variant="ghost" onClick={() => setConfirmDel(r)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 mt-3 text-center">
-                    <MiniStat label="Today" value={String(r.orders_today)} />
-                    <MiniStat label="7d" value={String(r.orders_7d)} />
-                    <MiniStat label="30d" value={String(r.orders_30d)} />
-                    <MiniStat label="Avg min" value={Number(r.avg_minutes_30d).toFixed(1)} />
-                    <MiniStat label="On-time" value={`${Number(r.on_time_pct_30d).toFixed(0)}%`} />
-                    <MiniStat label="Rating" value={Number(r.rating).toFixed(1)} />
-                  </div>
-                  <div className="mt-3">
-                    <Select value={pp?.shop_id ?? ""} onValueChange={(v) => transferPartner(r.partner_id, v)}>
-                      <SelectTrigger className="h-9 rounded-xl"><SelectValue placeholder="Transfer to shop…" /></SelectTrigger>
-                      <SelectContent>
-                        {(shops.data ?? []).map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              );
-            })}
-            {(perf.data?.length ?? 0) === 0 && <div className="text-sm text-muted-foreground text-center py-6">No data yet.</div>}
-          </div>
-        </section>
-
-        <AlertDialog open={!!confirmDel} onOpenChange={(v) => !v && setConfirmDel(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Remove “{confirmDel?.name}”?</AlertDialogTitle>
-              <AlertDialogDescription>The partner profile and delivery role will be removed. Active orders block deletion.</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => confirmDel && deletePartner(confirmDel.partner_id)}>Remove</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-    </RoleShell>
+      <AlertDialog open={!!confirmDel} onOpenChange={(v) => !v && setConfirmDel(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove “{confirmDel?.name}”?</AlertDialogTitle>
+            <AlertDialogDescription>The partner profile and delivery role will be removed. Active orders block deletion.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => confirmDel && deletePartner(confirmDel.partner_id)}>Remove</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
 
@@ -386,13 +380,13 @@ function AddPartnerDialog({ onDone }: { shops: Array<{ id: string; name: string 
       <DialogHeader><DialogTitle>Create delivery partner</DialogTitle></DialogHeader>
       <p className="text-xs text-muted-foreground -mt-1">Partners you create here go into the pool. Shopkeepers then select their team.</p>
       <div className="space-y-3">
-        <div><label className="text-xs font-bold">Name *</label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-        <div><label className="text-xs font-bold">Phone</label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
-        <div><label className="text-xs font-bold">Vehicle type</label><Input value={vehicle} onChange={(e) => setVehicle(e.target.value)} placeholder="Bike / Scooter / EV" /></div>
+        <div><label className="text-meta font-medium">Name *</label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
+        <div><label className="text-meta font-medium">Phone</label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+        <div><label className="text-meta font-medium">Vehicle type</label><Input value={vehicle} onChange={(e) => setVehicle(e.target.value)} placeholder="Bike / Scooter / EV" /></div>
         <div>
-          <label className="text-xs font-bold">Account email (optional)</label>
+          <label className="text-meta font-medium">Account email (optional)</label>
           <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="User must already be signed up" />
-          <p className="text-[11px] text-muted-foreground mt-1">Linked email gains the delivery role automatically.</p>
+          <p className="text-caption text-muted-foreground mt-1">Linked email gains the delivery role automatically.</p>
         </div>
       </div>
       <DialogFooter>
@@ -405,18 +399,18 @@ function AddPartnerDialog({ onDone }: { shops: Array<{ id: string; name: string 
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-4">
-      <div className="text-xs text-muted-foreground font-semibold">{label}</div>
-      <div className="font-display text-2xl font-extrabold mt-1">{value}</div>
+    <div className="rounded-xl border border-border/70 bg-card p-4">
+      <div className="text-meta text-muted-foreground">{label}</div>
+      <div className="mt-0.5 text-xl font-semibold tracking-tight">{value}</div>
     </div>
   );
 }
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-secondary/40 px-2 py-1.5">
-      <div className="text-[10px] uppercase font-bold text-muted-foreground">{label}</div>
-      <div className="font-bold text-sm">{value}</div>
+    <div className="rounded-xl bg-secondary/70 px-2 py-2">
+      <div className="text-caption font-medium text-muted-foreground">{label}</div>
+      <div className="text-body font-semibold">{value}</div>
     </div>
   );
 }

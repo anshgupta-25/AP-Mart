@@ -2,8 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { RoleShell } from "@/components/RoleShell";
-import { ADMIN_NAV } from "@/lib/adminNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -190,135 +188,170 @@ function LocationsPage() {
   const rowBusy = (id: string) => busyId === id;
 
   return (
-    <RoleShell role="admin" nav={ADMIN_NAV}>
-      <div className="space-y-6">
-        <section className="rounded-2xl border border-border bg-card p-5 shadow-card">
-          <h2 className="font-display text-lg font-bold mb-3">Add location</h2>
-          <form
-            className="grid grid-cols-1 md:grid-cols-4 gap-3"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!addMutation.isPending) addMutation.mutate();
-            }}
-          >
-            <div>
-              <Label>State</Label>
-              <Input value={state} onChange={(e) => setState(e.target.value)} placeholder="Uttar Pradesh" className="mt-1" />
-            </div>
-            <div>
-              <Label>City</Label>
-              <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Noida" className="mt-1" />
-            </div>
-            <div>
-              <Label>PIN Code</Label>
-              <Input
-                value={pincode}
-                onChange={(e) => setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                inputMode="numeric"
-                placeholder="201301"
-                maxLength={6}
-                className="mt-1 font-mono"
-              />
-            </div>
-            <div className="flex items-end">
-              <Button type="submit" disabled={addMutation.isPending} className="w-full gap-2">
-                {addMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                {addMutation.isPending ? "Saving…" : "Add"}
-              </Button>
-            </div>
-          </form>
-        </section>
-
-        <section className="rounded-2xl border border-border bg-card p-5 shadow-card">
-          <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-            <h2 className="font-display text-lg font-bold">
-              All locations ({q.isSuccess ? q.data.length : "—"})
-            </h2>
-            <div className="flex items-center gap-2">
-              <Input
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                placeholder="Search state, city, PIN…"
-                className="max-w-xs"
-              />
-              <Button variant="outline" size="icon" onClick={() => q.refetch()} disabled={q.isFetching} aria-label="Refresh">
-                <RefreshCw className={`h-4 w-4 ${q.isFetching ? "animate-spin" : ""}`} />
-              </Button>
-            </div>
-          </div>
-
-          {q.isLoading ? (
-            <div className="py-10 text-center text-muted-foreground inline-flex w-full items-center justify-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading locations...
-            </div>
-          ) : q.isError ? (
-            <div className="py-8 text-center space-y-3">
-              <div className="inline-flex items-center gap-2 text-destructive font-semibold">
-                <AlertTriangle className="h-4 w-4" /> Unable to load locations. Please try again.
-              </div>
-              <p className="text-xs text-muted-foreground break-words max-w-xl mx-auto">
-                {(q.error as Error)?.message}
-              </p>
-              <Button variant="outline" onClick={() => q.refetch()}>Retry</Button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-muted-foreground border-b">
-                    <th className="py-2 px-2">State</th>
-                    <th className="py-2 px-2">City</th>
-                    <th className="py-2 px-2">PIN</th>
-                    <th className="py-2 px-2">Active</th>
-                    <th className="py-2 px-2 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r) => (
-                    <tr key={r.id} className="border-b hover:bg-muted/40">
-                      <td className="py-2 px-2">{r.state}</td>
-                      <td className="py-2 px-2">{r.city}</td>
-                      <td className="py-2 px-2 font-mono">{r.pincode}</td>
-                      <td className="py-2 px-2">
-                        <Switch
-                          checked={r.is_active}
-                          disabled={rowBusy(r.id)}
-                          onCheckedChange={() => {
-                            setBusyId(r.id);
-                            toggleMutation.mutate(r);
-                          }}
-                        />
-                      </td>
-                      <td className="py-2 px-2 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={rowBusy(r.id)}
-                          onClick={() => {
-                            if (!window.confirm("Are you sure you want to delete this location?")) return;
-                            setBusyId(r.id);
-                            deleteMutation.mutate(r);
-                          }}
-                          className="text-destructive"
-                        >
-                          {rowBusy(r.id) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                  {rows.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="py-6 text-center text-muted-foreground">
-                        {filter ? "No locations match your search." : "No locations found."}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
+    <div className="mx-auto w-full max-w-5xl space-y-5 px-4 py-4 md:px-6 md:py-6">
+      <div>
+        <h1 className="large-title">Service locations</h1>
+        <p className="mt-0.5 text-meta text-muted-foreground">PIN codes customers can order from.</p>
       </div>
-    </RoleShell>
+      <section className="rounded-xl border border-border/70 bg-card p-4">
+        <h2 className="section-title mb-4">Add location</h2>
+        <form
+          className="grid grid-cols-1 md:grid-cols-4 gap-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!addMutation.isPending) addMutation.mutate();
+          }}
+        >
+          <div>
+            <Label className="text-meta font-medium">State</Label>
+            <Input value={state} onChange={(e) => setState(e.target.value)} placeholder="Uttar Pradesh" className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-meta font-medium">City</Label>
+            <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Noida" className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-meta font-medium">PIN code</Label>
+            <Input
+              value={pincode}
+              onChange={(e) => setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              inputMode="numeric"
+              placeholder="201301"
+              maxLength={6}
+              className="mt-1 font-mono"
+            />
+          </div>
+          <div className="flex items-end">
+            <Button type="submit" disabled={addMutation.isPending} className="w-full gap-2">
+              {addMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              {addMutation.isPending ? "Saving…" : "Add"}
+            </Button>
+          </div>
+        </form>
+      </section>
+
+      <section className="rounded-xl border border-border/70 bg-card p-4">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="section-title">
+            All locations ({q.isSuccess ? q.data.length : "—"})
+          </h2>
+          <div className="flex items-center gap-2">
+            <Input
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              placeholder="Search state, city, PIN…"
+              className="max-w-xs"
+            />
+            <Button variant="secondary" size="icon" onClick={() => q.refetch()} disabled={q.isFetching} aria-label="Refresh">
+              <RefreshCw className={`h-4 w-4 ${q.isFetching ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
+        </div>
+
+        {q.isLoading ? (
+          <div className="inline-flex w-full items-center justify-center gap-2 py-10 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading locations...
+          </div>
+        ) : q.isError ? (
+          <div className="py-8 text-center space-y-3">
+            <div className="inline-flex items-center gap-2 text-destructive font-semibold">
+              <AlertTriangle className="h-4 w-4" /> Unable to load locations. Please try again.
+            </div>
+            <p className="text-xs text-muted-foreground break-words max-w-xl mx-auto">
+              {(q.error as Error)?.message}
+            </p>
+            <Button variant="secondary" onClick={() => q.refetch()}>Retry</Button>
+          </div>
+        ) : (
+          <>
+            <div className="md:hidden">
+              {rows.map((r) => (
+                <div key={r.id} className="flex items-center justify-between gap-3 border-b border-border/70 py-3 last:border-0">
+                  <div className="min-w-0">
+                    <div className="font-mono text-subtitle font-semibold">{r.pincode}</div>
+                    <div className="mt-0.5 truncate text-meta text-muted-foreground">{r.city}, {r.state}</div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Switch
+                      checked={r.is_active}
+                      disabled={rowBusy(r.id)}
+                      onCheckedChange={() => {
+                        setBusyId(r.id);
+                        toggleMutation.mutate(r);
+                      }}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={rowBusy(r.id)}
+                      aria-label="Delete location"
+                      onClick={() => {
+                        if (!window.confirm("Are you sure you want to delete this location?")) return;
+                        setBusyId(r.id);
+                        deleteMutation.mutate(r);
+                      }}
+                      className="text-destructive"
+                    >
+                      {rowBusy(r.id) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <table className="hidden w-full text-sm md:table">
+              <thead>
+                <tr className="border-b border-border/70 text-left text-small font-medium text-muted-foreground">
+                  <th className="px-3 py-3 font-medium">State</th>
+                  <th className="px-3 py-3 font-medium">City</th>
+                  <th className="px-3 py-3 font-medium">PIN</th>
+                  <th className="px-3 py-3 font-medium">Active</th>
+                  <th className="px-3 py-3 text-right font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id} className="border-b border-border/70 last:border-0 hover:bg-secondary/50">
+                    <td className="px-3 py-2.5">{r.state}</td>
+                    <td className="px-3 py-2.5">{r.city}</td>
+                    <td className="px-3 py-2.5 font-mono">{r.pincode}</td>
+                    <td className="px-3 py-2.5">
+                      <Switch
+                        checked={r.is_active}
+                        disabled={rowBusy(r.id)}
+                        onCheckedChange={() => {
+                          setBusyId(r.id);
+                          toggleMutation.mutate(r);
+                        }}
+                      />
+                    </td>
+                    <td className="px-3 py-2.5 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={rowBusy(r.id)}
+                        onClick={() => {
+                          if (!window.confirm("Are you sure you want to delete this location?")) return;
+                          setBusyId(r.id);
+                          deleteMutation.mutate(r);
+                        }}
+                        className="text-destructive"
+                      >
+                        {rowBusy(r.id) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {rows.length === 0 && (
+              <div className="py-10 text-center text-body text-muted-foreground">
+                {filter ? "No locations match your search." : "No locations found."}
+              </div>
+            )}
+          </>
+        )}
+      </section>
+    </div>
   );
 }

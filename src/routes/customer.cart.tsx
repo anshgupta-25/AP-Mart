@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Minus, Plus, Trash2, Zap } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { ChevronRight, MapPin, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
+import { useDeliveryContext } from "@/hooks/useDeliveryContext";
 import { Button } from "@/components/ui/button";
 import { rupees } from "@/lib/format";
 import { CartShopSelector } from "@/components/CartShopSelector";
@@ -14,20 +14,22 @@ export const Route = createFileRoute("/customer/cart")({
 
 function AppCart() {
   const { items, subtotal, savings, setQty, loading, priceOf, mrpOf } = useCart();
+  const { addressLabel } = useDeliveryContext();
   const navigate = useNavigate();
-
 
   if (!loading && items.length === 0) {
     return (
-      <div className="px-4 py-20 text-center">
-        <div className="text-7xl">🛒</div>
-        <h2 className="font-display text-2xl font-bold mt-4">Your cart is empty</h2>
-        <p className="text-muted-foreground mt-2 text-sm">Looks like you haven't added anything yet.</p>
+      <div className="px-4 py-24 text-center">
+        <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-tint-mint text-primary-ink">
+          <ShoppingBag className="h-5 w-5" strokeWidth={1.8} />
+        </div>
+        <h2 className="mt-4 text-subtitle font-semibold">Your cart is empty</h2>
+        <p className="mt-1 text-meta text-muted-foreground">Add items from nearby shops to get started.</p>
         <Link
           to="/customer/categories"
-          className="mt-6 inline-block rounded-2xl gradient-primary px-6 py-3 font-bold text-primary-foreground shadow-glow"
+          className="press mt-5 inline-flex h-11 items-center rounded-xl bg-primary px-6 text-body font-semibold text-primary-foreground"
         >
-          Continue Shopping
+          Browse products
         </Link>
       </div>
     );
@@ -37,72 +39,91 @@ function AppCart() {
   const total = subtotal + deliveryFee;
 
   return (
-    <div className="px-4 py-4 pb-40">
-      <h1 className="font-display text-2xl font-extrabold mb-4">Your cart ({items.length})</h1>
+    <div className="mx-auto max-w-2xl space-y-4 px-4 pb-44 pt-4">
+      <div className="flex items-baseline justify-between">
+        <h1 className="large-title">Cart</h1>
+        <span className="text-small text-muted-foreground">
+          {items.length} {items.length === 1 ? "item" : "items"}
+        </span>
+      </div>
 
       <CartShopSelector />
 
-      <div className="space-y-3">
-        <AnimatePresence>
-          {items.map((l) => (
-            <motion.div
-              key={l.id}
-              layout
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, x: -50 }}
-              className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 shadow-card"
-            >
-              {(l.variant?.images?.[0] ?? l.product.image_url) ? (
-                <StorageImg loading="lazy" decoding="async" src={l.variant?.images?.[0] ?? l.product.image_url!} alt={l.product.name} className="h-16 w-16 rounded-xl object-cover" />
-              ) : (
-                <div className="h-16 w-16 rounded-xl bg-secondary grid place-items-center text-2xl">🛒</div>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm line-clamp-1">{l.product.name}</div>
-                <div className="text-[11px] text-muted-foreground">
-                  {l.variant ? `${l.variant.size}${l.variant.unit ? " " + l.variant.unit : ""}` : l.product.unit}
-                </div>
-                <div className="mt-1 flex items-center gap-2">
-                  <span className="font-bold text-sm">{rupees(priceOf(l))}</span>
-                  {mrpOf(l) > priceOf(l) && (
-                    <span className="text-[11px] text-muted-foreground line-through">{rupees(mrpOf(l))}</span>
-                  )}
-                </div>
-
+      <div className="divide-y divide-border/60 overflow-hidden rounded-xl border border-border/70 bg-card">
+        {items.map((l) => (
+          <div key={l.id} className="flex items-center gap-3 p-3">
+            {(l.variant?.images?.[0] ?? l.product.image_url) ? (
+              <StorageImg
+                loading="lazy"
+                decoding="async"
+                src={l.variant?.images?.[0] ?? l.product.image_url!}
+                alt={l.product.name}
+                className="h-14 w-14 shrink-0 rounded-lg bg-secondary/60 object-contain p-1"
+              />
+            ) : (
+              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-lg bg-secondary text-muted-foreground">
+                <ShoppingBag className="h-5 w-5" strokeWidth={1.6} />
               </div>
-              <div className="flex items-center gap-1 rounded-xl gradient-primary text-primary-foreground">
-                <button onClick={() => setQty(l.id, l.quantity - 1)} className="h-9 w-9 grid place-items-center">
-                  {l.quantity === 1 ? <Trash2 className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
-                </button>
-                <span className="w-6 text-center text-sm font-bold">{l.quantity}</span>
-                <button onClick={() => setQty(l.id, l.quantity + 1)} className="h-9 w-9 grid place-items-center">
-                  <Plus className="h-4 w-4" />
-                </button>
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="line-clamp-2 text-meta font-medium leading-[17px]">{l.product.name}</div>
+              <div className="mt-0.5 text-caption text-muted-foreground">
+                {l.variant ? `${l.variant.size}${l.variant.unit ? " " + l.variant.unit : ""}` : l.product.unit}
               </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+              <div className="mt-1 flex items-baseline gap-1.5">
+                <span className="text-meta font-bold">{rupees(priceOf(l))}</span>
+                {mrpOf(l) > priceOf(l) && (
+                  <span className="text-caption text-muted-foreground line-through">{rupees(mrpOf(l))}</span>
+                )}
+              </div>
+            </div>
+            <div className="flex h-8 shrink-0 items-center rounded-full bg-primary text-primary-foreground">
+              <button onClick={() => setQty(l.id, l.quantity - 1)} className="press grid h-8 w-8 place-items-center" aria-label="Decrease">
+                {l.quantity === 1 ? <Trash2 className="h-3.5 w-3.5" /> : <Minus className="h-3.5 w-3.5" />}
+              </button>
+              <span className="min-w-4 text-center text-meta font-semibold">{l.quantity}</span>
+              <button onClick={() => setQty(l.id, l.quantity + 1)} className="press grid h-8 w-8 place-items-center" aria-label="Increase">
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
 
-      <div className="mt-5 rounded-3xl border border-border bg-card p-4 shadow-card">
-        <h3 className="font-display text-base font-bold mb-2">Bill details</h3>
-        <Row label="Item total" value={rupees(subtotal)} />
-        {savings > 0 && <Row label="You save" value={`- ${rupees(savings)}`} className="text-success" />}
-        <Row label="Delivery fee" value={deliveryFee === 0 ? "FREE" : rupees(deliveryFee)} />
-        <Row label="Handling" value="At checkout" />
-        <div className="my-2 h-px bg-border" />
-        <Row label="To pay" value={rupees(total)} bold />
-      </div>
+      <Link
+        to="/customer/profile"
+        className="press flex items-center gap-3 rounded-xl border border-border/70 bg-card p-3"
+      >
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-tint-mint text-primary-ink">
+          <MapPin className="h-4 w-4" />
+        </span>
+        <span className="min-w-0 flex-1 leading-tight">
+          <span className="block text-caption text-muted-foreground">Delivering to</span>
+          <span className="block truncate text-meta font-medium">{addressLabel ?? "Choose your address"}</span>
+        </span>
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+      </Link>
 
-      {/* Sticky checkout */}
-      <div className="fixed bottom-16 left-0 right-0 z-20 px-4 pb-3">
+      <section>
+        <h3 className="section-title mb-2">Bill details</h3>
+        <div className="rounded-xl border border-border/70 bg-card px-4 py-3">
+          <Row label="Item total" value={rupees(subtotal)} />
+          {savings > 0 && <Row label="You save" value={`- ${rupees(savings)}`} className="text-success" />}
+          <Row label="Delivery fee" value={deliveryFee === 0 ? "Free" : rupees(deliveryFee)} />
+          <Row label="Handling" value="At checkout" />
+          <div className="my-2 h-px bg-border/60" />
+          <Row label="To pay" value={rupees(total)} bold />
+        </div>
+      </section>
+
+      <div className="bar-blur hairline-t fixed inset-x-0 bottom-[calc(60px+env(safe-area-inset-bottom))] z-20 px-4 py-3">
         <Button
           onClick={() => navigate({ to: "/checkout" })}
           disabled={loading || items.length === 0}
-          className="w-full h-12 rounded-2xl gradient-primary text-primary-foreground font-bold shadow-glow"
+          className="mx-auto flex h-11 w-full max-w-2xl justify-between rounded-xl"
         >
-          <Zap className="h-4 w-4 mr-2 fill-current" /> Checkout · {rupees(total)}
+          <span>{rupees(total)}</span>
+          <span>Proceed to pay</span>
         </Button>
       </div>
     </div>
@@ -111,9 +132,9 @@ function AppCart() {
 
 function Row({ label, value, bold, className }: { label: string; value: string; bold?: boolean; className?: string }) {
   return (
-    <div className={`flex justify-between py-1 text-sm ${bold ? "font-bold text-base" : ""} ${className ?? ""}`}>
+    <div className={`flex justify-between py-1 text-meta ${bold ? "text-body font-semibold" : "text-muted-foreground"} ${className ?? ""}`}>
       <span>{label}</span>
-      <span>{value}</span>
+      <span className={bold || className ? "" : "text-foreground"}>{value}</span>
     </div>
   );
 }

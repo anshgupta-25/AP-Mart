@@ -3,8 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { RoleShell } from "@/components/RoleShell";
-import { SHOPKEEPER_NAV } from "./shopkeeper.dashboard";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -146,53 +144,52 @@ function Page() {
   };
 
   return (
-    <RoleShell role="shopkeeper" nav={SHOPKEEPER_NAV} requireRoles={["shopkeeper", "admin"]}>
-      <div className="p-4 md:p-6 space-y-6">
-        <header className="flex flex-col sm:flex-row sm:items-start gap-3">
+    <>
+      <div className="mx-auto max-w-6xl space-y-5 px-4 py-4 md:px-6">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-end">
           <div className="flex-1 min-w-0">
-            <h1 className="font-display text-2xl sm:text-3xl font-extrabold flex items-center gap-2">
-              <Truck className="h-6 w-6 sm:h-7 sm:w-7 text-primary shrink-0" />
-              Delivery Management
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Pick your delivery team from the admin pool and assign each order to a teammate.
+            <h1 className="large-title">Delivery</h1>
+            <p className="mt-1 text-body text-muted-foreground">
+              Build your delivery team and assign orders to them.
             </p>
           </div>
-          <Button className="w-full sm:w-auto shrink-0 whitespace-nowrap" onClick={() => setTeamOpen(true)}>
-            <UserCog className="h-4 w-4 mr-1" />Select delivery team
+          <Button className="w-full shrink-0 whitespace-nowrap sm:w-auto" onClick={() => setTeamOpen(true)}>
+            <UserCog className="mr-1.5 h-4 w-4" />Select team
           </Button>
         </header>
 
         {/* Team summary */}
         <section>
-          <h2 className="font-bold mb-3 flex items-center gap-2"><Users className="h-4 w-4 text-primary" />Assigned delivery team ({team.data?.length ?? 0})</h2>
+          <h2 className="section-title mb-3">Your team <span className="font-normal text-muted-foreground">({team.data?.length ?? 0})</span></h2>
           {(team.data?.length ?? 0) === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border bg-card p-6 text-center">
-              <p className="text-sm text-muted-foreground">No delivery partners on your team yet.</p>
-              <Button className="mt-3" onClick={() => setTeamOpen(true)}>Select delivery team</Button>
+            <div className="rounded-xl bg-card px-6 py-10 text-center border border-border/70">
+              <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary-soft text-primary-ink"><Users className="h-6 w-6" /></div>
+              <p className="mt-4 text-body text-muted-foreground">No delivery partners on your team yet.</p>
+              <Button className="mt-4" onClick={() => setTeamOpen(true)}>Select delivery team</Button>
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {(team.data ?? []).map((p) => {
                 const b = badgeFor(p);
                 return (
-              <div key={p.partner_id} className="rounded-2xl border border-border bg-card p-4 relative group">
+              <div key={p.partner_id} className="group relative rounded-xl bg-card p-4 border border-border/70">
                     <button
                       onClick={() => removePartner(p.partner_id)}
-                      className="absolute top-2 right-2 p-1 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition opacity-0 group-hover:opacity-100 focus:opacity-100"
+                      className="absolute top-2 right-2 p-1 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition md:opacity-0 md:group-hover:opacity-100 focus:opacity-100"
                       title="Remove from shop"
+                      aria-label="Remove from shop"
                     >
                       <X className="h-4 w-4" />
                     </button>
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <div className="font-bold truncate">{p.name}</div>
-                        <div className="text-xs text-muted-foreground truncate">{[p.phone, p.vehicle].filter(Boolean).join(" · ") || "—"}</div>
+                        <div className="truncate text-body font-semibold">{p.name}</div>
+                        <div className="truncate text-meta text-muted-foreground">{[p.phone, p.vehicle].filter(Boolean).join(" · ") || "—"}</div>
                       </div>
-                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] uppercase font-bold ${b.cls}`}>{b.label}</span>
+                      <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-caption font-semibold ${b.cls}`}>{b.label}</span>
                     </div>
                     {(p.current_order_number || p.eta_minutes != null) && (
-                      <div className="mt-3 rounded-xl bg-secondary/40 px-3 py-2 text-xs">
+                      <div className="mt-3 rounded-xl bg-secondary px-3 py-2 text-meta">
                         {p.current_order_number && (
                           <div>Order <span className="font-bold">{p.current_order_number}</span></div>
                         )}
@@ -208,7 +205,7 @@ function Page() {
                       <Mini label="7d" value={String(perfByPartner[p.partner_id]?.orders_7d ?? 0)} />
                       <Mini label="Rating" value={p.rating != null ? Number(p.rating).toFixed(1) : "—"} />
                     </div>
-                    <div className="mt-2 text-[11px] text-muted-foreground">Updated {timeAgo(p.status_updated_at)}</div>
+                    <div className="mt-2 text-caption text-muted-foreground">Updated {timeAgo(p.status_updated_at)}</div>
                   </div>
                 );
               })}
@@ -220,40 +217,63 @@ function Page() {
 
         {/* Active orders */}
         <section>
-          <h2 className="font-bold mb-3 flex items-center gap-2"><Activity className="h-4 w-4 text-primary" />Active orders</h2>
+          <h2 className="section-title mb-3">Active orders</h2>
           <div className="space-y-3">
             {(orders.data ?? []).map((o: any) => {
               const p = teamById(o.partner_id);
               return (
-                <div key={o.id} className="rounded-2xl border border-border bg-card p-4 flex flex-wrap items-center gap-3 justify-between">
+                <div key={o.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-card p-4 border border-border/70">
                   <div className="min-w-0">
-                    <div className="font-bold">{o.order_number} <span className="text-muted-foreground font-normal">• {rupees(o.total)}</span></div>
-                    <div className="text-xs text-muted-foreground">{o.status.replace(/_/g, " ")} · {(o.address as any)?.line1}, {(o.address as any)?.city}</div>
-                    <div className="text-xs mt-1">
+                    <div className="text-body font-semibold">{o.order_number} <span className="font-normal text-muted-foreground">· {rupees(o.total)}</span></div>
+                    <div className="text-meta capitalize text-muted-foreground">{o.status.replace(/_/g, " ")} · {(o.address as any)?.line1}, {(o.address as any)?.city}</div>
+                    <div className="mt-1 text-meta">
                       {p ? <span><span className="font-semibold">{p.name}</span> · {p.phone ?? "—"}</span>
-                         : <span className="text-yellow-600 font-semibold">Unassigned</span>}
+                         : <span className="font-semibold text-warning-foreground">Unassigned</span>}
                     </div>
                   </div>
                   <Button size="sm" onClick={() => setAssignFor(o)}>{p ? "Re-assign" : "Assign delivery partner"}</Button>
                 </div>
               );
             })}
-            {(orders.data?.length ?? 0) === 0 && <div className="text-sm text-muted-foreground">No active deliveries.</div>}
+            {(orders.data?.length ?? 0) === 0 && <div className="rounded-xl bg-card px-6 py-8 text-center text-body text-muted-foreground border border-border/70">No active deliveries.</div>}
           </div>
         </section>
 
         {/* Performance */}
         <section>
-          <h2 className="font-bold mb-3 flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" />Partner performance</h2>
-          <div className="overflow-x-auto rounded-2xl border border-border">
-            <table className="w-full text-sm">
-              <thead className="bg-secondary/40 text-xs uppercase">
+          <h2 className="section-title mb-3">Partner performance</h2>
+          <div className="divide-y divide-border/60 rounded-xl border border-border/70 bg-card md:hidden">
+            {(team.data ?? []).map((p) => {
+              const b = badgeFor(p);
+              const r = perfByPartner[p.partner_id];
+              return (
+                <div key={p.partner_id} className="p-3.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="truncate text-body font-semibold">{p.name}</div>
+                      <div className="text-small text-muted-foreground">{p.phone ?? "—"}</div>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-caption font-semibold ${b.cls}`}>{b.label}</span>
+                  </div>
+                  <div className="mt-2.5 grid grid-cols-3 gap-2 text-center">
+                    <Mini label="Active" value={String(p.active_order_count ?? 0)} />
+                    <Mini label="Done (7d)" value={String(r?.orders_7d ?? 0)} />
+                    <Mini label="Rating" value={p.rating != null ? Number(p.rating).toFixed(1) : "—"} />
+                  </div>
+                </div>
+              );
+            })}
+            {(team.data?.length ?? 0) === 0 && <div className="px-3 py-6 text-center text-meta text-muted-foreground">No team members yet.</div>}
+          </div>
+          <div className="hidden overflow-x-auto rounded-xl bg-card border border-border/70 md:block">
+            <table className="w-full text-body">
+              <thead className="bg-secondary/50 text-small text-muted-foreground">
                 <tr>
-                  <th className="text-left px-3 py-2">Partner</th>
-                  <th className="text-left px-3 py-2">Status</th>
-                  <th className="text-right px-3 py-2">Active</th>
-                  <th className="text-right px-3 py-2">Completed (7d)</th>
-                  <th className="text-right px-3 py-2">Rating</th>
+                  <th className="px-4 py-2.5 text-left font-medium">Partner</th>
+                  <th className="px-4 py-2.5 text-left font-medium">Status</th>
+                  <th className="px-4 py-2.5 text-right font-medium">Active</th>
+                  <th className="px-4 py-2.5 text-right font-medium">Completed (7d)</th>
+                  <th className="px-4 py-2.5 text-right font-medium">Rating</th>
                 </tr>
               </thead>
               <tbody>
@@ -261,17 +281,17 @@ function Page() {
                   const b = badgeFor(p);
                   const r = perfByPartner[p.partner_id];
                   return (
-                    <tr key={p.partner_id} className="border-t border-border">
-                      <td className="px-3 py-2">
+                    <tr key={p.partner_id} className="border-t border-border/60">
+                      <td className="px-4 py-3">
                         <div className="font-semibold">{p.name}</div>
                         <div className="text-xs text-muted-foreground">{p.phone ?? "—"}</div>
                       </td>
-                      <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-[10px] uppercase font-bold ${b.cls}`}>{b.label}</span></td>
-                      <td className="px-3 py-2 text-right font-bold">{p.active_order_count ?? 0}</td>
-                      <td className="px-3 py-2 text-right">{r?.orders_7d ?? 0}</td>
-                      <td className="px-3 py-2 text-right">
+                      <td className="px-4 py-3"><span className={`rounded-full px-2.5 py-0.5 text-caption font-semibold ${b.cls}`}>{b.label}</span></td>
+                      <td className="px-4 py-3 text-right font-bold">{p.active_order_count ?? 0}</td>
+                      <td className="px-4 py-3 text-right">{r?.orders_7d ?? 0}</td>
+                      <td className="px-4 py-3 text-right">
                         <span className="inline-flex items-center gap-1">
-                          <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+                          <Star className="h-3 w-3 fill-accent text-accent" />
                           {p.rating != null ? Number(p.rating).toFixed(1) : "—"}
                         </span>
                       </td>
@@ -311,13 +331,13 @@ function Page() {
                   key={p.partner_id}
                   disabled={disabled}
                   onClick={() => assignFor && assign(assignFor.id, p.partner_id)}
-                  className={`w-full text-left rounded-xl border border-border p-3 flex items-center justify-between gap-3 transition ${disabled ? "opacity-50 cursor-not-allowed" : "hover:border-primary hover:bg-primary/5"}`}
+                  className={`press flex min-h-12 w-full items-center justify-between gap-3 rounded-xl bg-secondary p-3.5 text-left transition ${disabled ? "cursor-not-allowed opacity-50" : "hover:bg-primary-soft"}`}
                 >
                   <div className="min-w-0">
-                    <div className="font-bold truncate">{p.name}</div>
+                    <div className="truncate text-body font-semibold">{p.name}</div>
                     <div className="text-xs text-muted-foreground">Active: {p.active_order_count ?? 0}{p.vehicle ? ` · ${p.vehicle}` : ""}</div>
                   </div>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase font-bold ${b.cls}`}>{b.label}</span>
+                  <span className={`rounded-full px-2.5 py-0.5 text-caption font-semibold ${b.cls}`}>{b.label}</span>
                 </button>
               );
             })}
@@ -327,15 +347,15 @@ function Page() {
           </div>
         </DialogContent>
       </Dialog>
-    </RoleShell>
+    </>
   );
 }
 
 function Mini({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-secondary/40 px-2 py-1.5">
-      <div className="text-[10px] uppercase font-bold text-muted-foreground">{label}</div>
-      <div className="font-bold text-sm">{value}</div>
+    <div className="rounded-xl bg-secondary px-2 py-2">
+      <div className="text-caption text-muted-foreground">{label}</div>
+      <div className="text-body font-semibold">{value}</div>
     </div>
   );
 }
@@ -391,13 +411,13 @@ function SelectTeamDialog({
             const b = badgeFor({ is_online: p.is_online });
             const checked = selected.has(p.partner_id);
             return (
-              <label key={p.partner_id} className={`flex items-center gap-3 rounded-xl border p-3 cursor-pointer transition ${checked ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}>
+              <label key={p.partner_id} className={`press flex min-h-12 cursor-pointer items-center gap-3 rounded-xl p-3.5 transition ${checked ? "bg-primary-soft ring-1 ring-primary" : "bg-secondary"}`}>
                 <Checkbox checked={checked} onCheckedChange={() => toggle(p.partner_id)} />
                 <div className="min-w-0 flex-1">
-                  <div className="font-bold truncate">{p.name}</div>
+                  <div className="truncate text-body font-semibold">{p.name}</div>
                   <div className="text-xs text-muted-foreground truncate">{[p.phone, p.vehicle].filter(Boolean).join(" · ") || "—"}</div>
                 </div>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase font-bold ${b.cls}`}>{b.label}</span>
+                <span className={`rounded-full px-2.5 py-0.5 text-caption font-semibold ${b.cls}`}>{b.label}</span>
               </label>
             );
           })}

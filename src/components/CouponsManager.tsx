@@ -110,67 +110,68 @@ export function CouponsManager({ readOnly = false }: { readOnly?: boolean }) {
   });
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="font-display text-xl font-bold">Coupons</h2>
-          <p className="text-xs text-muted-foreground">
+          <h2 className="large-title">Coupons</h2>
+          <p className="mt-1 text-body text-muted-foreground">
             {readOnly
               ? "Promo codes available across the platform."
               : "Create promo codes, set discount, min order, expiry & usage limits."}
           </p>
         </div>
         {!readOnly && (
-          <Button size="sm" onClick={() => setEditing(emptyForm())}>
-            <Plus className="h-4 w-4 mr-1" /> New coupon
+          <Button onClick={() => setEditing(emptyForm())}>
+            <Plus className="mr-1.5 h-4 w-4" /> New coupon
           </Button>
         )}
       </div>
 
       {list.isLoading ? (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-20 rounded-xl" />
           ))}
         </div>
       ) : list.data?.length === 0 ? (
-        <div className="text-center py-12 rounded-2xl border border-dashed border-border text-sm text-muted-foreground">
-          No coupons yet.
+        <div className="rounded-xl bg-card px-6 py-12 text-center border border-border/70">
+          <div className="text-body font-semibold">No coupons yet</div>
+          <p className="mt-1 text-body text-muted-foreground">Live promo codes will appear here.</p>
         </div>
       ) : (
-        <div className="grid gap-2">
+        <div className="grid grid-cols-1 gap-3">
           {list.data!.map((c) => {
             const expired = c.expires_at && new Date(c.expires_at) < new Date();
             const used = c.usage_limit ? `${c.times_used}/${c.usage_limit}` : `${c.times_used}`;
             return (
               <div
                 key={c.id}
-                className="flex gap-3 items-center rounded-2xl border border-border bg-card p-3 shadow-card"
+                className="flex min-w-0 items-center gap-3 rounded-xl bg-card p-3.5 border border-border/70"
               >
-                <div className="h-12 w-12 grid place-items-center rounded-xl bg-primary/10 text-primary">
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary-ink">
                   <Ticket className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-bold text-sm font-mono">{c.code}</p>
-                    <span className="text-[10px] font-bold rounded-full bg-secondary px-2 py-0.5">
+                    <p className="font-mono text-body font-semibold">{c.code}</p>
+                    <span className="rounded-full bg-secondary px-2.5 py-0.5 text-caption font-semibold text-muted-foreground">
                       {c.type === "percent" ? `${c.value}% OFF` : `₹${c.value} OFF`}
                     </span>
                     {!c.active && (
-                      <span className="text-[10px] font-bold rounded-full bg-destructive/15 text-destructive px-2 py-0.5">
+                      <span className="rounded-full bg-tint-rose px-2.5 py-0.5 text-caption font-semibold text-destructive">
                         Inactive
                       </span>
                     )}
                     {expired && (
-                      <span className="text-[10px] font-bold rounded-full bg-muted px-2 py-0.5">
+                      <span className="rounded-full bg-secondary px-2.5 py-0.5 text-caption font-semibold text-muted-foreground">
                         Expired
                       </span>
                     )}
                   </div>
                   {c.description && (
-                    <p className="text-xs text-muted-foreground truncate">{c.description}</p>
+                    <p className="truncate text-meta text-muted-foreground">{c.description}</p>
                   )}
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-small text-muted-foreground">
                     Min ₹{c.min_order}
                     {c.max_discount ? ` · Max ₹${c.max_discount}` : ""}
                     {` · Used ${used}`}
@@ -203,16 +204,16 @@ export function CouponsManager({ readOnly = false }: { readOnly?: boolean }) {
       )}
 
       {editing && !readOnly && (
-        <div className="fixed inset-0 z-50 bg-foreground/50 backdrop-blur-sm grid place-items-center p-4">
-          <div className="bg-card rounded-2xl border border-border w-full max-w-lg shadow-glow max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b border-border">
-              <h3 className="font-bold">{editing.id ? "Edit coupon" : "New coupon"}</h3>
+        <div className="fixed inset-0 z-50 grid place-items-end bg-foreground/40 p-0 sm:place-items-center sm:p-4">
+          <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-card shadow-float sm:rounded-2xl">
+            <div className="hairline-b flex items-center justify-between px-4 py-4">
+              <h3 className="section-title">{editing.id ? "Edit coupon" : "New coupon"}</h3>
               <Button size="icon" variant="ghost" onClick={() => setEditing(null)}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
             <form
-              className="p-4 space-y-3"
+              className="space-y-4 p-4"
               onSubmit={(e) => {
                 e.preventDefault();
                 if (!editing.code.trim()) {
@@ -254,10 +255,8 @@ export function CouponsManager({ readOnly = false }: { readOnly?: boolean }) {
                         key={t}
                         type="button"
                         onClick={() => setEditing({ ...editing, type: t })}
-                        className={`px-3 py-1.5 rounded-full text-xs font-bold border ${
-                          editing.type === t
-                            ? "gradient-primary text-primary-foreground border-transparent"
-                            : "border-border bg-card"
+                        className={`press h-9 rounded-full px-4 text-meta font-semibold ${
+                          editing.type === t ? "bg-foreground text-background" : "bg-secondary"
                         }`}
                       >
                         {t === "percent" ? "Percent %" : "Flat ₹"}
@@ -326,18 +325,18 @@ export function CouponsManager({ readOnly = false }: { readOnly?: boolean }) {
                   />
                 </Field>
               </div>
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex min-h-12 items-center gap-3 rounded-xl bg-secondary px-4">
                 <Switch
                   checked={editing.active}
                   onCheckedChange={(v) => setEditing({ ...editing, active: v })}
                 />
-                <Label className="text-sm">Active</Label>
+                <Label className="text-body font-medium">Active</Label>
               </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="ghost" onClick={() => setEditing(null)}>
+              <div className="flex gap-2 pt-2">
+                <Button type="button" variant="secondary" className="h-11 flex-1 rounded-xl" onClick={() => setEditing(null)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={upsert.isPending}>
+                <Button type="submit" className="h-11 flex-[2] rounded-xl" disabled={upsert.isPending}>
                   {upsert.isPending ? "Saving…" : "Save coupon"}
                 </Button>
               </div>
@@ -351,8 +350,8 @@ export function CouponsManager({ readOnly = false }: { readOnly?: boolean }) {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1">
-      <Label className="text-xs font-bold">{label}</Label>
+    <div className="space-y-1.5">
+      <Label className="text-meta font-medium text-foreground/80">{label}</Label>
       {children}
     </div>
   );

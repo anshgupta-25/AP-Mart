@@ -44,7 +44,7 @@ export function SearchableSelect({
           id={id}
           disabled={disabled}
           className={cn(
-            "w-full h-11 rounded-xl mt-1 justify-between font-normal",
+            "mt-1 w-full justify-between font-normal",
             !value && "text-muted-foreground",
             className,
           )}

@@ -130,36 +130,38 @@ function PlatformSettings() {
   }
 
   if (isLoading) {
-    return <div className="grid place-items-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+    return <div className="grid place-items-center py-16"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
   }
 
   return (
     <div className="space-y-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-extrabold">Platform settings</h1>
-          <p className="text-sm text-muted-foreground">Global switches that apply to every shop, rider and customer.</p>
+          <h1 className="large-title">Platform settings</h1>
+          <p className="mt-0.5 text-small text-muted-foreground">Global switches that apply to every shop, rider and customer.</p>
         </div>
-        <Button onClick={save} disabled={saving} className="rounded-xl font-bold">
+        <Button onClick={save} disabled={saving} className="shrink-0">
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           <span className="ml-1.5">Save</span>
         </Button>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid gap-2.5 md:gap-4 lg:grid-cols-2">
         {GROUPS.map((g) => (
-          <section key={g.title} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <h2 className="flex items-center gap-2 font-display text-sm font-extrabold">
-              <g.icon className="h-4 w-4 text-emerald-600" />
+          <section key={g.title} className="rounded-xl border border-border/70 bg-card p-4">
+            <h2 className="flex items-center gap-2.5 text-body font-semibold">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-tint-mint text-primary-ink">
+                <g.icon className="h-4 w-4" />
+              </span>
               {g.title}
             </h2>
-            <div className="mt-3 space-y-3">
+            <div className="mt-3 space-y-3.5">
               {g.items.map((i) =>
                 i.kind === "bool" ? (
                   <div key={i.key} className="flex items-start justify-between gap-3">
                     <div>
-                      <div className="text-sm font-semibold">{i.label}</div>
-                      {i.hint && <div className="text-[11px] text-muted-foreground">{i.hint}</div>}
+                      <div className="text-body font-medium">{i.label}</div>
+                      {i.hint && <div className="mt-0.5 text-small text-muted-foreground">{i.hint}</div>}
                     </div>
                     <Switch
                       checked={get(i.key) === "true"}
@@ -168,11 +170,11 @@ function PlatformSettings() {
                   </div>
                 ) : (
                   <div key={i.key}>
-                    <label className="text-xs font-semibold text-muted-foreground">{i.label}</label>
+                    <label className="text-small font-medium text-muted-foreground">{i.label}</label>
                     <Input
                       value={get(i.key)}
                       onChange={(e) => set(i.key, e.target.value)}
-                      className="mt-1 h-10 rounded-xl"
+                      className="mt-1"
                     />
                   </div>
                 ),

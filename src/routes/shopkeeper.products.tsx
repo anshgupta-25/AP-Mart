@@ -6,7 +6,6 @@ import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { RoleShell } from "@/components/RoleShell";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,6 @@ import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -42,7 +40,6 @@ import { DateRangeFields, dateRangeError } from "@/components/DateRangeFields";
 import { CatalogDialogContent } from "@/components/CatalogBrowser";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { SHOPKEEPER_NAV } from "./shopkeeper.dashboard";
 import { StorageImg } from "@/components/StorageImg";
 
 
@@ -159,11 +156,14 @@ function Page() {
   }
 
   return (
-    <RoleShell role="shopkeeper" nav={SHOPKEEPER_NAV} requireRoles={["shopkeeper", "admin"]}>
-      <div className="p-4 md:p-6 max-w-6xl mx-auto">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <h1 className="font-display text-3xl font-extrabold flex-1">Inventory</h1>
-          <div className="flex items-center gap-2 flex-wrap">
+    <>
+      <div className="mx-auto max-w-6xl px-4 py-4 md:px-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="flex-1">
+            <h1 className="large-title">Inventory</h1>
+            <p className="mt-0.5 text-small text-muted-foreground">{(items.data ?? []).length} products in your shop</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
             {shopId && (
               <>
                 <Dialog open={catalogOpen} onOpenChange={setCatalogOpen}>
@@ -171,7 +171,7 @@ function Page() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <DialogTrigger asChild>
-                          <Button variant="outline" className="gap-1 bg-card">
+                          <Button variant="secondary" size="sm" className="gap-1.5">
                             <Library className="h-4 w-4" />
                             Add from Catalog
                           </Button>
@@ -188,7 +188,7 @@ function Page() {
                 </Dialog>
                 <Dialog open={addOpen} onOpenChange={setAddOpen}>
                   <DialogTrigger asChild>
-                    <Button className="gap-1"><Plus className="h-4 w-4" />Add Product</Button>
+                    <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" />Add product</Button>
                   </DialogTrigger>
                   <AddProductDialog
                     shopId={shopId}
@@ -199,54 +199,56 @@ function Page() {
                 </Dialog>
               </>
             )}
-            <Button asChild variant="outline" size="sm" className="gap-1 sm:ml-2">
+            <Button asChild variant="secondary" size="sm" className="gap-1.5">
               <Link to="/shopkeeper/inventory-insights"><BarChart3 className="h-4 w-4" />Insights</Link>
             </Button>
           </div>
         </div>
 
         {!shopId ? (
-          <p className="mt-6 text-sm text-muted-foreground">No shop assigned to your account.</p>
+          <p className="mt-5 rounded-xl bg-card px-4 py-8 text-center text-body text-muted-foreground border border-border/70">No shop assigned to your account.</p>
         ) : (
           <>
-            <div className="mt-4 relative">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search your inventory..." className="pl-9" />
+            <div className="relative mt-4">
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search your inventory" className="h-10 rounded-xl pl-10" />
             </div>
 
             {items.isLoading ? (
-              <p className="mt-6 text-muted-foreground">Loading...</p>
+              <div className="mt-4 space-y-2.5">{[0, 1, 2].map((i) => <div key={i} className="h-[72px] rounded-xl shimmer" />)}</div>
             ) : filtered.length === 0 ? (
-              <p className="mt-6 text-muted-foreground text-center py-10">
-                {q ? "No matches." : "No products yet. Tap Add product to get started."}
-              </p>
+              <div className="mt-4 rounded-xl border border-border/70 bg-card px-4 py-8 text-center">
+                <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-primary-soft text-primary-ink"><Package className="h-5 w-5" /></div>
+                <div className="mt-3 text-body font-semibold">{q ? "No matches" : "No products yet"}</div>
+                <p className="mt-1 text-small text-muted-foreground">{q ? "Try a different search." : "Add your first product to start selling."}</p>
+              </div>
             ) : (
-              <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="mt-4 divide-y divide-border/60 overflow-hidden rounded-xl border border-border/70 bg-card">
                 {filtered.map((sp) => (
-                  <div key={sp.id} className="rounded-2xl border border-border bg-card overflow-hidden">
+                  <div key={sp.id}>
                     <div className="flex gap-3 p-3">
                       {sp.products?.image_url ? (
-                        <StorageImg loading="lazy" decoding="async" src={sp.products.image_url} alt={sp.products.name} className="h-16 w-16 rounded-xl object-cover" />
+                        <StorageImg loading="lazy" decoding="async" src={sp.products.image_url} alt={sp.products.name} className="h-12 w-12 rounded-lg bg-secondary object-cover" />
                       ) : (
-                        <div className="h-16 w-16 rounded-xl bg-secondary grid place-items-center"><Package className="h-5 w-5 text-muted-foreground" /></div>
+                        <div className="grid h-12 w-12 place-items-center rounded-lg bg-secondary"><Package className="h-5 w-5 text-muted-foreground" /></div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <div className="font-bold text-sm truncate">{sp.products?.name ?? "—"}</div>
-                        <div className="text-xs text-muted-foreground">{sp.products?.unit}</div>
-                        <div className="mt-1 flex items-center gap-2 text-sm flex-wrap">
-                          <span className="font-bold text-primary">{rupees(sp.price)}</span>
-                          <span className={`text-xs ${sp.stock <= 5 ? "text-destructive font-bold" : "text-muted-foreground"}`}>
-                            Stock: {sp.stock}
+                        <div className="truncate text-meta font-semibold">{sp.products?.name ?? "—"}</div>
+                        <div className="text-caption text-muted-foreground">{sp.products?.unit}</div>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-meta">
+                          <span className="font-semibold">{rupees(sp.price)}</span>
+                          <span className={`rounded-full px-2 py-0.5 text-caption font-semibold ${sp.stock <= 5 ? "bg-tint-rose text-destructive" : "bg-secondary text-muted-foreground"}`}>
+                            {sp.stock} in stock
                           </span>
-                          {!sp.is_available && <span className="text-xs bg-muted px-2 rounded-full">Hidden</span>}
+                          {!sp.is_available && <span className="rounded-full bg-secondary px-2 py-0.5 text-caption font-semibold text-muted-foreground">Hidden</span>}
                         </div>
                         {(() => {
                           const st = expiryStatus(sp.expiry_date, sp.manufacturing_date);
                           if (st.status === "none") return null;
                           return (
                             <div className="mt-1 flex flex-wrap gap-1">
-                              <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${st.color}`}>
-                                {st.emoji} {st.statusLabel}
+                              <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-caption font-semibold ${st.color}`}>
+                                {st.statusLabel}
                               </span>
                             </div>
                           );
@@ -254,11 +256,11 @@ function Page() {
                       </div>
                     </div>
 
-                    <div className="flex border-t border-border">
-                      <button onClick={() => { setEditing(sp); setEditOpen(true); }} className="flex-1 flex items-center justify-center gap-1 py-2 text-sm font-semibold hover:bg-secondary">
+                    <div className="hairline-t flex">
+                      <button onClick={() => { setEditing(sp); setEditOpen(true); }} className="press flex flex-1 items-center justify-center gap-1.5 py-2 text-meta font-semibold text-primary-ink hover:bg-secondary">
                         <Pencil className="h-4 w-4" />Edit
                       </button>
-                      <button onClick={() => setConfirmDel(sp)} className="flex-1 flex items-center justify-center gap-1 py-2 text-sm font-semibold text-destructive hover:bg-secondary border-l border-border">
+                      <button onClick={() => setConfirmDel(sp)} className="press flex flex-1 items-center justify-center gap-1.5 border-l border-border/60 py-2 text-meta font-semibold text-destructive hover:bg-secondary">
                         <Trash2 className="h-4 w-4" />Remove
                       </button>
                     </div>
@@ -292,7 +294,7 @@ function Page() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </RoleShell>
+    </>
   );
 }
 
@@ -386,26 +388,26 @@ function EditDialog({
   }
 
   return (
-    <DialogContent className="max-h-[90vh] overflow-y-auto">
+    <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl">
       <DialogHeader><DialogTitle>Edit product</DialogTitle></DialogHeader>
-      <div className="space-y-3">
+      <div className="space-y-4">
         <MultiImageInput value={gallery} onChange={setGallery} label="Product images" required />
         <div>
-          <label className="text-xs font-bold">Name</label>
+          <label className="mb-1.5 block text-meta font-medium text-foreground/80">Name</label>
           <Input value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-bold">Brand</label>
+            <label className="mb-1.5 block text-meta font-medium text-foreground/80">Brand</label>
             <Input value={brand} onChange={(e) => setBrand(e.target.value)} />
           </div>
           <div>
-            <label className="text-xs font-bold">Unit (e.g. 500g)</label>
+            <label className="mb-1.5 block text-meta font-medium text-foreground/80">Unit (e.g. 500g)</label>
             <Input value={unit} onChange={(e) => setUnit(e.target.value)} />
           </div>
         </div>
         <div>
-          <label className="text-xs font-bold">Categories <span className="text-destructive">*</span></label>
+          <label className="mb-1.5 block text-meta font-medium text-foreground/80">Categories <span className="text-destructive">*</span></label>
           <MultiCategorySelect
             options={categories}
             value={categoryIds}
@@ -422,25 +424,25 @@ function EditDialog({
         />
 
         <div>
-          <label className="text-xs font-bold">Description</label>
+          <label className="mb-1.5 block text-meta font-medium text-foreground/80">Description</label>
           <Textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
 
-        <div className="pt-2 border-t border-border">
+        <div className="border-t border-border/60 pt-4">
           <VariantsEditor variants={variants} onChange={setVariants} />
         </div>
 
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="text-xs font-bold">Your price ₹</label>
+            <label className="mb-1.5 block text-meta font-medium text-foreground/80">Your price ₹</label>
             <Input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} />
           </div>
           <div>
-            <label className="text-xs font-bold">MRP ₹</label>
+            <label className="mb-1.5 block text-meta font-medium text-foreground/80">MRP ₹</label>
             <Input type="number" value={mrp} onChange={(e) => setMrp(Number(e.target.value))} />
           </div>
           <div>
-            <label className="text-xs font-bold">Stock</label>
+            <label className="mb-1.5 block text-meta font-medium text-foreground/80">Stock</label>
             <Input type="number" value={stock} onChange={(e) => setStock(Number(e.target.value))} />
           </div>
         </div>
@@ -448,14 +450,14 @@ function EditDialog({
           mfg={mfgDate} exp={expDate}
           onMfg={setMfgDate} onExp={setExpDate}
         />
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex min-h-12 items-center gap-3 rounded-xl bg-secondary px-4 text-body font-medium">
           <Switch checked={available} onCheckedChange={setAvailable} />Available to customers
         </label>
 
       </div>
-      <DialogFooter>
-        <Button disabled={saving || !name || gallery.length === 0} onClick={save}>{saving ? "Saving..." : "Save"}</Button>
-      </DialogFooter>
+      <div className="bar-blur hairline-t sticky bottom-0 -mx-6 -mb-6 px-6 py-3">
+        <Button className="h-11 w-full rounded-xl" disabled={saving || !name || gallery.length === 0} onClick={save}>{saving ? "Saving..." : "Save"}</Button>
+      </div>
     </DialogContent>
   );
 }
@@ -464,7 +466,7 @@ function AddProductDialog({
   shopId, categories, onOpenCatalog, onDone,
 }: { shopId: string; categories: Category[]; onOpenCatalog: () => void; onDone: () => void }) {
   return (
-    <DialogContent className="max-h-[90vh] overflow-y-auto">
+    <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl">
       <DialogHeader><DialogTitle>Add a new product</DialogTitle></DialogHeader>
       <CreateNewProduct
         shopId={shopId}
@@ -604,58 +606,54 @@ function CreateNewProduct({
   return (
     <div className="relative">
       <div className="space-y-4 pb-20">
-        <div className="rounded-2xl border border-border bg-secondary/40 p-3">
-          <div className="text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wide">Product Type</div>
+        <div className="rounded-xl bg-secondary p-3">
+          <div className="eyebrow mb-2 px-1">Product type</div>
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => setProductType("simple")}
-              className={`rounded-xl border p-3 text-left transition ${
-                productType === "simple"
-                  ? "border-primary bg-primary/10 ring-2 ring-primary/30"
-                  : "border-border bg-card hover:bg-secondary"
+              className={`press rounded-xl p-3 text-left transition ${
+                productType === "simple" ? "bg-card border border-border/70 ring-2 ring-primary" : "bg-card/60"
               }`}
             >
               <div className="flex items-center gap-2">
                 <span className={`h-4 w-4 rounded-full border-2 grid place-items-center ${productType === "simple" ? "border-primary" : "border-muted-foreground"}`}>
                   {productType === "simple" && <span className="h-2 w-2 rounded-full bg-primary" />}
                 </span>
-                <span className="font-bold text-sm">Simple Product</span>
+                <span className="text-body font-semibold">Simple</span>
               </div>
-              <p className="text-[11px] text-muted-foreground mt-1 ml-6">One price, one stock</p>
+              <p className="text-caption text-muted-foreground mt-1 ml-6">One price, one stock</p>
             </button>
             <button
               type="button"
               onClick={() => setProductType("variants")}
-              className={`rounded-xl border p-3 text-left transition ${
-                productType === "variants"
-                  ? "border-primary bg-primary/10 ring-2 ring-primary/30"
-                  : "border-border bg-card hover:bg-secondary"
+              className={`press rounded-xl p-3 text-left transition ${
+                productType === "variants" ? "bg-card border border-border/70 ring-2 ring-primary" : "bg-card/60"
               }`}
             >
               <div className="flex items-center gap-2">
                 <span className={`h-4 w-4 rounded-full border-2 grid place-items-center ${productType === "variants" ? "border-primary" : "border-muted-foreground"}`}>
                   {productType === "variants" && <span className="h-2 w-2 rounded-full bg-primary" />}
                 </span>
-                <span className="font-bold text-sm">With Variants</span>
+                <span className="text-body font-semibold">Variants</span>
               </div>
-              <p className="text-[11px] text-muted-foreground mt-1 ml-6">e.g. 500 ml, 1 L, 1 kg</p>
+              <p className="text-caption text-muted-foreground mt-1 ml-6">e.g. 500 ml, 1 L, 1 kg</p>
             </button>
           </div>
         </div>
 
         {productType === "simple" && (
-          <div className="rounded-2xl border border-border bg-card p-3">
+          <div className="rounded-xl bg-card p-4 border border-border/70">
             <MultiImageInput value={gallery} onChange={setGallery} label="Product images (1–6)" required />
           </div>
         )}
 
-        <div className="rounded-2xl border border-border bg-card p-3 space-y-3">
+        <div className="space-y-4 rounded-xl bg-card p-4 border border-border/70">
           <div>
-            <label className="text-xs font-bold">Name <span className="text-destructive">*</span></label>
+            <label className="mb-1.5 block text-meta font-medium text-foreground/80">Name <span className="text-destructive">*</span></label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Amul Gold Milk" />
             {duplicate && (
-              <div className="mt-2 rounded-xl border border-primary/40 bg-primary/10 p-3">
+              <div className="mt-2 rounded-xl bg-primary-soft p-3">
                 <p className="text-sm font-semibold flex items-start gap-2">
                   <AlertCircle className="h-4 w-4 mt-0.5 text-primary shrink-0" />
                   {duplicate.already_added
@@ -677,12 +675,12 @@ function CreateNewProduct({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-bold">Brand</label>
+              <label className="mb-1.5 block text-meta font-medium text-foreground/80">Brand</label>
               <Input value={brand} onChange={(e) => setBrand(e.target.value)} />
             </div>
           </div>
           <div>
-            <label className="text-xs font-bold">Categories <span className="text-destructive">*</span></label>
+            <label className="mb-1.5 block text-meta font-medium text-foreground/80">Categories <span className="text-destructive">*</span></label>
             <MultiCategorySelect
               options={categories}
               value={categoryIds}
@@ -699,29 +697,29 @@ function CreateNewProduct({
           />
 
           <div>
-            <label className="text-xs font-bold">Description</label>
+            <label className="mb-1.5 block text-meta font-medium text-foreground/80">Description</label>
             <Textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
         </div>
 
         {productType === "simple" && (
-          <div className="rounded-2xl border border-border bg-card p-3 space-y-3">
-            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Pricing &amp; stock</div>
+          <div className="space-y-4 rounded-xl bg-card p-4 border border-border/70">
+            <div className="section-title">Pricing &amp; stock</div>
             <div>
-              <label className="text-xs font-bold">Unit <span className="text-destructive">*</span></label>
+              <label className="mb-1.5 block text-meta font-medium text-foreground/80">Unit <span className="text-destructive">*</span></label>
               <Input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="500g, 1L, 1 pc" />
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="text-xs font-bold">Price ₹ <span className="text-destructive">*</span></label>
+                <label className="mb-1.5 block text-meta font-medium text-foreground/80">Price ₹ <span className="text-destructive">*</span></label>
                 <Input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} />
               </div>
               <div>
-                <label className="text-xs font-bold">MRP ₹</label>
+                <label className="mb-1.5 block text-meta font-medium text-foreground/80">MRP ₹</label>
                 <Input type="number" value={mrp} onChange={(e) => setMrp(Number(e.target.value))} />
               </div>
               <div>
-                <label className="text-xs font-bold">Stock <span className="text-destructive">*</span></label>
+                <label className="mb-1.5 block text-meta font-medium text-foreground/80">Stock <span className="text-destructive">*</span></label>
                 <Input type="number" value={stock} onChange={(e) => setStock(Number(e.target.value))} />
               </div>
             </div>
@@ -730,14 +728,14 @@ function CreateNewProduct({
         )}
 
         {productType === "variants" && (
-          <div className="rounded-2xl border border-border bg-card p-3">
+          <div className="rounded-xl bg-card p-4 border border-border/70">
             <VariantsEditor variants={variants} onChange={setVariants} />
           </div>
         )}
       </div>
 
-      <div className="sticky bottom-0 left-0 right-0 -mx-6 px-6 py-3 bg-background/95 backdrop-blur border-t border-border">
-        <Button className="w-full" disabled={saving || !!duplicate} onClick={save}>
+      <div className="bar-blur hairline-t sticky bottom-0 left-0 right-0 -mx-6 px-6 py-3">
+        <Button className="h-11 w-full rounded-xl" disabled={saving || !!duplicate} onClick={save}>
           {duplicate ? "Product already exists" : saving ? "Creating..." : "Create Product"}
         </Button>
       </div>

@@ -116,37 +116,37 @@ function PrivacyPage() {
   const router = useRouter();
 
   return (
-    <div className="px-4 py-4 space-y-4">
+    <div className="space-y-4 px-4 pb-8 pt-4">
       <div className="flex items-center gap-3">
         <button
           onClick={() => router.history.back()}
           aria-label="Go back"
-          className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-card shadow-card"
+          className="press grid h-9 w-9 place-items-center rounded-full bg-secondary"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-4 w-4" />
         </button>
         <div className="min-w-0">
-          <h1 className="font-display text-xl font-extrabold truncate">Privacy Policy</h1>
-          <p className="text-[11px] text-muted-foreground">Last updated: 24 August 2026</p>
+          <h1 className="large-title truncate">Privacy</h1>
+          <p className="mt-0.5 text-caption text-muted-foreground">Last updated: 24 August 2026</p>
         </div>
       </div>
 
-      <div className="rounded-3xl gradient-hero border border-border p-5 shadow-card flex items-center gap-4">
-        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-primary/15 text-primary">
-          <ShieldCheck className="h-6 w-6" />
+      <div className="flex items-center gap-3 rounded-xl bg-tint-mint p-4">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-card text-primary-ink">
+          <ShieldCheck className="h-5 w-5" />
         </span>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-meta text-foreground/70">
           Your privacy matters. This page explains what AP Mart collects, why we need it, and the
           control you have over it.
         </p>
       </div>
 
       {SECTIONS.map((s) => (
-        <section key={s.title} className="rounded-3xl border border-border bg-card p-5 shadow-card">
-          <h2 className="font-display text-base font-bold mb-2">{s.title}</h2>
-          <div className="space-y-2">
+        <section key={s.title} className="rounded-xl border border-border/70 bg-card p-4">
+          <h2 className="section-title mb-2">{s.title}</h2>
+          <div className="space-y-2.5">
             {s.body.map((p, i) => (
-              <p key={i} className="text-sm leading-relaxed text-muted-foreground">
+              <p key={i} className="text-meta leading-relaxed text-muted-foreground">
                 {p}
               </p>
             ))}
@@ -154,20 +154,20 @@ function PrivacyPage() {
         </section>
       ))}
 
-      <section className="rounded-3xl border border-border bg-card p-5 shadow-card">
-        <h2 className="font-display text-base font-bold mb-2">Contact</h2>
-        <p className="text-sm text-muted-foreground mb-3">
+      <section className="rounded-xl border border-border/70 bg-card p-4">
+        <h2 className="section-title mb-2">Contact</h2>
+        <p className="mb-3 text-meta text-muted-foreground">
           Questions about privacy or your data? Reach our team any time.
         </p>
         <a
           href="mailto:eshanthakur02@gmail.com"
-          className="inline-flex items-center gap-2 rounded-xl bg-primary/10 px-3.5 py-2.5 font-bold text-sm text-primary"
+          className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary-soft px-4 text-meta font-semibold text-primary-ink"
         >
           <Mail className="h-4 w-4" /> eshanthakur02@gmail.com
         </a>
       </section>
 
-      <div className="text-center text-[11px] text-muted-foreground pt-2">
+      <div className="text-center text-caption text-muted-foreground pt-2">
         © 2026 AP Mart. All rights reserved.
       </div>
     </div>

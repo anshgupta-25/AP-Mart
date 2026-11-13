@@ -2,9 +2,8 @@ import { createFileRoute, useNavigate, Link, Navigate } from "@tanstack/react-ro
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
 import confetti from "canvas-confetti";
-import { MapPin, Plus, Wallet, CreditCard, Tag, Zap } from "lucide-react";
+import { MapPin, Plus, Wallet, CreditCard, Tag, Zap, Truck, Store } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
@@ -168,8 +167,8 @@ function CheckoutPage() {
   if (items.length === 0) {
     return (
       <div className="mx-auto max-w-md px-4 py-20 text-center">
-        <p className="text-muted-foreground">Your cart is empty.</p>
-        <Link to="/products" className="mt-4 inline-block text-primary font-bold">Shop now →</Link>
+        <p className="text-meta text-muted-foreground">Your cart is empty.</p>
+        <Link to="/products" className="mt-3 inline-block text-body font-semibold text-primary">Shop now</Link>
       </div>
     );
   }
@@ -300,66 +299,73 @@ function CheckoutPage() {
     }
   };
 
+  const tierIcon = (id: string) =>
+    id === "pickup" ? <Store className="h-4 w-4" /> : id === "standard_delivery" ? <Truck className="h-4 w-4" /> : <Zap className="h-4 w-4" />;
+  const placeLabel = placing ? "Placing…" : `Place order · ${rupees(total)}`;
+  const optionCls = (on: boolean, disabled?: boolean) =>
+    `flex items-center gap-3 rounded-xl p-3 transition-colors ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"} ${
+      on ? "bg-primary-soft ring-1 ring-primary" : "bg-secondary/60"
+    }`;
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 grid md:grid-cols-[1fr_360px] gap-6">
-      <div className="space-y-6">
+    <div className="mx-auto grid max-w-5xl gap-4 px-4 pb-32 pt-4 md:grid-cols-[1fr_360px] md:pb-10">
+      <div className="space-y-4">
+        <h1 className="large-title">Checkout</h1>
         <CartShopSelector deliveryLat={coords?.lat} deliveryLng={coords?.lng} />
-        {/* Address */}
-        <section className="rounded-3xl border border-border bg-card p-5 shadow-card">
-          <h2 className="font-display text-xl font-bold flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-primary" /> Delivery address
+
+        <section className="rounded-xl border border-border/70 bg-card p-4">
+          <h2 className="section-title flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-primary" /> Deliver to
           </h2>
-          <p className="mt-1 text-xs text-muted-foreground">Pin your exact spot on the map for the nearest shop and the fastest delivery.</p>
-          <div className="mt-3">
+          <p className="mt-1 text-small text-muted-foreground">Pin your exact spot so the nearest shop can deliver to you.</p>
+          <div className="mt-3 overflow-hidden rounded-xl">
             <LocationPicker value={coords} onChange={setCoords} />
           </div>
           <div className="mt-3 space-y-2">
             {addresses.data?.map((a) => (
-              <label
-                key={a.id}
-                className={`flex items-start gap-3 rounded-2xl border-2 p-3 cursor-pointer ${selectedAddr === a.id ? "border-primary bg-primary/5" : "border-border"}`}
-              >
+              <label key={a.id} className={`items-start ${optionCls(selectedAddr === a.id)}`}>
                 <input
                   type="radio"
                   name="addr"
-                  className="mt-1"
+                  className="mt-1 accent-[var(--primary)]"
                   checked={selectedAddr === a.id}
                   onChange={() => setSelectedAddr(a.id)}
                 />
-                <div className="flex-1">
-                  <div className="font-semibold">
-                    {a.name} <span className="ml-2 text-xs rounded-full bg-secondary px-2 py-0.5">{a.type}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 text-body font-semibold">
+                    {a.name}
+                    <span className="rounded-full bg-card px-2 py-0.5 text-micro font-medium capitalize text-muted-foreground">{a.type}</span>
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="mt-0.5 text-small text-muted-foreground">
                     {a.line1}, {a.line2 ? `${a.line2}, ` : ""}{a.city}, {a.state} - {a.pincode}
                   </div>
-                  <div className="text-xs text-muted-foreground">📞 {a.phone}</div>
+                  <div className="mt-0.5 text-caption text-muted-foreground">{a.phone}</div>
                 </div>
               </label>
             ))}
             {!showNew ? (
               <button
                 onClick={() => setShowNew(true)}
-                className="flex items-center gap-2 rounded-2xl border-2 border-dashed border-border px-4 py-3 w-full text-sm hover:border-primary"
+                className="press flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary-soft text-meta font-semibold text-primary-ink"
               >
                 <Plus className="h-4 w-4" /> Add a new address
               </button>
             ) : (
-              <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-4 space-y-3">
-                <div className="grid sm:grid-cols-2 gap-3">
+              <div className="space-y-3 rounded-xl bg-secondary/60 p-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <FormInput id="n" label="Full name" v={newAddr.name} set={(v) => setNewAddr({ ...newAddr, name: v })} />
                   <FormInput id="p" label="Phone" v={newAddr.phone} set={(v) => setNewAddr({ ...newAddr, phone: v })} />
                 </div>
                 <FormInput id="l1" label="House / flat / building" v={newAddr.line1} set={(v) => setNewAddr({ ...newAddr, line1: v })} />
                 <FormInput id="l2" label="Area / street (optional)" v={newAddr.line2} set={(v) => setNewAddr({ ...newAddr, line2: v })} />
                 <FormInput id="lm" label="Landmark (optional)" v={newAddr.landmark} set={(v) => setNewAddr({ ...newAddr, landmark: v })} />
-                <div className="grid sm:grid-cols-3 gap-3">
+                <div className="grid gap-3 sm:grid-cols-3">
                   <FormInput id="c" label="City" v={newAddr.city} set={(v) => setNewAddr({ ...newAddr, city: v })} />
                   <FormInput id="s" label="State" v={newAddr.state} set={(v) => setNewAddr({ ...newAddr, state: v })} />
                   <FormInput id="pn" label="Pincode" v={newAddr.pincode} set={(v) => setNewAddr({ ...newAddr, pincode: v })} />
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={saveNewAddress} className="rounded-xl gradient-primary text-primary-foreground">Save address</Button>
+                  <Button onClick={saveNewAddress}>Save address</Button>
                   <Button variant="ghost" onClick={() => setShowNew(false)}>Cancel</Button>
                 </div>
               </div>
@@ -367,40 +373,37 @@ function CheckoutPage() {
           </div>
         </section>
 
-        {/* Delivery option */}
-        <section className="rounded-3xl border border-border bg-card p-5 shadow-card">
-          <h2 className="font-display text-xl font-bold">Delivery option</h2>
+        <section className="rounded-xl border border-border/70 bg-card p-4">
+          <h2 className="section-title">Delivery option</h2>
           {activePincode && !zone.isLoading && !zone.data && (
-            <p className="mt-2 text-xs text-amber-600">
+            <p className="mt-2 rounded-lg bg-tint-sun px-3 py-2 text-caption text-warning-foreground">
               No delivery zone configured for PIN {activePincode}. Showing defaults; ask the admin to add this PIN Code.
             </p>
           )}
-          <div className="mt-3 grid gap-3">
+          <div className="mt-3 grid gap-2">
             {tiers.map((o) => {
               const disabled = o.minOrder != null && subtotal < o.minOrder;
               return (
-                <label
-                  key={o.id}
-                  className={`flex items-center gap-3 rounded-2xl border-2 p-4 ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"} ${deliveryType === o.id ? "border-primary bg-primary/5" : "border-border"}`}
-                >
+                <label key={o.id} className={optionCls(deliveryType === o.id, disabled)}>
                   <input
                     type="radio"
                     name="delivery_type"
+                    className="accent-[var(--primary)]"
                     disabled={disabled}
                     checked={deliveryType === o.id}
                     onChange={() => setDeliveryType(o.id)}
                   />
-                  <span className="text-2xl leading-none">{o.icon}</span>
-                  <div className="flex-1">
-                    <div className="font-bold flex items-center justify-between">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-card text-primary-ink">{tierIcon(o.id)}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2 text-body font-semibold">
                       <span>{o.title}</span>
-                      <span className={`text-sm ${o.fee === 0 ? "text-primary" : "text-foreground"}`}>
+                      <span className={`text-meta ${o.fee === 0 ? "text-primary" : "text-foreground"}`}>
                         {o.fee === 0 ? "Free" : `+${rupees(o.fee)}`}
                       </span>
                     </div>
-                    <div className="text-xs text-muted-foreground">{o.sub}</div>
+                    <div className="text-caption text-muted-foreground">{o.sub}</div>
                     {o.minOrder != null && (
-                      <div className="text-[11px] text-muted-foreground">
+                      <div className="mt-0.5 text-caption text-muted-foreground">
                         Min order {rupees(o.minOrder)}{disabled ? ` — add ${rupees(o.minOrder - subtotal)} more` : ""}
                       </div>
                     )}
@@ -411,57 +414,54 @@ function CheckoutPage() {
           </div>
         </section>
 
-        {/* Instruction */}
-        <section className="rounded-3xl border border-border bg-card p-5 shadow-card">
-          <h2 className="font-display text-xl font-bold">Delivery instructions</h2>
+        <section className="rounded-xl border border-border/70 bg-card p-4">
+          <h2 className="section-title">Delivery instructions</h2>
           <Textarea
             value={instruction}
             onChange={(e) => setInstruction(e.target.value)}
             placeholder="e.g., leave at the door, call on arrival…"
-            className="mt-3 rounded-xl"
+            className="mt-3"
           />
         </section>
 
-        {/* Payment */}
-        <section className="rounded-3xl border border-border bg-card p-5 shadow-card">
-          <h2 className="font-display text-xl font-bold">Payment method</h2>
-          <div className="mt-3 grid sm:grid-cols-2 gap-3">
-            <label className={`flex items-center gap-3 rounded-2xl border-2 p-4 cursor-pointer ${method === "cod" ? "border-primary bg-primary/5" : "border-border"}`}>
-              <input type="radio" checked={method === "cod"} onChange={() => setMethod("cod")} />
-              <Wallet className="h-5 w-5 text-primary" />
+        <section className="rounded-xl border border-border/70 bg-card p-4">
+          <h2 className="section-title">Payment</h2>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <label className={optionCls(method === "cod")}>
+              <input type="radio" className="accent-[var(--primary)]" checked={method === "cod"} onChange={() => setMethod("cod")} />
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-card text-primary-ink"><Wallet className="h-4 w-4" /></span>
               <div>
-                <div className="font-bold">Cash on Delivery</div>
-                <div className="text-xs text-muted-foreground">Pay when your order arrives</div>
+                <div className="text-body font-semibold">Cash on delivery</div>
+                <div className="text-caption text-muted-foreground">Pay when your order arrives</div>
               </div>
             </label>
-            <label className={`flex items-center gap-3 rounded-2xl border-2 p-4 cursor-pointer ${method === "razorpay" ? "border-primary bg-primary/5" : "border-border"}`}>
-              <input type="radio" checked={method === "razorpay"} onChange={() => setMethod("razorpay")} />
-              <CreditCard className="h-5 w-5 text-primary" />
+            <label className={optionCls(method === "razorpay")}>
+              <input type="radio" className="accent-[var(--primary)]" checked={method === "razorpay"} onChange={() => setMethod("razorpay")} />
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-card text-primary-ink"><CreditCard className="h-4 w-4" /></span>
               <div>
-                <div className="font-bold">Online (Razorpay)</div>
-                <div className="text-xs text-muted-foreground">UPI / Card / Netbanking (test mode)</div>
+                <div className="text-body font-semibold">Pay online</div>
+                <div className="text-caption text-muted-foreground">UPI, card or netbanking</div>
               </div>
             </label>
           </div>
           {method === "razorpay" && (
-            <div className="mt-3 rounded-xl bg-primary/10 border border-primary/30 p-3 text-xs">
+            <div className="mt-3 rounded-lg bg-primary-soft px-3 py-2.5 text-caption text-primary-ink">
               Pay with UPI, debit/credit card, netbanking or wallet via Razorpay (currently in test mode).
             </div>
           )}
         </section>
       </div>
 
-      {/* Summary */}
-      <aside className="md:sticky md:top-24 self-start space-y-4">
-        <div className="rounded-3xl border border-border bg-card p-5 shadow-card">
-          <h3 className="font-display text-lg font-bold mb-3 flex items-center gap-2">
-            <Tag className="h-4 w-4 text-primary" /> Apply coupon
+      <aside className="space-y-4 self-start md:sticky md:top-6">
+        <div className="rounded-xl border border-border/70 bg-card p-4">
+          <h3 className="section-title mb-3 flex items-center gap-2">
+            <Tag className="h-4 w-4 text-primary" /> Coupon
           </h3>
           {appliedCoupon ? (
-            <div className="flex items-center justify-between rounded-xl border-2 border-primary/40 bg-primary/10 px-3 py-2">
+            <div className="flex items-center justify-between rounded-lg bg-primary-soft px-3 py-2.5">
               <div>
-                <div className="font-bold text-sm">{appliedCoupon.code} applied</div>
-                <div className="text-xs text-muted-foreground">You saved {rupees(appliedCoupon.discount)}</div>
+                <div className="text-meta font-semibold text-primary-ink">{appliedCoupon.code} applied</div>
+                <div className="text-caption text-muted-foreground">You saved {rupees(appliedCoupon.discount)}</div>
               </div>
               <Button variant="ghost" size="sm" className="text-destructive" onClick={removeCoupon}>Remove</Button>
             </div>
@@ -470,44 +470,46 @@ function CheckoutPage() {
               <Input
                 value={coupon}
                 onChange={(e) => setCoupon(e.target.value.toUpperCase())}
-                placeholder="FLASH50"
-                className="rounded-xl uppercase"
+                placeholder="Enter code"
+                className="uppercase"
                 onKeyDown={(e) => e.key === "Enter" && applyCoupon()}
               />
-              <Button variant="outline" className="rounded-xl" onClick={applyCoupon} disabled={applyingCoupon}>
+              <Button variant="secondary" onClick={applyCoupon} disabled={applyingCoupon}>
                 {applyingCoupon ? "…" : "Apply"}
               </Button>
             </div>
           )}
-          <div className="mt-2 text-xs text-muted-foreground">Try FLASH50 (₹299+), SAVE10 (₹199+), or WELCOME (₹99+)</div>
+          <div className="mt-2 text-caption text-muted-foreground">Have a coupon? Enter the code above.</div>
         </div>
 
-        <div className="rounded-3xl border border-border bg-card p-5 shadow-card">
-          <h3 className="font-display text-lg font-bold mb-3">Bill summary</h3>
+        <div className="rounded-xl border border-border/70 bg-card p-4">
+          <h3 className="section-title mb-3">Bill summary</h3>
           <Row label={`Item total (${items.length})`} value={rupees(subtotal)} />
-          {appliedCoupon && (
-            <Row label={`Coupon (${appliedCoupon.code})`} value={`- ${rupees(appliedCoupon.discount)}`} />
-          )}
-          <Row label={selectedTier ? `${selectedTier.title} (${selectedTier.sub})` : "Delivery"} value={deliveryFee === 0 ? "FREE" : rupees(deliveryFee)} />
+          {appliedCoupon && <Row label={`Coupon (${appliedCoupon.code})`} value={`- ${rupees(appliedCoupon.discount)}`} />}
+          <Row label={selectedTier ? `${selectedTier.title} (${selectedTier.sub})` : "Delivery"} value={deliveryFee === 0 ? "Free" : rupees(deliveryFee)} />
           <Row label="Handling" value={rupees(handling)} />
-          <div className="my-3 h-px bg-border" />
+          <div className="my-3 h-px bg-border/60" />
           <Row label="To pay" value={rupees(total)} bold />
           {minOrderNotMet && selectedTier?.minOrder != null && (
-            <div className="mt-2 text-xs text-destructive">
+            <div className="mt-2 text-caption text-destructive">
               Add {rupees(selectedTier.minOrder - subtotal)} more to use {selectedTier.title}.
             </div>
           )}
-          <motion.div whileTap={{ scale: 0.97 }}>
-            <Button
-              disabled={placing || !selectedAddr || minOrderNotMet}
-              onClick={place}
-              className="mt-5 w-full h-12 rounded-xl gradient-primary text-primary-foreground font-bold shadow-glow"
-            >
-              <Zap className="h-4 w-4 mr-2 fill-current" /> {placing ? "Placing…" : `Place order • ${rupees(total)}`}
-            </Button>
-          </motion.div>
+          <Button
+            disabled={placing || !selectedAddr || minOrderNotMet}
+            onClick={place}
+            className="mt-4 hidden h-11 w-full rounded-xl md:flex"
+          >
+            {placeLabel}
+          </Button>
         </div>
       </aside>
+
+      <div className="bar-blur hairline-t pb-safe fixed inset-x-0 bottom-0 z-20 px-4 py-3 md:hidden">
+        <Button disabled={placing || !selectedAddr || minOrderNotMet} onClick={place} className="h-11 w-full rounded-xl">
+          {placeLabel}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -515,16 +517,17 @@ function CheckoutPage() {
 function FormInput({ id, label, v, set }: { id: string; label: string; v: string; set: (v: string) => void }) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-xs">{label}</Label>
-      <Input id={id} value={v} onChange={(e) => set(e.target.value)} className="h-10 rounded-xl" />
+      <Label htmlFor={id} className="text-small text-muted-foreground">{label}</Label>
+      <Input id={id} value={v} onChange={(e) => set(e.target.value)} />
     </div>
   );
 }
 
 function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
-    <div className={`flex justify-between py-1 text-sm ${bold ? "text-base font-bold" : ""}`}>
-      <span>{label}</span><span>{value}</span>
+    <div className={`flex justify-between py-1 text-meta ${bold ? "text-body font-semibold" : "text-muted-foreground"}`}>
+      <span>{label}</span>
+      <span className={bold ? "" : "text-foreground"}>{value}</span>
     </div>
   );
 }

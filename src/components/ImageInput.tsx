@@ -20,12 +20,15 @@ export function ImageInput({
   bucket,
   label = "Image",
   required = true,
+  maxEdge,
 }: {
   value: string;
   onChange: (url: string) => void;
   bucket: Bucket;
   label?: string;
   required?: boolean;
+  /** Longest image edge after upload; defaults by bucket (see uploadImage). */
+  maxEdge?: number;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -53,7 +56,7 @@ export function ImageInput({
     try {
       // New product uploads always go to `products`; `product-images` is legacy.
       const target = bucket === "product-images" ? "products" : bucket;
-      const stored = await uploadImage({ bucket: target, file, maxBytes: 5 * 1024 * 1024 });
+      const stored = await uploadImage({ bucket: target, file, maxBytes: 5 * 1024 * 1024, maxEdge });
       onChange(stored.ref);
       setPreviewUrl(null); // the saved reference renders immediately via StorageImg
       toast.success("Uploaded");
@@ -69,7 +72,7 @@ export function ImageInput({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-bold">
+        <label className="text-meta font-medium text-foreground/80">
           {label} {required && <span className="text-destructive">*</span>}
         </label>
         {value && (
@@ -95,7 +98,7 @@ export function ImageInput({
               onChange(e.target.value);
             }}
             placeholder="https://… or upload below"
-            className="pl-9"
+            className="pl-10"
           />
         </div>
         <Button
@@ -117,7 +120,7 @@ export function ImageInput({
         />
       </div>
       {(previewUrl || value) && (
-        <div className="rounded-xl overflow-hidden border border-border w-full max-w-xs">
+        <div className="w-full max-w-xs overflow-hidden rounded-xl bg-secondary">
           <StorageImg
             loading="lazy"
             decoding="async"
@@ -129,7 +132,7 @@ export function ImageInput({
         </div>
       )}
       {required && !value && (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-caption text-muted-foreground">
           Paste a URL or upload a file — one is required.
         </p>
       )}

@@ -39,45 +39,63 @@ function AuditPage() {
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div>
-        <h1 className="font-display text-2xl font-extrabold">Security audit log</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="large-title">Security audit log</h1>
+        <p className="mt-0.5 text-small text-muted-foreground">
           Append-only. Entries cannot be edited or deleted by anyone, including Super Admins.
         </p>
       </div>
 
       {error ? (
-        <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-small text-destructive">
           {(error as any)?.message ?? "Could not load the audit log"}
         </div>
       ) : isLoading ? (
-        <div className="grid place-items-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+        <div className="grid place-items-center py-12"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : (data ?? []).length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border p-10 text-center">
-          <ScrollText className="mx-auto h-8 w-8 text-muted-foreground" />
-          <p className="mt-2 text-sm text-muted-foreground">No privileged actions recorded yet.</p>
+        <div className="rounded-xl border border-dashed border-border p-10 text-center">
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-tint-mint text-primary-ink">
+            <ScrollText className="h-5 w-5" />
+          </span>
+          <p className="mt-3 text-small text-muted-foreground">No privileged actions recorded yet.</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-muted/50 text-muted-foreground">
+        <div className="overflow-hidden rounded-xl border border-border/70 bg-card">
+          <div className="md:hidden">
+            {(data ?? []).map((row: any) => (
+              <div key={row.id} className="border-b border-border/70 px-4 py-3 last:border-0">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-body font-medium">{LABELS[row.event_type] ?? row.event_type.replace(/_/g, " ")}</span>
+                  <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-caption font-semibold text-muted-foreground">
+                    {row.actor_role ?? "—"}
+                  </span>
+                </div>
+                <div className="mt-0.5 text-small text-muted-foreground">
+                  {row.detail?.role ? String(row.detail.role) : row.detail?.status ? String(row.detail.status) : "—"} ·{" "}
+                  {new Date(row.created_at).toLocaleString()}
+                </div>
+              </div>
+            ))}
+          </div>
+          <table className="hidden w-full text-left text-small md:table">
+            <thead className="bg-secondary/60 text-small font-medium text-muted-foreground">
               <tr>
-                <th className="px-3 py-2 font-bold">Event</th>
-                <th className="px-3 py-2 font-bold">Detail</th>
-                <th className="px-3 py-2 font-bold">By</th>
-                <th className="px-3 py-2 font-bold">When</th>
+                <th className="px-4 py-2.5 font-medium">Event</th>
+                <th className="px-4 py-2.5 font-medium">Detail</th>
+                <th className="px-4 py-2.5 font-medium">By</th>
+                <th className="px-4 py-2.5 font-medium">When</th>
               </tr>
             </thead>
             <tbody>
               {(data ?? []).map((row: any) => (
-                <tr key={row.id} className="border-t border-border">
-                  <td className="px-3 py-2 font-semibold">{LABELS[row.event_type] ?? row.event_type.replace(/_/g, " ")}</td>
-                  <td className="px-3 py-2 text-muted-foreground">
+                <tr key={row.id} className="border-t border-border/70 hover:bg-secondary/50">
+                  <td className="px-4 py-2.5 font-medium">{LABELS[row.event_type] ?? row.event_type.replace(/_/g, " ")}</td>
+                  <td className="px-4 py-2.5 text-muted-foreground">
                     {row.detail?.role ? String(row.detail.role) : row.detail?.status ? String(row.detail.status) : "—"}
                   </td>
-                  <td className="px-3 py-2 text-muted-foreground">{row.actor_role ?? "—"}</td>
-                  <td className="px-3 py-2 text-muted-foreground">{new Date(row.created_at).toLocaleString()}</td>
+                  <td className="px-4 py-2.5 text-muted-foreground">{row.actor_role ?? "—"}</td>
+                  <td className="px-4 py-2.5 text-muted-foreground">{new Date(row.created_at).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>

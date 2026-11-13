@@ -12,7 +12,7 @@ export function LeafletMap({
   children,
   center,
   zoom = 14,
-  className = "h-72 w-full rounded-2xl overflow-hidden border border-border",
+  className = "h-72 w-full overflow-hidden rounded-xl",
   scrollWheelZoom = true,
 }: {
   children: ReactNode | ((L: typeof import("react-leaflet")) => ReactNode);

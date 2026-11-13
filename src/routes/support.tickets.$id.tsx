@@ -95,8 +95,8 @@ function Page() {
     else { toast.success("Assigned"); qc.invalidateQueries({ queryKey: ["ticket-context", id] }); }
   };
 
-  if (ctx.isLoading) return <div className="p-8 grid place-items-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
-  if (ctx.error || !t) return <div className="p-6 text-sm text-destructive">Could not load ticket.</div>;
+  if (ctx.isLoading) return <div className="grid place-items-center p-10"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  if (ctx.error || !t) return <div className="p-6 text-center text-body text-destructive">Could not load ticket.</div>;
 
   const creator = ctx.data?.creator;
   const shop = ctx.data?.shop;
@@ -104,31 +104,30 @@ function Page() {
   const role = t.role_at_creation;
 
   return (
-    <div className="p-4 md:p-6 grid lg:grid-cols-3 gap-4">
-      {/* Main column */}
-      <div className="lg:col-span-2 space-y-4">
-        <div className="rounded-2xl border border-border bg-card p-4">
+    <div className="mx-auto grid max-w-6xl gap-4 px-4 pb-8 pt-4 md:px-6 lg:grid-cols-3">
+      <div className="space-y-4 lg:col-span-2">
+        <div className="rounded-xl border border-border/70 bg-card p-4">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="min-w-0">
-              <div className="text-xs text-muted-foreground font-semibold">{t.ticket_number} · {role}</div>
-              <h1 className="font-display text-xl font-extrabold mt-0.5">{t.title}</h1>
-              <div className="text-xs text-muted-foreground mt-1">{t.category.replace(/_/g, " ")} · created {new Date(t.created_at).toLocaleString()}</div>
+              <div className="eyebrow capitalize">{t.ticket_number} · {role}</div>
+              <h1 className="mt-1 text-subtitle font-bold leading-tight tracking-tight">{t.title}</h1>
+              <div className="mt-1 text-small text-muted-foreground">{t.category.replace(/_/g, " ")} · created {new Date(t.created_at).toLocaleString()}</div>
             </div>
-            <span className="text-xs uppercase rounded-full bg-secondary px-2 py-1 font-bold">{t.status.replace(/_/g, " ")}</span>
+            <span className="rounded-full bg-secondary px-2.5 py-1 text-caption font-semibold capitalize">{t.status.replace(/_/g, " ")}</span>
           </div>
-          <p className="mt-3 text-sm whitespace-pre-wrap">{t.description}</p>
+          <p className="mt-3 whitespace-pre-wrap text-body leading-relaxed">{t.description}</p>
           {(ctx.data?.attachments ?? []).length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
               {ctx.data!.attachments.map((a: any) => (
                 <StorageLink key={a.id} href={a.file_url} target="_blank" rel="noreferrer" className="block">
-                  <StorageImg loading="lazy" decoding="async" src={a.file_url} alt={a.file_name ?? "attachment"} className="h-24 w-24 object-cover rounded-lg border border-border" />
+                  <StorageImg loading="lazy" decoding="async" src={a.file_url} alt={a.file_name ?? "attachment"} className="h-20 w-20 rounded-lg object-cover" />
                 </StorageLink>
               ))}
             </div>
           )}
           {t.status === "resolved" && (
-            <div className="mt-3 rounded-xl bg-green-500/10 border border-green-500/30 p-3 text-sm space-y-1">
-              <div className="text-[10px] uppercase font-bold text-green-700 dark:text-green-300">Resolution</div>
+            <div className="mt-3 space-y-1 rounded-lg bg-primary-soft p-3.5 text-small">
+              <div className="text-small font-semibold text-primary-ink">Resolution</div>
               {t.resolution_notes && <div className="whitespace-pre-wrap">{t.resolution_notes}</div>}
               <div className="text-xs text-muted-foreground">
                 Resolved {t.resolved_at ? new Date(t.resolved_at).toLocaleString() : ""}
@@ -138,21 +137,21 @@ function Page() {
         </div>
 
         {/* Actions */}
-        <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-          <div className="text-xs font-bold text-muted-foreground uppercase">Actions</div>
+        <div className="space-y-3 rounded-xl border border-border/70 bg-card p-4">
+          <h2 className="section-title">Actions</h2>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" onClick={() => setStatus("in_progress")}>Mark in progress</Button>
-            <Button size="sm" variant="outline" onClick={() => setShowResolve(v => !v)}>Resolve…</Button>
-            <Button size="sm" variant="outline" onClick={() => setStatus("closed")}>Close</Button>
-            <Button size="sm" variant="outline" disabled={!user} onClick={() => user && assign(user.id)}>Assign to me</Button>
+            <Button size="sm" variant="secondary" onClick={() => setStatus("in_progress")}>Mark in progress</Button>
+            <Button size="sm" variant="secondary" onClick={() => setShowResolve(v => !v)}>Resolve…</Button>
+            <Button size="sm" variant="secondary" onClick={() => setStatus("closed")}>Close</Button>
+            <Button size="sm" variant="secondary" disabled={!user} onClick={() => user && assign(user.id)}>Assign to me</Button>
           </div>
           {showResolve && (
-            <div className="space-y-2 rounded-xl border border-border p-3 bg-secondary/30">
-              <div className="text-xs font-semibold">Resolution notes (sent to the user)</div>
+            <div className="space-y-2 rounded-xl bg-secondary p-3.5">
+              <div className="text-small font-semibold">Resolution notes (sent to the user)</div>
               <Textarea rows={3} value={resolveNotes} onChange={(e) => setResolveNotes(e.target.value)} placeholder="Describe how the issue was resolved…" />
               <div className="flex justify-end gap-2">
                 <Button size="sm" variant="ghost" onClick={() => { setShowResolve(false); setResolveNotes(""); }}>Cancel</Button>
-                <Button size="sm" className="gradient-primary text-primary-foreground" onClick={async () => {
+                <Button size="sm" onClick={async () => {
                   await setStatus("resolved", resolveNotes.trim() || undefined);
                   setShowResolve(false); setResolveNotes("");
                 }}>Mark resolved</Button>
@@ -160,9 +159,9 @@ function Page() {
             </div>
           )}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold">Reassign:</span>
+            <span className="text-small font-semibold">Reassign</span>
             <Select onValueChange={assign}>
-              <SelectTrigger className="w-64"><SelectValue placeholder="Select agent…" /></SelectTrigger>
+              <SelectTrigger className="w-full max-w-64"><SelectValue placeholder="Select agent…" /></SelectTrigger>
               <SelectContent>
                 {(agents.data ?? []).map(a => (
                   <SelectItem key={a.user_id} value={a.user_id}>{a.display_name ?? a.user_id.slice(0,8)}</SelectItem>
@@ -173,36 +172,43 @@ function Page() {
         </div>
 
         {/* Conversation */}
-        <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-          <div className="text-xs font-bold text-muted-foreground uppercase">Conversation</div>
-          <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
-            {(messages.data ?? []).map(m => (
-              <div key={m.id} className={
-                "rounded-xl p-3 text-sm " +
-                (m.is_internal_note
-                  ? "bg-yellow-100 border border-yellow-300"
-                  : m.sender_role === "support"
-                    ? "bg-primary/10 border border-primary/30"
-                    : "bg-secondary border border-border")
-              }>
-                <div className="text-[10px] uppercase font-bold flex items-center gap-1 text-muted-foreground">
-                  {m.is_internal_note && <Lock className="h-3 w-3" />}
-                  {m.sender_role} · {new Date(m.created_at).toLocaleString()}
+        <div className="space-y-3 rounded-xl border border-border/70 bg-card p-4">
+          <h2 className="section-title">Conversation</h2>
+          <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
+            {(messages.data ?? []).map(m => {
+              const mine = m.sender_role === "support";
+              return (
+                <div key={m.id} className={"flex " + (mine ? "justify-end" : "justify-start")}>
+                  <div className={
+                    "max-w-[85%] rounded-2xl px-3.5 py-2.5 text-small " +
+                    (m.is_internal_note
+                      ? "bg-tint-sun"
+                      : mine
+                        ? "rounded-br-md bg-primary-soft"
+                        : "rounded-bl-md bg-secondary")
+                  }>
+                    <div className="flex items-center gap-1 text-caption font-semibold capitalize text-muted-foreground">
+                      {m.is_internal_note && <Lock className="h-3 w-3" />}
+                      {m.is_internal_note ? "Internal note" : m.sender_role} · {new Date(m.created_at).toLocaleString()}
+                    </div>
+                    <div className="mt-1 whitespace-pre-wrap leading-relaxed">{m.body}</div>
+                  </div>
                 </div>
-                <div className="mt-1 whitespace-pre-wrap">{m.body}</div>
-              </div>
-            ))}
-            {(messages.data ?? []).length === 0 && <div className="text-xs text-muted-foreground">No messages yet.</div>}
+              );
+            })}
+            {(messages.data ?? []).length === 0 && <div className="py-6 text-center text-small text-muted-foreground">No messages yet.</div>}
           </div>
-          <Textarea value={reply} onChange={(e) => setReply(e.target.value)} rows={3} placeholder="Write a reply…" />
-          <div className="flex items-center justify-between gap-2">
-            <label className="text-xs flex items-center gap-2 select-none">
-              <input type="checkbox" checked={internal} onChange={(e) => setInternal(e.target.checked)} />
-              Internal note (not visible to user)
-            </label>
-            <Button onClick={send} disabled={busy || !reply.trim()} className="gradient-primary text-primary-foreground">
-              {busy && <Loader2 className="h-4 w-4 mr-1 animate-spin" />} Send
-            </Button>
+          <div className="bar-blur hairline-t sticky bottom-[calc(60px+env(safe-area-inset-bottom))] -mx-4 -mb-4 space-y-2.5 rounded-b-xl px-4 py-3 md:bottom-0">
+            <Textarea value={reply} onChange={(e) => setReply(e.target.value)} rows={2} placeholder="Write a reply…" />
+            <div className="flex items-center justify-between gap-3">
+              <label className="flex select-none items-center gap-2 text-small text-muted-foreground">
+                <input type="checkbox" checked={internal} onChange={(e) => setInternal(e.target.checked)} className="h-4 w-4 accent-primary" />
+                Internal note
+              </label>
+              <Button onClick={send} disabled={busy || !reply.trim()} className="h-9 rounded-full px-5">
+                {busy && <Loader2 className="h-4 w-4 animate-spin" />} Send
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -253,7 +259,7 @@ function Page() {
             <Info icon={<MapPin className="h-3 w-3" />}>{shop.shop.address}, {shop.shop.city} {shop.shop.pincode}</Info>
             <Info icon={<Phone className="h-3 w-3" />}>{shop.shop.phone || "—"}</Info>
             <Info>Products: {shop.product_count}</Info>
-            <div className="mt-2 text-xs font-bold uppercase text-muted-foreground">Recent orders</div>
+            <div className="mt-2 text-xs font-semibold capitalize text-muted-foreground">Recent orders</div>
             {(shop.recent_orders ?? []).slice(0,5).map((o: any) => (
               <Row key={o.id} left={o.order_number} right={`${rupees(o.total)} · ${String(o.status).replace(/_/g, " ")}`} />
             ))}
@@ -266,7 +272,7 @@ function Page() {
             <Info icon={<Phone className="h-3 w-3" />}>{partner.partner.phone || "—"}</Info>
             <Info>Vehicle: {partner.partner.vehicle || "—"}</Info>
             <Info>Status: {partner.partner.is_online ? "Online" : "Offline"}</Info>
-            <div className="mt-2 text-xs font-bold uppercase text-muted-foreground">Assigned orders</div>
+            <div className="mt-2 text-xs font-semibold capitalize text-muted-foreground">Assigned orders</div>
             {(partner.assigned_orders ?? []).length === 0 && <div className="text-xs text-muted-foreground">None.</div>}
             {(partner.assigned_orders ?? []).map((o: any) => (
               <Row key={o.id} left={o.order_number} right={`${rupees(o.total)} · ${String(o.status).replace(/_/g, " ")}`} />
@@ -280,18 +286,18 @@ function Page() {
 
 function Panel({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 text-sm space-y-1">
-      <div className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1">{icon}{title}</div>
+    <div className="space-y-1.5 rounded-xl border border-border/70 bg-card p-4 text-small">
+      <div className="mb-1 flex items-center gap-1.5 text-small font-semibold text-muted-foreground">{icon}{title}</div>
       {children}
     </div>
   );
 }
 function Info({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
-  return <div className="text-xs flex items-center gap-1 text-muted-foreground">{icon}{children}</div>;
+  return <div className="flex items-center gap-1.5 text-small text-muted-foreground">{icon}{children}</div>;
 }
 function Row({ left, right }: { left: string; right: string }) {
   return (
-    <div className="flex items-center justify-between text-xs py-0.5">
+    <div className="flex min-h-9 items-center justify-between gap-3 text-small">
       <span className="font-semibold">{left}</span>
       <span className="text-muted-foreground">{right}</span>
     </div>

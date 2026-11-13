@@ -112,9 +112,9 @@ export function SupportTicketForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto rounded-2xl p-5">
         <DialogHeader>
-          <DialogTitle>Help & Support</DialogTitle>
+          <DialogTitle className="text-subtitle font-bold tracking-tight">Help & Support</DialogTitle>
           <DialogDescription>
             Describe your issue. Our support team will get back to you.
           </DialogDescription>
@@ -122,12 +122,12 @@ export function SupportTicketForm({
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="title">Complaint title</Label>
+            <Label htmlFor="title" className="text-small font-medium text-muted-foreground">Complaint title</Label>
             <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} placeholder="Short summary" />
           </div>
 
           <div className="space-y-1.5">
-            <Label>Category</Label>
+            <Label className="text-small font-medium text-muted-foreground">Category</Label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -140,7 +140,7 @@ export function SupportTicketForm({
 
           {orders.length > 0 && (
             <div className="space-y-1.5">
-              <Label>Related order (optional)</Label>
+              <Label className="text-small font-medium text-muted-foreground">Related order (optional)</Label>
               <Select value={orderId || "none"} onValueChange={(v) => setOrderId(v === "none" ? "" : v)}>
                 <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
                 <SelectContent>
@@ -154,14 +154,14 @@ export function SupportTicketForm({
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="desc">Description</Label>
+            <Label htmlFor="desc" className="text-small font-medium text-muted-foreground">Description</Label>
             <Textarea id="desc" rows={5} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={2000} placeholder="Tell us what happened…" />
           </div>
 
           <div className="space-y-1.5">
-            <Label>Image attachment (optional)</Label>
+            <Label className="text-small font-medium text-muted-foreground">Image attachment (optional)</Label>
             {file ? (
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-small">
                 <Paperclip className="h-4 w-4" />
                 <span className="truncate flex-1">{file.name}</span>
                 <Button type="button" size="icon" variant="ghost" onClick={() => setFile(null)}>
@@ -186,9 +186,9 @@ export function SupportTicketForm({
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>Cancel</Button>
-          <Button onClick={submit} disabled={submitting} className="gradient-primary text-primary-foreground">
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={submitting}>Cancel</Button>
+          <Button onClick={submit} disabled={submitting}>
             {submitting && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
             Submit ticket
           </Button>

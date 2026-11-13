@@ -3,11 +3,10 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { RoleShell } from "@/components/RoleShell";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { LayoutDashboard, PackageOpen, History, Wallet, User, Check, MapPin, Zap, Timer, AlertTriangle } from "lucide-react";
+import { PackageOpen, Check, MapPin, Zap, Timer, AlertTriangle } from "lucide-react";
 import { rupees } from "@/lib/format";
 import { RouteMap } from "@/components/maps/RouteMap";
 import { MessageCustomerDialog } from "@/components/MessageCustomerDialog";
@@ -18,13 +17,6 @@ import { runOptimistic, removeRow } from "@/lib/optimistic";
 
 
 
-const NAV = [
-  { to: "/delivery/dashboard", label: "Home", icon: LayoutDashboard },
-  { to: "/delivery/available-orders", label: "Available", icon: PackageOpen },
-  { to: "/delivery/history", label: "History", icon: History },
-  { to: "/delivery/earnings", label: "Earnings", icon: Wallet },
-  { to: "/delivery/profile", label: "Profile", icon: User },
-];
 
 export const Route = createFileRoute("/delivery/dashboard")({
   head: () => ({ meta: [{ title: "Delivery Dashboard — AP Mart" }] }),
@@ -88,7 +80,7 @@ function Page() {
         const becameMine = partner?.id && n.partner_id === partner.id && o.partner_id !== partner.id;
         if (becameMine && n.delivery_type === "fast_delivery") {
           beep();
-          toast.error("🚨 Fast Delivery — Priority order", {
+          toast.error("Fast Delivery — Priority order", {
             description: `${n.order_number ?? "New order"} · Deliver within 15–30 min`,
             duration: 8000,
           });
@@ -271,128 +263,216 @@ function Page() {
     else { toast.success("Checked out"); attendance.refetch(); setPartner((p: any) => p ? { ...p, is_online: false } : p); }
   };
 
+  const assignedCount = assigned.data?.length ?? 0;
+  const availableCount = available.data?.length ?? 0;
+  const greeting = (() => {
+    const h = new Date().getHours();
+    return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+  })();
+
   return (
-    <RoleShell role="delivery" nav={NAV} requireRoles={["delivery", "admin"]}>
-      <div className="p-4 md:p-6 space-y-5">
-        <div className="rounded-3xl gradient-hero p-5 border border-border">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-xs text-muted-foreground font-semibold">Status</div>
-              <div className="font-display text-2xl font-extrabold">{partner?.is_online ? "Online" : "Offline"}</div>
-              {partner?.is_online && (
-                <div className="mt-1 text-xs text-muted-foreground inline-flex items-center gap-1">
-                  <MapPin className="h-3 w-3 text-primary" />
-                  {myPos ? `Live: ${myPos.lat.toFixed(4)}, ${myPos.lng.toFixed(4)}` : "Waiting for GPS…"}
-                </div>
-              )}
+    <>
+      <div className="space-y-5 px-4 py-4 md:px-6">
+        <div>
+          <div className="text-small text-muted-foreground">{greeting}</div>
+          <h1 className="large-title mt-0.5">{partner?.name && partner.name !== user?.email ? partner.name : "Your deliveries"}</h1>
+        </div>
+
+        <div className="rounded-xl border border-border/70 bg-card p-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-subtitle font-semibold">
+                <span className={cn("h-2 w-2 rounded-full", partner?.is_online ? "bg-primary" : "bg-muted-foreground/40")} />
+                {partner?.is_online ? "You're online" : "You're offline"}
+              </div>
+              <div className="mt-1 flex items-center gap-1 text-small text-muted-foreground">
+                <MapPin className="h-3 w-3 shrink-0" />
+                <span className="truncate">
+                  {partner?.is_online
+                    ? myPos
+                      ? `Live location on (${myPos.lat.toFixed(3)}, ${myPos.lng.toFixed(3)})`
+                      : "Waiting for GPS…"
+                    : "Go online to receive orders"}
+                </span>
+              </div>
             </div>
             <Switch checked={partner?.is_online ?? false} onCheckedChange={toggleOnline} />
           </div>
         </div>
 
-        <section className="rounded-2xl border border-border bg-card p-4">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div>
-              <div className="font-bold">Attendance</div>
-              <div className="text-xs text-muted-foreground">
-                Today: <span className="font-bold text-foreground">{attendance.data?.hours.toFixed(2) ?? "0.00"}h</span>
-                {attendance.data?.open && <span className="ml-2 text-green-600 font-semibold">• Checked in</span>}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl bg-tint-mint p-3.5">
+            <div className="text-small text-foreground/60">Hours today</div>
+            <div className="mt-1 text-page font-bold leading-none tracking-tight">
+              {attendance.data?.hours.toFixed(1) ?? "0.0"}<span className="ml-0.5 text-small font-semibold text-foreground/60">h</span>
+            </div>
+          </div>
+          <div className="rounded-xl bg-tint-sky p-3.5">
+            <div className="text-small text-foreground/60">Active now</div>
+            <div className="mt-1 text-page font-bold leading-none tracking-tight">{myDeliveries.data?.length ?? 0}</div>
+          </div>
+        </div>
+
+        <section className="space-y-2.5">
+          <h2 className="section-title">Active deliveries</h2>
+          {(myDeliveries.data ?? []).map((o: any) => {
+            const points = [
+              myPos ? { lat: myPos.lat, lng: myPos.lng, label: "You" } : null,
+              o.shop ? { lat: o.shop.latitude, lng: o.shop.longitude, label: `Shop: ${o.shop.name}` } : null,
+              o.delivery_lat && o.delivery_lng ? { lat: o.delivery_lat, lng: o.delivery_lng, label: `Drop: ${(o.address as any)?.name ?? "Customer"}` } : null,
+            ].filter(Boolean) as { lat: number; lng: number; label: string }[];
+            const isFast = o.delivery_type === "fast_delivery";
+            return (
+              <div key={o.id} className="space-y-3 rounded-xl border border-border/70 bg-card p-3.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="text-body font-semibold">{o.order_number}</div>
+                      {isFast && <FastDeliveryBadge />}
+                    </div>
+                  </div>
+                  <div className="text-body font-semibold">{rupees(o.total)}</div>
+                </div>
+                <RouteStops shop={o.shop?.name} address={o.address} />
+                <RouteMap points={points} height="h-44" />
+                <div className="flex items-center gap-2">
+                  <MessageCustomerDialog orderId={o.id} orderNumber={o.order_number} />
+                  <Button onClick={() => markDelivered(o.id)} className="h-12 flex-1 rounded-xl">
+                    <Check className="h-4 w-4" />Mark delivered
+                  </Button>
+                </div>
               </div>
+            );
+          })}
+          {(myDeliveries.data?.length ?? 0) === 0 && (
+            <div className="rounded-xl border border-border/70 bg-card p-5 text-center">
+              <div className="mx-auto grid h-10 w-10 place-items-center rounded-full bg-tint-mint text-primary-ink">
+                <PackageOpen className="h-5 w-5" />
+              </div>
+              <div className="mt-2.5 text-body font-semibold">No active deliveries</div>
+              <p className="mt-0.5 text-small text-muted-foreground">Pick up a new order to get started.</p>
+              <a
+                href="/delivery/available-orders"
+                className="press mt-3 inline-flex h-9 items-center rounded-xl bg-primary-soft px-4 text-small font-semibold text-primary-ink"
+              >
+                Browse available orders
+              </a>
+            </div>
+          )}
+        </section>
+
+        <section className="space-y-2.5">
+          <div className="flex items-center gap-2">
+            <h2 className="section-title">Assigned to you</h2>
+            {assignedCount > 0 && (
+              <span className="rounded-full bg-tint-sun px-2 py-0.5 text-caption font-semibold">{assignedCount}</span>
+            )}
+          </div>
+          {(assigned.data ?? []).map((o: any) => (
+            <PriorityOrderRow
+              key={o.id}
+              o={o}
+              partnerOnline={!!partner?.is_online}
+              onAccept={() => acceptAvailable(o.id)}
+              onDecline={() => declineAssignment(o.id)}
+              assignedMode
+            />
+          ))}
+          {assignedCount === 0 && (
+            <div className="rounded-xl border border-border/70 bg-card p-4 text-center text-small text-muted-foreground">
+              Nothing assigned right now.
+            </div>
+          )}
+        </section>
+
+        <section className="space-y-2.5">
+          <div className="flex items-center gap-2">
+            <h2 className="section-title">Available orders</h2>
+            {availableCount > 0 && (
+              <span className="rounded-full bg-primary-soft px-2 py-0.5 text-caption font-semibold text-primary-ink">{availableCount} new</span>
+            )}
+          </div>
+          {(available.data ?? []).map((o: any) => (
+            <PriorityOrderRow
+              key={o.id}
+              o={o}
+              partnerOnline={!!partner?.is_online}
+              onAccept={() => acceptAvailable(o.id)}
+            />
+          ))}
+          {availableCount === 0 && (
+            <div className="rounded-xl border border-border/70 bg-card p-4 text-center text-small text-muted-foreground">
+              No available orders right now.
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-xl border border-border/70 bg-card p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="section-title">Attendance</h2>
+              <p className="mt-0.5 text-small text-muted-foreground">
+                {attendance.data?.open ? <span className="font-medium text-primary-ink">Checked in</span> : "Not checked in"}
+              </p>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" onClick={checkIn} disabled={!!attendance.data?.open} className="rounded-xl gradient-primary text-primary-foreground">Check In</Button>
-              <Button size="sm" variant="outline" onClick={checkOut} disabled={!attendance.data?.open} className="rounded-xl">Check Out</Button>
+              <Button size="sm" onClick={checkIn} disabled={!!attendance.data?.open}>Check in</Button>
+              <Button size="sm" variant="secondary" onClick={checkOut} disabled={!attendance.data?.open}>Check out</Button>
             </div>
           </div>
           {(attendance.data?.rows.length ?? 0) > 0 && (
-            <div className="mt-3 border-t border-border pt-3 text-xs space-y-1">
+            <div className="mt-3 divide-y divide-border/60 border-t border-border/60">
               {(attendance.data?.rows ?? []).map((r: any) => {
                 const inT = new Date(r.check_in_at);
                 const outT = r.check_out_at ? new Date(r.check_out_at) : null;
                 const hrs = ((outT ?? new Date()).getTime() - inT.getTime()) / 3.6e6;
+                const t = (d: Date) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
                 return (
-                  <div key={r.id} className="flex justify-between text-muted-foreground">
-                    <span>{inT.toLocaleDateString()} {inT.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} → {outT ? outT.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}</span>
-                    <span className="font-semibold text-foreground">{hrs.toFixed(2)}h</span>
+                  <div key={r.id} className="flex min-h-10 items-center justify-between text-small">
+                    <span className="text-muted-foreground">
+                      {inT.toLocaleDateString()} · {t(inT)} – {outT ? t(outT) : "now"}
+                    </span>
+                    <span className="font-semibold">{hrs.toFixed(2)}h</span>
                   </div>
                 );
               })}
             </div>
           )}
         </section>
-
-        <section>
-          <h2 className="font-bold mb-3">Assigned to you {((assigned.data?.length ?? 0) > 0) && <span className="ml-2 rounded-full bg-yellow-200 text-yellow-900 px-2 py-0.5 text-[10px] font-bold">{assigned.data!.length}</span>}</h2>
-          <div className="space-y-3">
-            {(assigned.data ?? []).map((o: any) => (
-              <PriorityOrderRow
-                key={o.id}
-                o={o}
-                partnerOnline={!!partner?.is_online}
-                onAccept={() => acceptAvailable(o.id)}
-                onDecline={() => declineAssignment(o.id)}
-                assignedMode
-              />
-            ))}
-            {(assigned.data?.length ?? 0) === 0 && <div className="text-sm text-muted-foreground">Nothing assigned right now.</div>}
-          </div>
-        </section>
-
-        <section>
-          <h2 className="font-bold mb-3">Available orders {((available.data?.length ?? 0) > 0) && <span className="ml-2 rounded-full bg-primary/15 text-primary px-2 py-0.5 text-[10px] font-bold">{available.data!.length} new</span>}</h2>
-          <div className="space-y-3">
-            {(available.data ?? []).map((o: any) => (
-              <PriorityOrderRow
-                key={o.id}
-                o={o}
-                partnerOnline={!!partner?.is_online}
-                onAccept={() => acceptAvailable(o.id)}
-              />
-            ))}
-            {(available.data?.length ?? 0) === 0 && <div className="text-sm text-muted-foreground">No available orders right now.</div>}
-          </div>
-        </section>
-
-        <section>
-          <h2 className="font-bold mb-3">Active deliveries</h2>
-          <div className="space-y-4">
-            {(myDeliveries.data ?? []).map((o: any) => {
-              const points = [
-                myPos ? { lat: myPos.lat, lng: myPos.lng, label: "You" } : null,
-                o.shop ? { lat: o.shop.latitude, lng: o.shop.longitude, label: `Shop: ${o.shop.name}` } : null,
-                o.delivery_lat && o.delivery_lng ? { lat: o.delivery_lat, lng: o.delivery_lng, label: `Drop: ${(o.address as any)?.name ?? "Customer"}` } : null,
-              ].filter(Boolean) as { lat: number; lng: number; label: string }[];
-              const isFast = o.delivery_type === "fast_delivery";
-              return (
-                <div key={o.id} className={cn(
-                  "rounded-2xl border p-4 space-y-3",
-                  isFast ? "border-2 border-red-500 bg-red-50 dark:bg-red-950/30" : "border-border bg-card",
-                )}>
-                  <div className="flex items-center justify-between gap-3 flex-wrap">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <div className="font-bold">{o.order_number} <span className="text-muted-foreground font-normal">• {rupees(o.total)}</span></div>
-                        {isFast && <FastDeliveryBadge />}
-                      </div>
-                      <div className="text-xs text-muted-foreground">{(o.address as any)?.line1}, {(o.address as any)?.city}</div>
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                      <MessageCustomerDialog orderId={o.id} orderNumber={o.order_number} />
-                      <Button size="sm" onClick={() => markDelivered(o.id)} className="rounded-xl"><Check className="h-3 w-3 mr-1" />Mark delivered</Button>
-                    </div>
-                  </div>
-                  <RouteMap points={points} height="h-56" />
-                </div>
-              );
-            })}
-            {(myDeliveries.data?.length ?? 0) === 0 && <div className="text-sm text-muted-foreground">No active deliveries. Check <a href="/delivery/available-orders" className="text-primary font-bold">available orders</a>.</div>}
-          </div>
-        </section>
       </div>
-    </RoleShell>
+    </>
   );
 }
 
+function RouteStops({ shop, address }: { shop?: string; address: any }) {
+  return (
+    <div className="space-y-0">
+      {shop && (
+        <div className="flex gap-2.5">
+          <div className="flex flex-col items-center">
+            <span className="mt-1 h-2 w-2 rounded-full bg-primary" />
+            <span className="my-0.5 w-px flex-1 border-l border-dashed border-border" />
+          </div>
+          <div className="min-w-0 pb-2">
+            <div className="text-caption text-muted-foreground">Pickup</div>
+            <div className="truncate text-small font-medium">{shop}</div>
+          </div>
+        </div>
+      )}
+      <div className="flex gap-2.5">
+        <div className="flex flex-col items-center">
+          <span className="mt-1 h-2 w-2 rounded-sm bg-foreground" />
+        </div>
+        <div className="min-w-0">
+          <div className="text-caption text-muted-foreground">Drop</div>
+          <div className="text-small font-medium leading-snug">
+            {address?.line1}, {address?.city}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function PriorityOrderRow({
   o, partnerOnline, onAccept, onDecline, assignedMode,
@@ -402,81 +482,63 @@ function PriorityOrderRow({
   const isFast = o.delivery_type === "fast_delivery";
   const deadline = isFast && o.placed_at ? new Date(new Date(o.placed_at).getTime() + 30 * 60 * 1000) : null;
   const countdown = useCountdown(deadline);
+  const addr = o.address as any;
 
-  if (isFast) {
-    return (
-      <div className="relative overflow-hidden rounded-2xl border-2 border-red-500 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950/40 dark:to-red-900/30 p-4 space-y-3 shadow-lg">
-        <div className="absolute inset-x-0 top-0 h-1 bg-red-500 animate-pulse" />
-        <div className="flex items-center justify-between gap-2 flex-wrap">
+  return (
+    <div className={cn("space-y-3 rounded-xl border bg-card p-3.5", isFast ? "border-destructive/30" : "border-border/70")}>
+      {isFast && (
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <PriorityDot />
-            <span className="inline-flex items-center gap-1 rounded-full bg-red-600 text-white px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider animate-pulse">
+            <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-caption font-semibold text-destructive">
               <AlertTriangle className="h-3 w-3" />
-              Fast delivery · Priority
+              Priority delivery
             </span>
           </div>
           {deadline && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/80 dark:bg-black/40 text-red-700 dark:text-red-300 border border-red-300 px-2 py-1 text-xs font-bold">
+            <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-caption font-semibold text-destructive">
               <Timer className="h-3 w-3" />
               {countdown}
             </span>
           )}
         </div>
-        <div className="min-w-0">
-          <div className="text-xs font-bold uppercase text-red-700 dark:text-red-300">New priority order</div>
-          <div className="font-extrabold text-lg leading-tight">{o.order_number}</div>
-          <div className="text-xs text-red-900/80 dark:text-red-100/80 mt-0.5">
-            {(o.address as any)?.line1}, {(o.address as any)?.city}
-          </div>
-          <div className="mt-1 text-xs text-red-900/70 dark:text-red-100/70">
-            ⏱ Deliver within 15–30 min · Total {rupees(o.total)}
-            {o.fast_delivery_fee ? ` · Extra ${rupees(o.fast_delivery_fee)}` : ""}
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            onClick={onAccept}
-            disabled={!partnerOnline}
-            className="flex-1 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold"
-          >
-            <Zap className="h-4 w-4 mr-1" />
-            {partnerOnline ? "Accept now" : "Go online to accept"}
-          </Button>
-          {assignedMode && onDecline && (
-            <Button size="sm" variant="outline" onClick={onDecline} className="rounded-xl border-red-300 text-red-700 hover:bg-red-100">
-              Decline
-            </Button>
-          )}
-        </div>
-      </div>
-    );
-  }
+      )}
 
-  return (
-    <div className={cn(
-      "rounded-2xl p-4 space-y-2",
-      assignedMode ? "border-2 border-primary/40 bg-primary/5" : "border border-border bg-card flex items-center justify-between gap-3 flex-wrap",
-    )}>
-      <div className="min-w-0">
-        <div className="font-bold">{o.order_number} <span className="text-muted-foreground font-normal">• {rupees(o.total)}</span></div>
-        <div className="text-xs text-muted-foreground">{(o.address as any)?.line1}, {(o.address as any)?.city}</div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-body font-semibold leading-tight">{o.order_number}</div>
+          <div className="mt-1 flex items-start gap-1 text-small leading-snug text-muted-foreground">
+            <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
+            <span>{addr?.line1}, {addr?.city}</span>
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="text-body font-semibold">{rupees(o.total)}</div>
+          {o.fast_delivery_fee ? (
+            <div className="text-caption text-muted-foreground">+{rupees(o.fast_delivery_fee)} priority</div>
+          ) : null}
+        </div>
       </div>
-      <div className={cn("flex gap-2", assignedMode ? "" : "shrink-0")}>
+
+      <div className="flex gap-2">
         <Button
-          size="sm"
           onClick={onAccept}
           disabled={!partnerOnline}
-          className={cn("rounded-xl gradient-primary text-primary-foreground", assignedMode && "flex-1")}
+          className={cn(
+            "h-11 flex-1 rounded-xl",
+            isFast && "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+          )}
         >
-          {partnerOnline ? "Accept" : "Go online to accept"}
+          {isFast && <Zap className="h-4 w-4" />}
+          {partnerOnline ? (isFast ? "Accept now" : "Accept") : "Go online to accept"}
         </Button>
         {assignedMode && onDecline && (
-          <Button size="sm" variant="outline" onClick={onDecline} className="rounded-xl">Decline</Button>
+          <Button variant="secondary" onClick={onDecline} className="h-11 rounded-xl px-4">
+            Decline
+          </Button>
         )}
       </div>
     </div>
   );
 }
 
-export { NAV as DELIVERY_NAV };

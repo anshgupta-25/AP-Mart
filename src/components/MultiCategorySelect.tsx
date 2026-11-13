@@ -64,7 +64,7 @@ export function MultiCategorySelect({
           {selected.map((cid) => (
             <span
               key={cid}
-              className="inline-flex max-w-full items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold"
+              className="inline-flex max-w-full items-center gap-1 rounded-full bg-primary-soft px-3 py-1 text-meta font-medium text-primary-ink"
             >
               <span className="truncate">{byId.get(cid)?.name}</span>
               <button
@@ -89,7 +89,7 @@ export function MultiCategorySelect({
             role="combobox"
             id={id}
             disabled={disabled}
-            className="h-10 w-full justify-between rounded-xl font-normal"
+            className="h-11 w-full justify-between rounded-xl bg-secondary font-normal"
           >
             <span className="flex items-center gap-1.5 truncate text-muted-foreground">
               <Plus className="h-3.5 w-3.5" />
@@ -98,7 +98,7 @@ export function MultiCategorySelect({
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <PopoverContent className="w-[--radix-popover-trigger-width] rounded-xl p-0" align="start">
           <Command>
             <div className="flex items-center border-b px-3">
               <Search className="mr-2 h-4 w-4 opacity-50" />
@@ -127,7 +127,7 @@ export function MultiCategorySelect({
         </PopoverContent>
       </Popover>
 
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-caption text-muted-foreground">
         {selected.length}/{max} selected{atMax ? " — remove one to add another" : ""}
       </p>
     </div>

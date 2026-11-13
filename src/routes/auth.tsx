@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
 import { describeAuthError } from "@/lib/authErrors";
-import { Zap, Phone as PhoneIcon, ArrowLeft, Loader2 } from "lucide-react";
+import { Phone as PhoneIcon, ArrowLeft, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { signInWithGoogle } from "@/lib/googleAuth";
 import {
@@ -96,40 +96,32 @@ function AuthPage() {
   };
 
   return (
-    <div className="min-h-[80vh] grid lg:grid-cols-2">
-      <div className="hidden lg:flex relative items-center justify-center p-12 gradient-hero overflow-hidden">
-        <div className="relative z-10 max-w-md text-foreground">
+    <div className="grid min-h-[80vh] lg:grid-cols-2">
+      <div className="relative hidden items-center justify-center bg-tint-mint p-12 lg:flex">
+        <div className="relative z-10 max-w-md">
           <Logo size="lg" />
-          <h1 className="mt-6 font-display text-5xl font-extrabold leading-[0.95]">
-            Lightning-fast groceries, right at your door.
+          <h1 className="mt-6 text-page font-bold leading-tight tracking-tight">
+            Groceries from the shops in your neighbourhood.
           </h1>
-          <p className="mt-4 text-lg opacity-80">
-            Join AP Mart and get fresh essentials delivered in 10 minutes.
+          <p className="mt-3 text-body text-foreground/65">
+            Join AP Mart to order from trusted local stores and get it delivered home.
           </p>
-          <div className="mt-8 grid grid-cols-3 gap-3 text-center">
-            {["10 min", "Free above ₹199", "100% authentic"].map((t) => (
-              <div key={t} className="rounded-2xl bg-card/70 backdrop-blur px-3 py-4 text-sm font-bold">
-                {t}
-              </div>
-            ))}
-          </div>
         </div>
-        <div className="absolute -bottom-10 -right-10 h-80 w-80 rounded-full bg-primary opacity-20 blur-3xl" />
       </div>
 
-      <div className="flex items-center justify-center p-6 md:p-12">
+      <div className="flex items-start justify-center px-4 pb-10 pt-8 md:items-center md:p-12">
         <div className="w-full max-w-md">
-          <Link to="/" className="lg:hidden flex justify-center mb-6"><Logo /></Link>
-          <div className="rounded-3xl border border-border bg-card p-6 md:p-8 shadow-card">
-            <div className="flex items-center gap-2 mb-2">
-              <Zap className="h-5 w-5 text-primary fill-primary" />
-              <span className="text-sm font-bold">Welcome to AP Mart</span>
-            </div>
-            <Tabs defaultValue="phone" className="mt-4">
-              <TabsList className="grid w-full grid-cols-3 rounded-xl">
-                <TabsTrigger value="phone" className="rounded-lg">Phone OTP</TabsTrigger>
-                <TabsTrigger value="login" className="rounded-lg">Email</TabsTrigger>
-                <TabsTrigger value="signup" className="rounded-lg">Sign up</TabsTrigger>
+          <Link to="/" className="mb-4 flex justify-center lg:hidden"><Logo size="md" /></Link>
+          <div className="text-center">
+            <h2 className="large-title">Welcome to AP Mart</h2>
+            <p className="mt-1 text-meta text-muted-foreground">Sign in or create an account</p>
+          </div>
+          <div className="mt-6 rounded-xl border border-border/70 bg-card p-4 md:p-6">
+            <Tabs defaultValue="phone">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="phone">Phone OTP</TabsTrigger>
+                <TabsTrigger value="login">Email</TabsTrigger>
+                <TabsTrigger value="signup">Sign up</TabsTrigger>
               </TabsList>
 
               <TabsContent value="phone" className="mt-4">
@@ -148,7 +140,7 @@ function AuthPage() {
                 <form onSubmit={onLogin} className="space-y-4">
                   <Field id="li-email" label="Email" type="email" value={li.email} onChange={(v) => setLi({ ...li, email: v })} />
                   <Field id="li-password" label="Password" type="password" value={li.password} onChange={(v) => setLi({ ...li, password: v })} />
-                  <Button type="submit" disabled={loading} className="w-full rounded-xl gradient-primary text-primary-foreground font-bold h-11">
+                  <Button type="submit" disabled={loading} className="h-11 w-full rounded-xl">
                     {loading ? "Signing in…" : "Sign in"}
                   </Button>
                 </form>
@@ -159,24 +151,24 @@ function AuthPage() {
                   <Field id="su-name" label="Full name" value={su.name} onChange={(v) => setSu({ ...su, name: v })} />
                   <Field id="su-email" label="Email" type="email" value={su.email} onChange={(v) => setSu({ ...su, email: v })} />
                   <Field id="su-password" label="Password (min 6)" type="password" value={su.password} onChange={(v) => setSu({ ...su, password: v })} />
-                  <Button type="submit" disabled={loading} className="w-full rounded-xl gradient-primary text-primary-foreground font-bold h-11">
+                  <Button type="submit" disabled={loading} className="h-11 w-full rounded-xl">
                     {loading ? "Creating…" : "Create account"}
                   </Button>
                 </form>
               </TabsContent>
             </Tabs>
 
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-              <div className="relative flex justify-center text-[10px] uppercase tracking-wider"><span className="bg-card px-2 text-muted-foreground">or</span></div>
+            <div className="relative my-5">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border/70" /></div>
+              <div className="relative flex justify-center"><span className="bg-card px-3 text-small text-muted-foreground">or</span></div>
             </div>
 
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               onClick={handleGoogle}
               disabled={loading || googleLoading}
-              className="w-full h-11 rounded-xl font-bold gap-2"
+              className="h-11 w-full gap-2 rounded-xl"
             >
               {googleLoading ? (
                 <>
@@ -193,7 +185,7 @@ function AuthPage() {
               )}
             </Button>
           </div>
-          <p className="mt-4 text-center text-xs text-muted-foreground">
+          <p className="mt-5 text-center text-small text-muted-foreground">
             By continuing you agree to AP Mart's terms of service.
           </p>
         </div>
@@ -463,16 +455,16 @@ function PhoneOtpForm({
               setOtp(e.target.value.replace(/\D/g, "").slice(0, 6));
               setErrorMessage("");
             }}
-            className="h-12 rounded-xl text-center text-xl tracking-[0.5em] font-bold"
+            className="h-11 rounded-xl text-center text-lg font-semibold tracking-[0.5em]"
             placeholder="••••••"
           />
-          <p className="text-[11px] text-muted-foreground">Code expires in 5 minutes.</p>
+          <p className="text-caption text-muted-foreground">Code expires in 5 minutes.</p>
         </div>
         {errorNotice}
         <Button
           onClick={verify}
           disabled={busy}
-          className="w-full rounded-xl gradient-primary text-primary-foreground font-bold h-11"
+          className="w-full rounded-xl bg-primary text-primary-foreground font-bold h-11"
         >
           {busy ? (
             <>
@@ -524,7 +516,7 @@ function PhoneOtpForm({
         <Button
           onClick={completeProfile}
           disabled={busy}
-          className="w-full rounded-xl gradient-primary text-primary-foreground font-bold h-11"
+          className="w-full rounded-xl bg-primary text-primary-foreground font-bold h-11"
         >
           {busy ? (
             <>
@@ -593,7 +585,7 @@ function PhoneOtpForm({
       <Button
         onClick={() => sendOtp(false)}
         disabled={busy}
-        className="w-full rounded-xl gradient-primary text-primary-foreground font-bold h-11"
+        className="w-full rounded-xl bg-primary text-primary-foreground font-bold h-11"
       >
         {busy ? (
           <>
@@ -607,7 +599,7 @@ function PhoneOtpForm({
           </>
         )}
       </Button>
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-caption text-muted-foreground">
         New users are created as customers. Only an admin can grant other roles.
       </p>
     </div>

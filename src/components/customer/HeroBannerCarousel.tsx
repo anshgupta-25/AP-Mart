@@ -1,120 +1,91 @@
-import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { StorageImg } from "@/components/StorageImg";
 
-type Banner = {
-  id: string;
-  title: string;
-  subtitle: string;
-  cta: string;
-  to: string;
-  gradient: string;
-  emoji: string;
-  tag?: string;
-};
+type Offer = { id: string; title: string; subtitle: string | null; image_url: string | null; link_url: string | null; badge: string | null };
 
-const BANNERS: Banner[] = [
-  {
-    id: "10min",
-    title: "10-min delivery",
-    subtitle: "Fresh groceries at lightning speed",
-    cta: "Shop now",
-    to: "/products",
-    gradient: "gradient-banner-fresh",
-    emoji: "⚡",
-    tag: "Free above ₹199",
-  },
-  {
-    id: "mango",
-    title: "Mango Festival",
-    subtitle: "Alphonso, Kesar & more · Up to 40% off",
-    cta: "Explore",
-    to: "/products?cat=fruits",
-    gradient: "gradient-banner-mango",
-    emoji: "🥭",
-    tag: "Limited stock",
-  },
-  {
-    id: "sale",
-    title: "Monsoon Stock-Up",
-    subtitle: "Buy more, save more on daily essentials",
-    cta: "Browse deals",
-    to: "/products",
-    gradient: "gradient-banner-night",
-    emoji: "🛒",
-    tag: "Up to 60% off",
-  },
-  {
-    id: "bakery",
-    title: "Fresh from the oven",
-    subtitle: "Breads, cakes & pastries baked today",
-    cta: "Order now",
-    to: "/products?cat=bakery",
-    gradient: "gradient-banner-pink",
-    emoji: "🥐",
-    tag: "New arrivals",
-  },
+type Fallback = { id: string; title: string; sub: string; to: string; bg: string; emoji: string };
+
+const FALLBACK: Fallback[] = [
+  { id: "local", title: "Fresh from stores near you", sub: "Trusted local shops", to: "/products", bg: "bg-tint-mint", emoji: "🧺" },
+  { id: "fruits", title: "Fruits & vegetables", sub: "Picked fresh every morning", to: "/category/fruits-vegetables", bg: "bg-tint-sun", emoji: "🥭" },
+  { id: "dairy", title: "Dairy & bakery", sub: "Daily staples in one order", to: "/category/dairy-bread-eggs", bg: "bg-tint-sky", emoji: "🥛" },
 ];
 
-export function HeroBannerCarousel() {
-  const [i, setI] = useState(0);
+function useOffers() {
+  return useQuery({
+    queryKey: ["home-offers"],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const now = new Date().toISOString();
+      const { data } = await (supabase as any)
+        .from("offers")
+        .select("id, title, subtitle, image_url, link_url, badge, starts_at, ends_at")
+        .eq("is_active", true)
+        .eq("scope", "global")
+        .order("display_order");
+      return ((data ?? []) as (Offer & { starts_at: string | null; ends_at: string | null })[]).filter(
+        (o) => o.image_url && (!o.starts_at || o.starts_at <= now) && (!o.ends_at || o.ends_at >= now),
+      );
+    },
+  });
+}
 
-  useEffect(() => {
-    const t = window.setInterval(() => setI((v) => (v + 1) % BANNERS.length), 4500);
-    return () => window.clearInterval(t);
-  }, []);
-
-  const b = BANNERS[i];
-
+function OfferLink({ href, className, children }: { href: string | null; className: string; children: React.ReactNode }) {
+  const [path, qs] = (href && href.startsWith("/") ? href : "/products").split("?");
+  const search = qs ? Object.fromEntries(new URLSearchParams(qs)) : undefined;
   return (
-    <div className="px-4">
-      <div className="relative h-[150px] rounded-3xl overflow-hidden shadow-card">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={b.id}
-            initial={{ opacity: 0, scale: 1.04 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className={`absolute inset-0 ${b.gradient} text-white p-5 flex flex-col justify-between`}
+    <Link to={path as any} search={search as any} className={className}>
+      {children}
+    </Link>
+  );
+}
+
+export function HeroBannerCarousel() {
+  const offers = useOffers();
+  const rail = "scrollbar-hide flex snap-x snap-mandatory scroll-px-4 gap-2.5 overflow-x-auto px-4";
+
+  if (offers.data && offers.data.length > 0) {
+    return (
+      <div className={rail}>
+        {offers.data.map((o) => (
+          <OfferLink
+            key={o.id}
+            href={o.link_url}
+            className="press relative h-[132px] w-[86%] shrink-0 snap-start overflow-hidden rounded-2xl bg-secondary md:w-[40%]"
           >
-            <div>
-              {b.tag && (
-                <span className="inline-block rounded-full bg-white/20 backdrop-blur px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">
-                  {b.tag}
-                </span>
+            <StorageImg src={o.image_url ?? undefined} alt={o.title} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+            <div className="absolute inset-0" style={{ backgroundImage: "linear-gradient(90deg, rgba(0,0,0,.58), rgba(0,0,0,.22) 62%, rgba(0,0,0,0))" }} />
+            <div className="relative z-10 flex h-full max-w-[68%] flex-col justify-end p-3.5 text-white">
+              {o.badge && (
+                <span className="mb-1 w-fit rounded-full bg-white/90 px-2 py-0.5 text-micro font-semibold text-foreground">{o.badge}</span>
               )}
-              <h2 className="mt-1.5 font-display text-2xl font-extrabold leading-tight drop-shadow-sm">
-                {b.title}
-              </h2>
-              <p className="text-[12px] text-white/90 leading-snug max-w-[68%]">{b.subtitle}</p>
+              <div className="text-subtitle font-bold leading-tight tracking-tight">{o.title}</div>
+              {o.subtitle && <div className="mt-0.5 text-small text-white/85">{o.subtitle}</div>}
             </div>
-            <Link
-              to={b.to as any}
-              className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white text-foreground px-3.5 py-1.5 text-[12px] font-bold shadow-soft"
-            >
-              {b.cta} <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-            <div className="absolute -right-4 -bottom-6 text-[140px] leading-none opacity-90 select-none">
-              {b.emoji}
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
-      {/* Dots */}
-      <div className="flex items-center justify-center gap-1.5 mt-2.5">
-        {BANNERS.map((_, idx) => (
-          <button
-            key={idx}
-            aria-label={`Slide ${idx + 1}`}
-            onClick={() => setI(idx)}
-            className={`h-1.5 rounded-full transition-all ${
-              idx === i ? "w-6 bg-primary" : "w-1.5 bg-border"
-            }`}
-          />
+          </OfferLink>
         ))}
       </div>
+    );
+  }
+
+  return (
+    <div className={rail}>
+      {FALLBACK.map((b) => (
+        <OfferLink
+          key={b.id}
+          href={b.to}
+          className={`press relative flex h-[88px] w-[84%] shrink-0 snap-start items-center overflow-hidden rounded-xl px-4 md:w-[40%] ${b.bg}`}
+        >
+          <div className="relative z-10 max-w-[68%]">
+            <h2 className="text-body font-bold leading-tight tracking-tight">{b.title}</h2>
+            <p className="mt-0.5 truncate text-caption text-foreground/60">{b.sub}</p>
+            <span className="mt-1.5 inline-flex text-caption font-semibold text-primary-ink">Shop now ›</span>
+          </div>
+          <span className="pointer-events-none absolute -right-1 top-1/2 -translate-y-1/2 select-none text-[56px] leading-none">{b.emoji}</span>
+        </OfferLink>
+      ))}
     </div>
   );
 }

@@ -6,8 +6,8 @@ import apmartLogoSmall from "@/assets/apmart-logo-192.png";
 const MARK_SIZES = {
   xs: "h-7 w-7",
   sm: "h-8 w-8",
-  md: "h-10 w-10 md:h-12 md:w-12",
-  lg: "h-12 w-12 md:h-14 md:w-14",
+  md: "h-9 w-9",
+  lg: "h-12 w-12",
 } as const;
 
 export function LogoMark({
@@ -31,7 +31,7 @@ export function LogoMark({
       }}
       className={cn(
         MARK_SIZES[size],
-        "shrink-0 rounded-xl object-contain shadow-glow",
+        "shrink-0 rounded-xl object-contain ",
         className
       )}
     />
@@ -45,12 +45,12 @@ export function Logo({
   size?: "sm" | "md" | "lg";
   className?: string;
 }) {
-  const t = { sm: "text-lg", md: "text-xl md:text-2xl", lg: "text-3xl" }[size];
+  const t = { sm: "text-subtitle", md: "text-subtitle", lg: "text-page" }[size];
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
       <LogoMark size={size} />
       <div className="leading-none">
-        <div className={`font-display font-bold ${t} text-foreground`}>
+        <div className={`font-display font-bold tracking-tight ${t} text-foreground`}>
           AP <span className="text-primary">Mart</span>
         </div>
       </div>

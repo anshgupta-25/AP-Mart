@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Store, Navigation2, CheckCircle2, Package, MapPin, Phone, Truck } from "lucide-react";
+import { Navigation2, CheckCircle2, Package, MapPin, Phone, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { rupees } from "@/lib/format";
 
@@ -64,22 +64,22 @@ export function MultiShopPickupPanel({
     if (allDone) onAllPickedUp();
   }, [allDone, onAllPickedUp]);
 
-  if (isLoading) return <Card className="p-4 text-sm text-muted-foreground">Loading pickups…</Card>;
+  if (isLoading) return <div className="h-32 rounded-xl shimmer" />;
 
   return (
-    <div className="space-y-3">
-      <Card className="p-4 rounded-2xl border-2 border-primary/40 bg-primary/5">
+    <div className="space-y-2.5">
+      <Card className="rounded-xl border-0 bg-tint-mint p-4 shadow-none">
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <Badge className="bg-primary text-primary-foreground gap-1"><Truck className="h-3 w-3" /> Multi-Shop Delivery</Badge>
-          <span className="text-xs text-muted-foreground">Order {parent.order_number}</span>
+          <Badge className="gap-1"><Truck className="h-3 w-3" /> Multi-shop delivery</Badge>
+          <span className="text-small font-medium text-foreground/70">Order {parent.order_number}</span>
         </div>
         <div className="mt-3 grid grid-cols-3 gap-3 text-center">
           <Stat label="Shops" value={String(parent.shop_count)} />
           <Stat label="Products" value={String(totalItems)} />
           <Stat label="Payout" value={rupees(parent.total)} />
         </div>
-        <div className="mt-3 text-xs text-muted-foreground">
-          Progress: <span className="font-bold text-foreground">{done}/{stops?.length ?? 0}</span> pickups completed
+        <div className="mt-3 text-small text-foreground/70">
+          Progress: <span className="font-semibold text-foreground">{done}/{stops?.length ?? 0}</span> pickups completed
         </div>
       </Card>
 
@@ -90,34 +90,33 @@ export function MultiShopPickupPanel({
           <Card
             key={s.child_id}
             className={
-              "p-4 rounded-2xl " +
+              "rounded-xl border-border/70 p-4 shadow-none " +
               (done
-                ? "border-green-500/40 bg-green-50/60 dark:bg-green-950/20"
+                ? "border-transparent bg-primary-soft"
                 : isNext
-                  ? "border-2 border-primary shadow-sm"
-                  : "opacity-70")
+                  ? "ring-1 ring-primary"
+                  : "opacity-60")
             }
           >
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="rounded-full">Stop {s.seq}</Badge>
-                <Store className="h-4 w-4 text-primary" />
-                <span className="font-semibold">{s.shop_name}</span>
+                <Badge variant="secondary" className="rounded-full">Stop {s.seq}</Badge>
+                <span className="text-body font-semibold">{s.shop_name}</span>
               </div>
               {done ? (
-                <Badge className="bg-green-600 gap-1"><CheckCircle2 className="h-3 w-3" /> Picked up</Badge>
+                <Badge className="gap-1"><CheckCircle2 className="h-3 w-3" /> Picked up</Badge>
               ) : (
                 <Badge variant="secondary">{String(s.status).replace(/_/g, " ")}</Badge>
               )}
             </div>
-            <div className="mt-2 text-sm text-muted-foreground flex items-start gap-1">
-              <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+            <div className="mt-2.5 flex items-start gap-1.5 text-small text-muted-foreground">
+              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>{s.shop_address ?? "—"}</span>
             </div>
-            <div className="mt-1 text-xs text-muted-foreground flex items-center gap-1">
-              <Package className="h-3 w-3" /> {s.items_count} item{s.items_count === 1 ? "" : "s"}
+            <div className="mt-1.5 flex items-center gap-1.5 text-small text-muted-foreground">
+              <Package className="h-3.5 w-3.5" /> {s.items_count} item{s.items_count === 1 ? "" : "s"}
               {s.shop_phone && (
-                <a href={`tel:${s.shop_phone}`} className="ml-3 inline-flex items-center gap-1 text-primary">
+                <a href={`tel:${s.shop_phone}`} className="ml-3 inline-flex items-center gap-1 font-medium text-primary">
                   <Phone className="h-3 w-3" /> {s.shop_phone}
                 </a>
               )}
@@ -128,7 +127,8 @@ export function MultiShopPickupPanel({
                 {s.shop_lat && s.shop_lng && (
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="secondary"
+                    className="h-8 rounded-full px-3.5"
                     onClick={() => {
                       const url = `https://www.google.com/maps/dir/?api=1&destination=${s.shop_lat},${s.shop_lng}&travelmode=driving`;
                       window.open(url, "_blank", "noopener,noreferrer");
@@ -150,8 +150,8 @@ export function MultiShopPickupPanel({
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase text-muted-foreground tracking-wide">{label}</div>
-      <div className="font-display font-extrabold text-lg">{value}</div>
+      <div className="text-small text-foreground/60">{label}</div>
+      <div className="mt-0.5 text-subtitle font-bold tracking-tight">{value}</div>
     </div>
   );
 }
@@ -176,7 +176,7 @@ function PickupOtpDialog({ childId, shopName, onDone, disabled }: { childId: str
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" disabled={disabled} className="rounded-xl">
+        <Button size="sm" disabled={disabled} className="h-8 rounded-full px-3.5">
           <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Pickup complete
         </Button>
       </DialogTrigger>
@@ -184,9 +184,9 @@ function PickupOtpDialog({ childId, shopName, onDone, disabled }: { childId: str
         <DialogHeader>
           <DialogTitle>Verify pickup — {shopName}</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-muted-foreground">Ask the shopkeeper for the 4-digit OTP shown on their order screen.</p>
+        <p className="text-small text-muted-foreground">Ask the shopkeeper for the 4-digit OTP shown on their order screen.</p>
         <Input value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="OTP" inputMode="numeric" />
-        <Button onClick={submit} disabled={busy} className="w-full">Confirm pickup</Button>
+        <Button onClick={submit} disabled={busy} className="h-11 w-full rounded-xl">Confirm pickup</Button>
       </DialogContent>
     </Dialog>
   );

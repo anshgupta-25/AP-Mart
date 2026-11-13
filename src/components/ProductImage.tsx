@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStorageUrl } from "@/hooks/useStorageUrl";
 
@@ -66,12 +67,11 @@ export function ProductImage({
       {status === "error" && (
         <div
           className={cn(
-            "absolute inset-0 grid place-items-center text-3xl text-muted-foreground select-none",
-            fallbackClassName,
+            "absolute inset-0 grid place-items-center text-muted-foreground/35 select-none",
           )}
           aria-hidden
         >
-          🛒
+          <Package className="h-[34%] w-[34%] min-h-5 min-w-5" strokeWidth={1.25} />
         </div>
       )}
     </div>

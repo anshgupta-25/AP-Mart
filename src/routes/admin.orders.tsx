@@ -2,9 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { RoleShell } from "@/components/RoleShell";
 import { rupees } from "@/lib/format";
-import { ADMIN_NAV } from "./admin.dashboard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DeliveryTypeBadge } from "@/components/FastDeliveryBadge";
@@ -26,19 +24,19 @@ export const Route = createFileRoute("/admin/orders")({
 });
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
-  placed: { label: "🟡 Placed", cls: "bg-amber-500/15 text-amber-600" },
-  payment_confirmed: { label: "🟡 Payment confirmed", cls: "bg-amber-500/15 text-amber-600" },
-  awaiting_shop: { label: "🟡 Awaiting shop", cls: "bg-amber-500/15 text-amber-600" },
-  accepted_by_shop: { label: "🟢 Assigned", cls: "bg-emerald-500/15 text-emerald-600" },
-  packing: { label: "🟢 Preparing", cls: "bg-emerald-500/15 text-emerald-600" },
-  packed: { label: "🟢 Ready", cls: "bg-emerald-500/15 text-emerald-600" },
-  out_for_delivery: { label: "🚚 Out for delivery", cls: "bg-blue-500/15 text-blue-600" },
-  delivered: { label: "✅ Delivered", cls: "bg-emerald-500/15 text-emerald-600" },
-  cancelled: { label: "🔴 Cancelled", cls: "bg-destructive/15 text-destructive" },
-  no_shop_available: { label: "🔴 No shop available", cls: "bg-destructive/15 text-destructive" },
+  placed: { label: "Placed", cls: "bg-tint-sun text-[oklch(0.45_0.1_75)]" },
+  payment_confirmed: { label: "Payment confirmed", cls: "bg-tint-sun text-[oklch(0.45_0.1_75)]" },
+  awaiting_shop: { label: "Awaiting shop", cls: "bg-tint-sun text-[oklch(0.45_0.1_75)]" },
+  accepted_by_shop: { label: "Assigned", cls: "bg-primary-soft text-primary-ink" },
+  packing: { label: "Preparing", cls: "bg-primary-soft text-primary-ink" },
+  packed: { label: "Ready", cls: "bg-primary-soft text-primary-ink" },
+  out_for_delivery: { label: "Out for delivery", cls: "bg-tint-sky text-[oklch(0.42_0.1_235)]" },
+  delivered: { label: "Delivered", cls: "bg-primary-soft text-primary-ink" },
+  cancelled: { label: "Cancelled", cls: "bg-tint-rose text-[oklch(0.45_0.12_15)]" },
+  no_shop_available: { label: "No shop available", cls: "bg-tint-rose text-[oklch(0.45_0.12_15)]" },
 };
 
-const statusBadge = (s: string) => STATUS_BADGE[s] ?? { label: String(s).replace(/_/g, " "), cls: "bg-secondary text-foreground" };
+const statusBadge = (s: string) => STATUS_BADGE[s] ?? { label: String(s).replace(/_/g, " "), cls: "bg-secondary text-muted-foreground" };
 
 function useAdminOrders() {
   return useQuery({
@@ -81,7 +79,7 @@ function useAdminOrders() {
 }
 
 function Chip({ children }: { children: React.ReactNode }) {
-  return <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-semibold">{children}</span>;
+  return <span className="rounded-full bg-secondary px-2.5 py-1 text-caption font-medium text-muted-foreground">{children}</span>;
 }
 
 function ProductPreview({ items }: { items: any[] }) {
@@ -91,7 +89,7 @@ function ProductPreview({ items }: { items: any[] }) {
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2">
       {shown.map((it) => (
-        <span key={it.id} className="inline-flex items-center gap-2 rounded-xl bg-secondary/60 pl-1 pr-2.5 py-1 text-xs">
+        <span key={it.id} className="inline-flex items-center gap-2 rounded-xl bg-secondary/70 py-1 pl-1 pr-2.5 text-small">
           <span className="h-7 w-7 rounded-lg overflow-hidden bg-muted flex items-center justify-center shrink-0">
             {it.image_url ? (
               <StorageImg src={it.image_url} alt={it.name} loading="lazy" decoding="async" className="h-full w-full object-cover" />
@@ -99,9 +97,9 @@ function ProductPreview({ items }: { items: any[] }) {
               <ImageOff className="h-3 w-3 text-muted-foreground" />
             )}
           </span>
-          <span className="font-semibold truncate max-w-[9rem]">{it.name}</span>
+          <span className="max-w-[9rem] truncate font-medium">{it.name}</span>
           {(it.variant_label || it.unit) && <span className="text-muted-foreground">({[it.variant_label, it.unit].filter(Boolean).join(" ")})</span>}
-          <span className="font-bold">×{it.quantity}</span>
+          <span className="font-semibold">×{it.quantity}</span>
         </span>
       ))}
       {rest > 0 && <span className="text-xs font-semibold text-muted-foreground">+{rest} more products</span>}
@@ -169,129 +167,125 @@ function Page() {
     setPayStatus("all"); setDelType("all"); setPincode(""); setDate("");
   };
 
-  const selectCls = "h-9 rounded-xl border border-border bg-background px-2 text-sm";
+  const selectCls = "h-10 rounded-xl border-0 bg-secondary px-3 text-meta font-medium";
 
   return (
-    <RoleShell role="admin" nav={ADMIN_NAV} requireRoles={["admin"]}>
-      <div className="p-4 md:p-6 space-y-4">
-        <div className="flex items-end justify-between gap-3 flex-wrap">
-          <div>
-            <h1 className="font-display text-3xl font-extrabold">All orders</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {filtered.length} of {rows.length} orders
-            </p>
-          </div>
-        </div>
-
-        {/* Search + filters */}
-        <div className="rounded-2xl border border-border bg-card p-3 space-y-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search order ID, customer, phone, shop, owner, product, rider…"
-              className="pl-9 rounded-xl"
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <select className={selectCls} value={status} onChange={(e) => setStatus(e.target.value)}>
-              <option value="all">All statuses</option>
-              {Object.keys(STATUS_BADGE).map((s) => (
-                <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
-              ))}
-            </select>
-            <select className={selectCls} value={shopId} onChange={(e) => setShopId(e.target.value)}>
-              <option value="all">All shops</option>
-              {shopOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-            </select>
-            <select className={selectCls} value={partnerId} onChange={(e) => setPartnerId(e.target.value)}>
-              <option value="all">All riders</option>
-              {partnerOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-            </select>
-            <select className={selectCls} value={payStatus} onChange={(e) => setPayStatus(e.target.value)}>
-              <option value="all">All payments</option>
-              {["pending", "paid", "failed", "refund_initiated", "refunded", "cod"].map((s) => (
-                <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
-              ))}
-            </select>
-            <select className={selectCls} value={delType} onChange={(e) => setDelType(e.target.value)}>
-              <option value="all">All delivery types</option>
-              {["standard", "fast", "express", "pickup"].map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <Input value={pincode} onChange={(e) => setPincode(e.target.value)} placeholder="PIN code" className="h-9 w-28 rounded-xl" />
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-9 w-40 rounded-xl" />
-            <Button variant="outline" size="sm" className="h-9 rounded-xl" onClick={reset}>Reset</Button>
-          </div>
-        </div>
-
-        {/* Orders */}
-        {q.isLoading ? (
-          <div className="p-6 text-muted-foreground">Loading orders…</div>
-        ) : filtered.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground">No orders match these filters.</div>
-        ) : (
-          <div className="space-y-3">
-            {filtered.map((o: any) => {
-              const a = (o.address ?? {}) as any;
-              const b = statusBadge(o.status);
-              return (
-                <Link
-                  key={o.id}
-                  to="/admin/orders/$id"
-                  params={{ id: o.id }}
-                  className="block rounded-2xl border border-border bg-card p-4 hover:border-primary/50 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-3 flex-wrap">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-extrabold">{o.order_number}</span>
-                        <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${b.cls}`}>{b.label}</span>
-                        <DeliveryTypeBadge type={o.delivery_type} size="sm" />
-                        {o.is_parent && <Chip>Multi-shop · {o.shop_count ?? 0} shops</Chip>}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {o.placed_at ? new Date(o.placed_at).toLocaleString() : "—"}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-extrabold text-lg">{rupees(o.total)}</div>
-                      <div className="text-xs text-muted-foreground uppercase">
-                        {String(o.payment_method ?? "")} · {String(o.payment_status ?? "").replace(/_/g, " ")}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 grid gap-3 sm:grid-cols-3 text-xs">
-                    <div className="space-y-1">
-                      <div className="font-bold text-[11px] uppercase text-muted-foreground">Customer</div>
-                      <div className="flex items-center gap-1.5"><User className="h-3.5 w-3.5 text-muted-foreground" />{a.name ?? "—"}</div>
-                      <div className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-muted-foreground" />{a.phone ?? "—"}</div>
-                      <div className="flex items-start gap-1.5 text-muted-foreground">
-                        <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                        <span>{[a.line1, a.line2, a.city].filter(Boolean).join(", ") || "—"} — {o.delivery_pincode ?? a.pincode ?? "—"}</span>
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="font-bold text-[11px] uppercase text-muted-foreground">Shop</div>
-                      <div className="flex items-center gap-1.5"><Store className="h-3.5 w-3.5 text-muted-foreground" />{o.shop?.name ?? (o.is_parent ? "Multiple shops" : "Not assigned")}</div>
-                      <div className="text-muted-foreground">Owner: {o.shop?.owner_name ?? "—"}</div>
-                      <div className="text-muted-foreground font-mono text-[10px] truncate">ID: {o.shop_id ?? "—"}</div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="font-bold text-[11px] uppercase text-muted-foreground">Delivery partner</div>
-                      <div className="flex items-center gap-1.5"><Truck className="h-3.5 w-3.5 text-muted-foreground" />{o.partner?.name ?? "Not assigned"}</div>
-                      <div className="text-muted-foreground">{o.partner?.phone ?? "—"}</div>
-                    </div>
-                  </div>
-
-                  <ProductPreview items={o.items} />
-                </Link>
-              );
-            })}
-          </div>
-        )}
+    <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-4 md:px-6 md:py-6">
+      <div>
+        <h1 className="large-title">All orders</h1>
+        <p className="mt-0.5 text-meta text-muted-foreground">
+          {filtered.length} of {rows.length} orders
+        </p>
       </div>
-    </RoleShell>
+
+      {/* Search + filters */}
+      <div className="space-y-3 rounded-xl border border-border/70 bg-card p-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search order ID, customer, phone, shop, owner, product, rider…"
+            className="pl-10"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <select className={selectCls} value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value="all">All statuses</option>
+            {Object.keys(STATUS_BADGE).map((s) => (
+              <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
+            ))}
+          </select>
+          <select className={selectCls} value={shopId} onChange={(e) => setShopId(e.target.value)}>
+            <option value="all">All shops</option>
+            {shopOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+          </select>
+          <select className={selectCls} value={partnerId} onChange={(e) => setPartnerId(e.target.value)}>
+            <option value="all">All riders</option>
+            {partnerOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+          </select>
+          <select className={selectCls} value={payStatus} onChange={(e) => setPayStatus(e.target.value)}>
+            <option value="all">All payments</option>
+            {["pending", "paid", "failed", "refund_initiated", "refunded", "cod"].map((s) => (
+              <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
+            ))}
+          </select>
+          <select className={selectCls} value={delType} onChange={(e) => setDelType(e.target.value)}>
+            <option value="all">All delivery types</option>
+            {["standard", "fast", "express", "pickup"].map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <Input value={pincode} onChange={(e) => setPincode(e.target.value)} placeholder="PIN code" className="h-10 w-28" />
+          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-10 w-40" />
+          <Button variant="secondary" size="sm" className="h-10" onClick={reset}>Reset</Button>
+        </div>
+      </div>
+
+      {/* Orders */}
+      {q.isLoading ? (
+        <div className="space-y-3">{[0, 1, 2].map((i) => <div key={i} className="h-40 rounded-xl shimmer" />)}</div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-xl border border-border/70 bg-card px-6 py-10 text-center"><div className="text-subtitle font-semibold">No orders found</div><p className="mt-0.5 text-meta text-muted-foreground">Try changing or resetting the filters.</p></div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((o: any) => {
+            const a = (o.address ?? {}) as any;
+            const b = statusBadge(o.status);
+            return (
+              <Link
+                key={o.id}
+                to="/admin/orders/$id"
+                params={{ id: o.id }}
+                className="press block rounded-xl border border-border/70 bg-card p-4 transition-colors hover:bg-secondary/40 md:p-5"
+              >
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-subtitle font-semibold">{o.order_number}</span>
+                      <span className={`rounded-full px-2.5 py-0.5 text-caption font-semibold ${b.cls}`}>{b.label}</span>
+                      <DeliveryTypeBadge type={o.delivery_type} size="sm" />
+                      {o.is_parent && <Chip>Multi-shop · {o.shop_count ?? 0} shops</Chip>}
+                    </div>
+                    <div className="mt-1 text-meta text-muted-foreground">
+                      {o.placed_at ? new Date(o.placed_at).toLocaleString() : "—"}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-semibold tracking-tight">{rupees(o.total)}</div>
+                    <div className="text-small text-muted-foreground">
+                      {String(o.payment_method ?? "")} · {String(o.payment_status ?? "").replace(/_/g, " ")}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-4 border-t border-border/70 pt-4 text-meta sm:grid-cols-3">
+                  <div className="space-y-1">
+                    <div className="eyebrow">Customer</div>
+                    <div className="flex items-center gap-1.5"><User className="h-3.5 w-3.5 text-muted-foreground" />{a.name ?? "—"}</div>
+                    <div className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-muted-foreground" />{a.phone ?? "—"}</div>
+                    <div className="flex items-start gap-1.5 text-muted-foreground">
+                      <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                      <span>{[a.line1, a.line2, a.city].filter(Boolean).join(", ") || "—"} — {o.delivery_pincode ?? a.pincode ?? "—"}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="eyebrow">Shop</div>
+                    <div className="flex items-center gap-1.5"><Store className="h-3.5 w-3.5 text-muted-foreground" />{o.shop?.name ?? (o.is_parent ? "Multiple shops" : "Not assigned")}</div>
+                    <div className="text-muted-foreground">Owner: {o.shop?.owner_name ?? "—"}</div>
+                    <div className="truncate font-mono text-micro text-muted-foreground">ID: {o.shop_id ?? "—"}</div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="eyebrow">Delivery partner</div>
+                    <div className="flex items-center gap-1.5"><Truck className="h-3.5 w-3.5 text-muted-foreground" />{o.partner?.name ?? "Not assigned"}</div>
+                    <div className="text-muted-foreground">{o.partner?.phone ?? "—"}</div>
+                  </div>
+                </div>
+
+                <ProductPreview items={o.items} />
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }

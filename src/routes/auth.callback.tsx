@@ -195,49 +195,49 @@ function AuthCallbackPage() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-muted/30 flex items-center justify-center p-6">
-      <div className="w-full max-w-md bg-card rounded-3xl border border-border shadow-xl p-8 text-center space-y-5">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="w-full max-w-sm bg-card rounded-xl border border-border/70 p-6 text-center space-y-4">
         <div className="flex justify-center">
-          <LogoMark size="lg" className="rounded-2xl" />
+          <LogoMark size="lg" className="h-12 w-12 rounded-xl" />
         </div>
 
         {status === "loading" && (
           <div className="space-y-3">
-            <h1 className="font-display text-2xl font-extrabold text-foreground">
+            <h1 className="text-subtitle font-semibold text-foreground">
               Signing you in…
             </h1>
-            <p className="text-sm text-muted-foreground">{message}</p>
+            <p className="text-meta text-muted-foreground">{message}</p>
             <div className="flex justify-center py-4">
-              <Loader2 className="h-8 w-8 text-[#16a34a] animate-spin" />
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           </div>
         )}
 
         {status === "success" && (
           <div className="space-y-3">
-            <div className="flex justify-center text-[#16a34a]">
-              <CheckCircle2 className="h-10 w-10" />
+            <div className="flex justify-center text-primary">
+              <CheckCircle2 className="h-8 w-8" />
             </div>
-            <h1 className="font-display text-2xl font-extrabold text-foreground">
+            <h1 className="text-subtitle font-semibold text-foreground">
               Welcome back!
             </h1>
-            <p className="text-sm text-muted-foreground">{message}</p>
+            <p className="text-meta text-muted-foreground">{message}</p>
           </div>
         )}
 
         {status === "error" && (
           <div className="space-y-4">
             <div className="flex justify-center text-destructive">
-              <AlertCircle className="h-10 w-10" />
+              <AlertCircle className="h-8 w-8" />
             </div>
-            <h1 className="font-display text-xl font-bold text-foreground">
-              Sign-in Error
+            <h1 className="text-subtitle font-semibold text-foreground">
+              Sign-in error
             </h1>
-            <p className="text-sm text-muted-foreground">{message}</p>
+            <p className="text-meta text-muted-foreground">{message}</p>
             <Button
               type="button"
               onClick={() => navigate({ to: "/login", replace: true })}
-              className="w-full h-11 rounded-xl bg-[#16a34a] hover:bg-[#15803d] text-white font-bold"
+              className="h-11 w-full rounded-xl"
             >
               Back to Sign In
             </Button>

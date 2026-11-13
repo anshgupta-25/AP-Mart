@@ -34,19 +34,19 @@ export function RoleHeader({ homeTo, accountTo, searchTo = "/products", showSear
   };
 
   return (
-    <header className="sticky top-0 z-40 glass border-b border-border">
+    <header className="bg-tint-mint hairline-b sticky top-0 z-40 pt-safe">
       <div className="flex items-center gap-3 px-4 py-3">
         {leading}
-        <Link to={homeTo as any} className="flex items-center gap-2 font-display font-extrabold text-lg">
+        <Link to={homeTo as any} className="flex items-center gap-2 font-display font-bold text-subtitle">
           <LogoMark size="sm" className="h-8 w-8 rounded-full" />
-          AP <span className="text-primary">Mart</span>
+          <span>AP <span className="text-primary">Mart</span></span>
         </Link>
         <div className="flex-1" />
         {trailing}
         <Link
           to={accountTo as any}
           aria-label="Account"
-          className="grid h-10 w-10 place-items-center rounded-full hover:bg-secondary transition"
+          className="press grid h-9 w-9 place-items-center rounded-full bg-secondary"
         >
           <User className="h-5 w-5" />
         </Link>
@@ -55,7 +55,7 @@ export function RoleHeader({ homeTo, accountTo, searchTo = "/products", showSear
 
       {showSearch && (
         <form onSubmit={onSubmit} className="px-3 pb-3">
-          <div className="flex items-center gap-2 rounded-full bg-card border border-border px-4 py-2.5 shadow-sm">
+          <div className="flex items-center gap-2 rounded-xl bg-card px-3.5 py-2.5 shadow-soft">
             <Search className="h-4 w-4 text-muted-foreground shrink-0" />
             <input
               value={q}

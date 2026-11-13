@@ -2,8 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { RoleShell } from "@/components/RoleShell";
-import { ADMIN_NAV } from "./admin.dashboard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -108,152 +106,205 @@ function Page() {
   };
 
   return (
-    <RoleShell role="admin" nav={ADMIN_NAV} requireRoles={["admin"]}>
-      <div className="p-4 md:p-6 space-y-6">
-        <header className="flex flex-col sm:flex-row sm:items-start gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Link to="/admin/delivery-partners" className="inline-flex items-center gap-1 hover:text-foreground">
-                <ArrowLeft className="h-4 w-4" /> Delivery Management
-              </Link>
+    <>
+    <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-4 md:px-6 md:py-6">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 text-meta text-muted-foreground">
+            <Link to="/admin/delivery-partners" className="inline-flex items-center gap-1 hover:text-foreground">
+              <ArrowLeft className="h-4 w-4" /> Delivery team
+            </Link>
+          </div>
+          <h1 className="large-title mt-1">Delivery pricing</h1>
+          <p className="mt-0.5 text-meta text-muted-foreground">
+            Configure delivery charges, delivery speed, and service availability for each PIN Code.
+          </p>
+        </div>
+        <Button onClick={() => setEdit({ ...empty })} className="w-full shrink-0 sm:w-auto">
+          <Plus className="h-4 w-4 mr-1" /> Add PIN Code
+        </Button>
+      </header>
+
+      <section className="flex flex-col gap-2 md:flex-row md:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={q} onChange={(e) => setQ(e.target.value)}
+            placeholder="Search by PIN Code, city, or state…"
+            className="pl-10"
+          />
+        </div>
+        <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
+          <SelectTrigger className="h-11 w-full rounded-xl border-0 bg-secondary md:w-56"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All zones</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+            <SelectItem value="standard">Standard enabled</SelectItem>
+            <SelectItem value="fast">Fast enabled</SelectItem>
+            <SelectItem value="express">Express enabled</SelectItem>
+          </SelectContent>
+        </Select>
+      </section>
+
+      <section className="space-y-3 md:hidden">
+        {zones.isLoading && <div className="h-32 rounded-xl shimmer" />}
+        {!zones.isLoading && filtered.length === 0 && (
+          <div className="rounded-xl border border-border/70 bg-card px-6 py-10 text-center">
+            <div className="text-subtitle font-semibold">No zones yet</div>
+            <p className="mt-0.5 text-meta text-muted-foreground">Tap Add PIN Code to create one.</p>
+          </div>
+        )}
+        {filtered.map((z) => (
+          <div key={z.id} className="space-y-3 rounded-xl border border-border/70 bg-card p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="font-mono text-subtitle font-semibold">{z.pin_code}</div>
+                <div className="mt-0.5 truncate text-meta text-muted-foreground">{z.city}, {z.state} · {Number(z.delivery_radius_km)} km</div>
+              </div>
+              <div className="flex items-center gap-1">
+                <Badge variant={z.is_active ? "default" : "secondary"}>{z.is_active ? "Active" : "Inactive"}</Badge>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" aria-label="Zone actions"><MoreVertical className="h-4 w-4" /></Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setView(z)}><Eye className="mr-2 h-4 w-4" />View</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setEdit(z)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => duplicate(z)}><Copy className="mr-2 h-4 w-4" />Duplicate</DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive" onClick={() => setConfirmDel(z)}>
+                      <Trash2 className="mr-2 h-4 w-4" />Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
-            <h1 className="font-display text-2xl sm:text-3xl font-extrabold flex items-center gap-2 mt-1">
-              <Truck className="h-6 w-6 text-primary" /> PIN Code Delivery Pricing & Speed Management
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Configure delivery charges, delivery speed, and service availability for each PIN Code.
-            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: "Standard", on: z.standard_enabled, fee: z.standard_fee, eta: z.standard_eta_minutes },
+                { label: "Fast", on: z.fast_enabled, fee: z.fast_fee, eta: z.fast_eta_minutes },
+                { label: "Express", on: z.express_enabled, fee: z.express_fee, eta: z.express_eta_minutes },
+              ].map((t) => (
+                <div key={t.label} className="rounded-xl bg-secondary/70 p-2.5">
+                  <div className="text-caption font-medium text-muted-foreground">{t.label}</div>
+                  {t.on ? (
+                    <>
+                      <div className="text-body font-semibold">{rupees(Number(t.fee))}</div>
+                      <div className="text-caption text-muted-foreground">{t.eta} min</div>
+                    </>
+                  ) : (
+                    <div className="text-body text-muted-foreground">Off</div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-          <Button onClick={() => setEdit({ ...empty })} className="shrink-0">
-            <Plus className="h-4 w-4 mr-1" /> Add PIN Code
-          </Button>
-        </header>
+        ))}
+      </section>
 
-        <section className="flex flex-col md:flex-row gap-2 md:items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={q} onChange={(e) => setQ(e.target.value)}
-              placeholder="Search by PIN Code, city, or state…"
-              className="pl-9"
-            />
-          </div>
-          <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
-            <SelectTrigger className="w-full md:w-56"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All zones</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-              <SelectItem value="standard">Standard enabled</SelectItem>
-              <SelectItem value="fast">Fast enabled</SelectItem>
-              <SelectItem value="express">Express enabled</SelectItem>
-            </SelectContent>
-          </Select>
-        </section>
-
-        <section className="rounded-2xl border border-border bg-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-left">
-                <tr>
-                  <Th>State</Th><Th>City</Th><Th>PIN</Th><Th>Status</Th>
-                  <Th>Standard</Th><Th>Fast</Th><Th>Express</Th>
-                  <Th>Radius</Th><Th className="text-right pr-4">Actions</Th>
+      <section className="hidden overflow-hidden rounded-xl border border-border/70 bg-card md:block">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="text-left text-small font-medium text-muted-foreground">
+              <tr className="border-b border-border/70">
+                <Th>State</Th><Th>City</Th><Th>PIN</Th><Th>Status</Th>
+                <Th>Standard</Th><Th>Fast</Th><Th>Express</Th>
+                <Th>Radius</Th><Th className="text-right pr-4">Actions</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {zones.isLoading && (
+                <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Loading…</td></tr>
+              )}
+              {!zones.isLoading && filtered.length === 0 && (
+                <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">
+                  No zones yet. Click <b>Add PIN Code</b> to create one.
+                </td></tr>
+              )}
+              {filtered.map((z) => (
+                <tr key={z.id} className="border-b border-border/70 last:border-0 hover:bg-secondary/50">
+                  <Td>{z.state}</Td>
+                  <Td>{z.city}</Td>
+                  <Td className="font-mono font-semibold">{z.pin_code}</Td>
+                  <Td>
+                    <Badge variant={z.is_active ? "default" : "secondary"}>
+                      {z.is_active ? "Active" : "Inactive"}
+                    </Badge>
+                  </Td>
+                  <Td><TierCell enabled={z.standard_enabled} fee={z.standard_fee} eta={z.standard_eta_minutes} /></Td>
+                  <Td><TierCell enabled={z.fast_enabled} fee={z.fast_fee} eta={z.fast_eta_minutes} /></Td>
+                  <Td><TierCell enabled={z.express_enabled} fee={z.express_fee} eta={z.express_eta_minutes} /></Td>
+                  <Td>{Number(z.delivery_radius_km)} km</Td>
+                  <Td className="text-right pr-4">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setView(z)}><Eye className="h-4 w-4 mr-2" />View</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setEdit(z)}><Pencil className="h-4 w-4 mr-2" />Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => duplicate(z)}><Copy className="h-4 w-4 mr-2" />Duplicate</DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => setConfirmDel(z)}>
+                          <Trash2 className="h-4 w-4 mr-2" />Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </Td>
                 </tr>
-              </thead>
-              <tbody>
-                {zones.isLoading && (
-                  <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Loading…</td></tr>
-                )}
-                {!zones.isLoading && filtered.length === 0 && (
-                  <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">
-                    No zones yet. Click <b>Add PIN Code</b> to create one.
-                  </td></tr>
-                )}
-                {filtered.map((z) => (
-                  <tr key={z.id} className="border-t border-border">
-                    <Td>{z.state}</Td>
-                    <Td>{z.city}</Td>
-                    <Td className="font-mono font-semibold">{z.pin_code}</Td>
-                    <Td>
-                      <Badge variant={z.is_active ? "default" : "secondary"}>
-                        {z.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                    </Td>
-                    <Td><TierCell enabled={z.standard_enabled} fee={z.standard_fee} eta={z.standard_eta_minutes} /></Td>
-                    <Td><TierCell enabled={z.fast_enabled} fee={z.fast_fee} eta={z.fast_eta_minutes} /></Td>
-                    <Td><TierCell enabled={z.express_enabled} fee={z.express_fee} eta={z.express_eta_minutes} /></Td>
-                    <Td>{Number(z.delivery_radius_km)} km</Td>
-                    <Td className="text-right pr-4">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setView(z)}><Eye className="h-4 w-4 mr-2" />View</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setEdit(z)}><Pencil className="h-4 w-4 mr-2" />Edit</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => duplicate(z)}><Copy className="h-4 w-4 mr-2" />Duplicate</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive" onClick={() => setConfirmDel(z)}>
-                            <Trash2 className="h-4 w-4 mr-2" />Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </Td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    {edit && (
+      <ZoneDialog
+        zone={edit}
+        onClose={() => setEdit(null)}
+        onSave={save}
+      />
+    )}
+
+    {view && (
+      <Dialog open onOpenChange={() => setView(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{view.city}, {view.state} — {view.pin_code}</DialogTitle></DialogHeader>
+          <div className="space-y-2 text-sm">
+            <Row k="Status" v={view.is_active ? "Active" : "Inactive"} />
+            <Row k="Radius" v={`${view.delivery_radius_km} km`} />
+            <TierView label="Standard" enabled={view.standard_enabled} fee={view.standard_fee} eta={view.standard_eta_minutes} min={view.minimum_order_standard} />
+            <TierView label="Fast" enabled={view.fast_enabled} fee={view.fast_fee} eta={view.fast_eta_minutes} min={view.minimum_order_fast} />
+            <TierView label="Express" enabled={view.express_enabled} fee={view.express_fee} eta={view.express_eta_minutes} min={view.minimum_order_express} />
           </div>
-        </section>
-      </div>
+        </DialogContent>
+      </Dialog>
+    )}
 
-      {edit && (
-        <ZoneDialog
-          zone={edit}
-          onClose={() => setEdit(null)}
-          onSave={save}
-        />
-      )}
-
-      {view && (
-        <Dialog open onOpenChange={() => setView(null)}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader><DialogTitle>{view.city}, {view.state} — {view.pin_code}</DialogTitle></DialogHeader>
-            <div className="space-y-2 text-sm">
-              <Row k="Status" v={view.is_active ? "Active" : "Inactive"} />
-              <Row k="Radius" v={`${view.delivery_radius_km} km`} />
-              <TierView label="🚚 Standard" enabled={view.standard_enabled} fee={view.standard_fee} eta={view.standard_eta_minutes} min={view.minimum_order_standard} />
-              <TierView label="⚡ Fast" enabled={view.fast_enabled} fee={view.fast_fee} eta={view.fast_eta_minutes} min={view.minimum_order_fast} />
-              <TierView label="🚀 Express" enabled={view.express_enabled} fee={view.express_fee} eta={view.express_eta_minutes} min={view.minimum_order_express} />
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      <AlertDialog open={!!confirmDel} onOpenChange={(o) => !o && setConfirmDel(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete zone {confirmDel?.pin_code}?</AlertDialogTitle>
-            <AlertDialogDescription>Customers in this PIN Code will lose configured delivery options.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => confirmDel && del(confirmDel)}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </RoleShell>
+    <AlertDialog open={!!confirmDel} onOpenChange={(o) => !o && setConfirmDel(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete zone {confirmDel?.pin_code}?</AlertDialogTitle>
+          <AlertDialogDescription>Customers in this PIN Code will lose configured delivery options.</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={() => confirmDel && del(confirmDel)}>Delete</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
 function Th({ children, className = "" }: any) {
-  return <th className={`px-3 py-2 font-semibold text-xs uppercase tracking-wide text-muted-foreground ${className}`}>{children}</th>;
+  return <th className={`px-3 py-3 text-left text-small font-medium text-muted-foreground ${className}`}>{children}</th>;
 }
 function Td({ children, className = "" }: any) {
-  return <td className={`px-3 py-2 align-middle ${className}`}>{children}</td>;
+  return <td className={`px-3 py-2.5 align-middle ${className}`}>{children}</td>;
 }
 function Row({ k, v }: { k: string; v: string }) {
-  return <div className="flex justify-between border-b border-border py-1"><span className="text-muted-foreground">{k}</span><span className="font-medium">{v}</span></div>;
+  return <div className="flex justify-between border-b border-border/70 py-2"><span className="text-muted-foreground">{k}</span><span className="font-medium">{v}</span></div>;
 }
 function TierCell({ enabled, fee, eta }: { enabled: boolean; fee: any; eta: string }) {
   if (!enabled) return <span className="text-muted-foreground">—</span>;
@@ -261,9 +312,9 @@ function TierCell({ enabled, fee, eta }: { enabled: boolean; fee: any; eta: stri
 }
 function TierView({ label, enabled, fee, eta, min }: any) {
   return (
-    <div className="rounded-xl border border-border p-3">
+    <div className="rounded-xl bg-secondary/70 p-3.5">
       <div className="flex items-center justify-between">
-        <span className="font-semibold">{label}</span>
+        <span className="font-medium">{label}</span>
         <Badge variant={enabled ? "default" : "secondary"}>{enabled ? "Enabled" : "Disabled"}</Badge>
       </div>
       {enabled && (
@@ -296,7 +347,7 @@ function ZoneDialog({ zone, onClose, onSave }: { zone: Zone; onClose: () => void
         </div>
 
         <TierBlock
-          title="🚚 Standard Delivery"
+          title="Standard Delivery"
           enabled={z.standard_enabled} fee={z.standard_fee} eta={z.standard_eta_minutes} min={z.minimum_order_standard}
           onEnabled={(v) => set("standard_enabled", v)}
           onFee={(v) => set("standard_fee", v)}
@@ -304,7 +355,7 @@ function ZoneDialog({ zone, onClose, onSave }: { zone: Zone; onClose: () => void
           onMin={(v) => set("minimum_order_standard", v)}
         />
         <TierBlock
-          title="⚡ Fast Delivery"
+          title="Fast Delivery"
           enabled={z.fast_enabled} fee={z.fast_fee} eta={z.fast_eta_minutes} min={z.minimum_order_fast}
           onEnabled={(v) => set("fast_enabled", v)}
           onFee={(v) => set("fast_fee", v)}
@@ -312,7 +363,7 @@ function ZoneDialog({ zone, onClose, onSave }: { zone: Zone; onClose: () => void
           onMin={(v) => set("minimum_order_fast", v)}
         />
         <TierBlock
-          title="🚀 Express Delivery"
+          title="Express Delivery"
           enabled={z.express_enabled} fee={z.express_fee} eta={z.express_eta_minutes} min={z.minimum_order_express}
           onEnabled={(v) => set("express_enabled", v)}
           onFee={(v) => set("express_fee", v)}
@@ -320,9 +371,9 @@ function ZoneDialog({ zone, onClose, onSave }: { zone: Zone; onClose: () => void
           onMin={(v) => set("minimum_order_express", v)}
         />
 
-        <div className="rounded-xl border border-border p-3 space-y-3">
+        <div className="space-y-3 rounded-xl bg-secondary/70 p-4">
           <div className="flex items-center justify-between">
-            <div className="font-semibold">📦 Handling Charges</div>
+            <div className="font-semibold">Handling charges</div>
             <div className="flex items-center gap-2">
               <Switch checked={!!z.handling_enabled} onCheckedChange={(v) => set("handling_enabled", v)} />
               <Label>{z.handling_enabled ? "Enabled" : "Disabled"}</Label>
@@ -355,13 +406,13 @@ function ZoneDialog({ zone, onClose, onSave }: { zone: Zone; onClose: () => void
               </div>
               <div className="text-xs text-muted-foreground pt-1">Per-tier overrides (leave blank to use default)</div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <Field label="🚚 Standard (₹)">
+                <Field label="Standard (₹)">
                   <Input type="number" value={String(z.standard_handling_fee ?? "")} onChange={(e) => set("standard_handling_fee", e.target.value as any)} />
                 </Field>
-                <Field label="⚡ Fast (₹)">
+                <Field label="Fast (₹)">
                   <Input type="number" value={String(z.fast_handling_fee ?? "")} onChange={(e) => set("fast_handling_fee", e.target.value as any)} />
                 </Field>
-                <Field label="🚀 Express (₹)">
+                <Field label="Express (₹)">
                   <Input type="number" value={String(z.express_handling_fee ?? "")} onChange={(e) => set("express_handling_fee", e.target.value as any)} />
                 </Field>
               </div>
@@ -383,7 +434,7 @@ function TierBlock({ title, enabled, fee, eta, min, onEnabled, onFee, onEta, onM
   onEnabled: (v: boolean) => void; onFee: (v: string) => void; onEta: (v: string) => void; onMin: (v: string) => void;
 }) {
   return (
-    <div className="rounded-xl border border-border p-3 space-y-3">
+    <div className="space-y-3 rounded-xl bg-secondary/70 p-4">
       <div className="flex items-center justify-between">
         <div className="font-semibold">{title}</div>
         <div className="flex items-center gap-2">
@@ -403,5 +454,5 @@ function TierBlock({ title, enabled, fee, eta, min, onEnabled, onFee, onEta, onM
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div className="space-y-1"><Label className="text-xs">{label}</Label>{children}</div>;
+  return <div className="space-y-1"><Label className="text-meta font-medium">{label}</Label>{children}</div>;
 }

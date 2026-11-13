@@ -3,29 +3,13 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { RoleShell } from "@/components/RoleShell";
 import { Button } from "@/components/ui/button";
 import { rupees } from "@/lib/format";
 import { toast } from "sonner";
-import { LayoutDashboard, ListOrdered, Package, Wallet, Bell, Star, Settings, Check, X, PackageCheck, Truck, AlertTriangle } from "lucide-react";
+import { ListOrdered, Package, Wallet, Bell, Star, Check, X, PackageCheck, Truck, AlertTriangle, ChevronRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { DeliveryTypeBadge } from "@/components/FastDeliveryBadge";
 import { runOptimistic, patchRow, removeRow } from "@/lib/optimistic";
-
-
-
-
-
-const NAV = [
-  { to: "/shopkeeper/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/shopkeeper/orders", label: "Orders", icon: ListOrdered },
-  { to: "/shopkeeper/products", label: "Products", icon: Package },
-  { to: "/shopkeeper/delivery", label: "Delivery", icon: Truck },
-  { to: "/shopkeeper/earnings", label: "Earnings", icon: Wallet },
-  { to: "/shopkeeper/notifications", label: "Alerts", icon: Bell },
-  { to: "/shopkeeper/reviews", label: "Reviews", icon: Star },
-  { to: "/shopkeeper/settings", label: "Settings", icon: Settings },
-];
 
 export const Route = createFileRoute("/shopkeeper/dashboard")({
   head: () => ({ meta: [{ title: "Shopkeeper Dashboard — AP Mart" }] }),
@@ -172,102 +156,165 @@ function Page() {
   };
 
 
+  const list = orders.data ?? [];
+  const awaiting = list.filter((o) => o.status === "awaiting_shop").length;
+  const inProgress = list.filter((o) => ["accepted_by_shop", "packed"].includes(o.status)).length;
+  const delivered = list.filter((o) => o.status === "delivered").length;
+  const active = list.filter((o) => !["delivered", "cancelled", "rejected"].includes(o.status));
+
   return (
-    <RoleShell role="shopkeeper" nav={NAV} requireRoles={["shopkeeper", "admin"]}>
-      <div className="p-4 md:p-6">
-        <h1 className="font-display text-3xl font-extrabold">Shop dashboard</h1>
+    <>
+      <div className="mx-auto max-w-6xl space-y-5 px-4 py-4 md:px-6">
+        <header className="rounded-xl bg-tint-mint px-4 py-3">
+          <h1 className="large-title">Today</h1>
+          <p className="mt-0.5 text-small text-foreground/60">Orders and stock at a glance</p>
+        </header>
+
         {shopLoading ? (
-          <div className="mt-6 rounded-2xl border border-border bg-card p-6">
-            <p className="text-sm text-muted-foreground">Loading your shop…</p>
-          </div>
+          <div className="h-40 rounded-xl shimmer" />
         ) : !shopId ? (
-          <div className="mt-6 rounded-2xl border border-border bg-card p-6">
-            <p className="text-sm text-muted-foreground">You don't own a shop yet. Ask an admin to assign one.</p>
-          </div>
+          <EmptyState icon={<Package className="h-6 w-6" />} title="No shop assigned yet" text="Ask an admin to assign a shop to your account." />
         ) : (
           <>
-            <section className="mt-5 grid md:grid-cols-3 gap-3">
-              <Stat label="Awaiting" value={String(orders.data?.filter(o => o.status === "awaiting_shop").length ?? 0)} />
-              <Stat label="In progress" value={String(orders.data?.filter(o => ["accepted_by_shop", "packed"].includes(o.status)).length ?? 0)} />
-              <Stat label="Delivered today" value={String(orders.data?.filter(o => o.status === "delivered").length ?? 0)} />
+            <section className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+              <Stat label="Awaiting" value={awaiting} tint="bg-tint-sun" icon={<Bell className="h-[18px] w-[18px]" />} />
+              <Stat label="In progress" value={inProgress} tint="bg-tint-sky" icon={<Package className="h-[18px] w-[18px]" />} />
+              <Stat label="Delivered" value={delivered} tint="bg-tint-mint" icon={<PackageCheck className="h-[18px] w-[18px]" />} />
+              <Stat label="Recent orders" value={list.length} tint="bg-tint-violet" icon={<ListOrdered className="h-[18px] w-[18px]" />} />
             </section>
 
-            {(expiry.data && (expiry.data.expired + expiry.data.week + expiry.data.month) > 0) && (
-              <section className="mt-4 rounded-2xl border border-orange-300 bg-orange-50 dark:bg-orange-950/30 p-4 flex items-start gap-3 flex-wrap">
-                <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-sm">⚠ Inventory Alerts</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {expiry.data.expired > 0 && <span className="mr-3">🔴 <b>{expiry.data.expired}</b> expired</span>}
-                    {expiry.data.week > 0 && <span className="mr-3">🟠 <b>{expiry.data.week}</b> expire this week</span>}
-                    {expiry.data.month > 0 && <span className="mr-3">🟡 <b>{expiry.data.month}</b> expire this month</span>}
-                    {expiry.data.valueAtRisk > 0 && <span>· Value at risk: <b>{rupees(expiry.data.valueAtRisk)}</b></span>}
+            {expiry.data && expiry.data.expired + expiry.data.week + expiry.data.month > 0 && (
+              <Link
+                to="/shopkeeper/inventory-insights"
+                className="press flex items-center gap-3 rounded-xl bg-tint-sun p-4"
+              >
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-card/70">
+                  <AlertTriangle className="h-5 w-5 text-warning-foreground" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-body font-semibold">Inventory alerts</div>
+                  <div className="truncate text-meta text-foreground/65">
+                    {[
+                      expiry.data.expired > 0 && `${expiry.data.expired} expired`,
+                      expiry.data.week > 0 && `${expiry.data.week} this week`,
+                      expiry.data.month > 0 && `${expiry.data.month} this month`,
+                      expiry.data.valueAtRisk > 0 && `${rupees(expiry.data.valueAtRisk)} at risk`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </div>
                 </div>
-                <Button asChild size="sm" variant="outline" className="rounded-xl">
-                  <Link to="/shopkeeper/inventory-insights">View details →</Link>
-                </Button>
-              </section>
+                <ChevronRight className="h-5 w-5 shrink-0 text-foreground/40" />
+              </Link>
             )}
 
-
-
-            <section className="mt-6">
-              <h2 className="font-bold mb-3">Live orders</h2>
-              <div className="space-y-3">
-                {(orders.data ?? []).map(o => (
-                  <div key={o.id} className="rounded-2xl border border-border bg-card p-4 flex items-center justify-between gap-3 flex-wrap">
-                    <div className="min-w-0">
-                      <div className="font-bold flex items-center gap-2 flex-wrap">
-                        {o.order_number}
-                        <DeliveryTypeBadge type={(o as any).delivery_type} size="xs" />
-                        <span className="text-[10px] uppercase font-bold rounded-full bg-secondary px-2 py-0.5">{String((o as any).payment_method ?? "").toUpperCase()}</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {rupees(o.total)} • {o.status.replace(/_/g, " ")} • {itemStats.data?.[o.id]?.products ?? 0} products / {itemStats.data?.[o.id]?.qty ?? 0} items
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {(o.address as any)?.name} {(o.address as any)?.phone ? `· ${(o.address as any).phone}` : ""} — {(o.address as any)?.line1}
-                        {(o as any).delivery_pincode ? ` · ${(o as any).delivery_pincode}` : ""}
-                        {(o as any).assignment_distance_km != null ? ` · ${Number((o as any).assignment_distance_km).toFixed(1)} km` : ""}
-                      </div>
-                      <div className="text-[11px] text-muted-foreground">{o.placed_at ? new Date(o.placed_at).toLocaleString() : ""}</div>
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                      <Button asChild size="sm" variant="secondary" className="rounded-xl">
-                        <Link to="/shopkeeper/orders/$id" params={{ id: o.id }}>View details</Link>
-                      </Button>
+            <section className="space-y-3">
+              <div className="flex items-end justify-between">
+                <h2 className="section-title">Live orders</h2>
+                <Link to="/shopkeeper/orders" className="press text-meta font-semibold text-primary">
+                  See all
+                </Link>
+              </div>
+              {active.length === 0 ? (
+                <EmptyState icon={<ListOrdered className="h-6 w-6" />} title="No live orders" text="New orders will show up here as they come in." />
+              ) : (
+                <div className="divide-y divide-border/60 overflow-hidden rounded-xl bg-card border border-border/70">
+                  {active.map((o) => (
+                    <div key={o.id} className="space-y-2.5 p-3.5">
+                      <Link to="/shopkeeper/orders/$id" params={{ id: o.id }} className="block">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 text-body font-semibold">
+                              {o.order_number}
+                              <DeliveryTypeBadge type={(o as any).delivery_type} size="xs" />
+                            </div>
+                            <div className="mt-0.5 text-small text-muted-foreground">
+                              {itemStats.data?.[o.id]?.qty ?? 0} items · {String((o as any).payment_method ?? "").toUpperCase()}
+                              {(o as any).assignment_distance_km != null ? ` · ${Number((o as any).assignment_distance_km).toFixed(1)} km` : ""}
+                            </div>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <div className="text-body font-semibold">{rupees(o.total)}</div>
+                            <span className={`mt-1 inline-block rounded-full px-2.5 py-0.5 text-caption font-semibold capitalize ${statusTint(o.status)}`}>
+                              {o.status.replace(/_/g, " ")}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mt-2 truncate text-small text-muted-foreground">
+                          {(o.address as any)?.name} — {(o.address as any)?.line1}
+                          {(o as any).delivery_pincode ? ` · ${(o as any).delivery_pincode}` : ""}
+                        </div>
+                      </Link>
                       {o.status === "awaiting_shop" && (
-                        <>
-                          <Button size="sm" onClick={() => accept(o.id)} className="rounded-xl"><Check className="h-3 w-3 mr-1" />Accept</Button>
-                          <Button size="sm" variant="outline" onClick={() => reject(o.id)} className="rounded-xl"><X className="h-3 w-3 mr-1" />Reject</Button>
-                        </>
+                        <div className="flex gap-2">
+                          <Button className="h-10 flex-1" onClick={() => accept(o.id)}>
+                            <Check className="mr-1 h-4 w-4" /> Accept
+                          </Button>
+                          <Button className="h-10 flex-1" variant="secondary" onClick={() => reject(o.id)}>
+                            <X className="mr-1 h-4 w-4" /> Reject
+                          </Button>
+                        </div>
                       )}
                       {o.status === "accepted_by_shop" && (
-                        <Button size="sm" onClick={() => pack(o.id)} className="rounded-xl"><PackageCheck className="h-3 w-3 mr-1" />Mark packed</Button>
+                        <Button className="h-10 w-full" onClick={() => pack(o.id)}>
+                          <PackageCheck className="mr-1 h-4 w-4" /> Mark packed
+                        </Button>
                       )}
                     </div>
-                  </div>
-                ))}
-                {(orders.data?.length ?? 0) === 0 && <div className="text-sm text-muted-foreground">No orders yet.</div>}
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="space-y-3">
+              <h2 className="section-title">Manage</h2>
+              <div className="divide-y divide-border/60 overflow-hidden rounded-xl bg-card border border-border/70">
+                <QuickLink to="/shopkeeper/products" icon={<Package className="h-[18px] w-[18px]" />} tint="bg-tint-mint" label="Products & stock" />
+                <QuickLink to="/shopkeeper/delivery" icon={<Truck className="h-[18px] w-[18px]" />} tint="bg-tint-sky" label="Delivery" />
+                <QuickLink to="/shopkeeper/earnings" icon={<Wallet className="h-[18px] w-[18px]" />} tint="bg-tint-sun" label="Earnings" />
+                <QuickLink to="/shopkeeper/reviews" icon={<Star className="h-[18px] w-[18px]" />} tint="bg-tint-rose" label="Reviews" />
               </div>
             </section>
           </>
         )}
       </div>
-    </RoleShell>
-
+    </>
   );
 }
 
+function statusTint(status: string) {
+  if (status === "awaiting_shop") return "bg-tint-sun text-warning-foreground";
+  if (status === "accepted_by_shop") return "bg-tint-sky text-foreground/80";
+  if (status === "packed" || status === "delivered") return "bg-primary-soft text-primary-ink";
+  return "bg-secondary text-muted-foreground";
+}
 
-function Stat({ label, value }: { label: string; value: string }) {
+function EmptyState({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-4">
-      <div className="text-xs text-muted-foreground font-semibold">{label}</div>
-      <div className="font-display text-2xl font-extrabold mt-1">{value}</div>
+    <div className="rounded-xl border border-border/70 bg-card px-4 py-8 text-center">
+      <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-primary-soft text-primary-ink">{icon}</div>
+      <div className="mt-3 text-body font-semibold">{title}</div>
+      <p className="mt-1 text-small text-muted-foreground">{text}</p>
     </div>
   );
 }
 
-export { NAV as SHOPKEEPER_NAV };
+function QuickLink({ to, icon, tint, label }: { to: string; icon: React.ReactNode; tint: string; label: string }) {
+  return (
+    <Link to={to as any} className="press flex min-h-12 items-center gap-3 px-4 py-2">
+      <span className={`grid h-9 w-9 place-items-center rounded-lg ${tint}`}>{icon}</span>
+      <span className="flex-1 text-body font-medium">{label}</span>
+      <ChevronRight className="h-4 w-4 text-muted-foreground/60" />
+    </Link>
+  );
+}
+
+function Stat({ label, value, tint, icon }: { label: string; value: number; tint: string; icon: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-card p-3.5">
+      <span className={`grid h-9 w-9 place-items-center rounded-lg ${tint}`}>{icon}</span>
+      <div className="mt-2.5 text-xl font-semibold tracking-tight">{value}</div>
+      <div className="text-small text-muted-foreground">{label}</div>
+    </div>
+  );
+}

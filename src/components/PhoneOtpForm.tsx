@@ -109,7 +109,7 @@ export function PhoneOtpForm({
   return (
     <div className="space-y-3">
       <div className="relative">
-        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           type="tel"
           inputMode="tel"
@@ -123,13 +123,13 @@ export function PhoneOtpForm({
             setErrorMessage("");
           }}
           disabled={sent || busy}
-          className="h-12 rounded-xl pl-10"
+          className="h-11 pl-11"
         />
       </div>
 
       {sent && (
         <div className="relative">
-          <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             inputMode="numeric"
             autoComplete="one-time-code"
@@ -140,13 +140,13 @@ export function PhoneOtpForm({
               setCode(e.target.value.replace(/\D/g, "").slice(0, 6));
               setErrorMessage("");
             }}
-            className="h-12 rounded-xl pl-10 tracking-[0.4em] font-semibold"
+            className="h-11 pl-11 font-semibold tracking-[0.4em]"
           />
         </div>
       )}
 
       {errorMessage && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-meta text-destructive">
           {errorMessage}
         </p>
       )}
@@ -156,7 +156,7 @@ export function PhoneOtpForm({
           type="button"
           onClick={send}
           disabled={busy}
-          className="w-full h-12 rounded-xl bg-[#16a34a] hover:bg-[#15803d] text-white font-bold text-base shadow-md"
+          className="h-11 w-full rounded-xl"
         >
           {busy ? (
             <>
@@ -172,7 +172,7 @@ export function PhoneOtpForm({
             type="button"
             onClick={verify}
             disabled={busy}
-            className="w-full h-12 rounded-xl bg-[#16a34a] hover:bg-[#15803d] text-white font-bold text-base shadow-md"
+            className="h-11 w-full rounded-xl"
           >
             {busy ? (
               <>
@@ -182,7 +182,7 @@ export function PhoneOtpForm({
               "Verify & continue"
             )}
           </Button>
-          <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center justify-between text-meta">
             <button
               type="button"
               onClick={() => {
@@ -201,7 +201,7 @@ export function PhoneOtpForm({
               type="button"
               onClick={send}
               disabled={cooldown > 0 || busy}
-              className="font-bold text-primary hover:underline disabled:text-muted-foreground disabled:no-underline"
+              className="font-semibold text-primary disabled:text-muted-foreground"
             >
               {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
             </button>

@@ -292,8 +292,41 @@ export async function uploadFile(opts: UploadOptions): Promise<StoredObject> {
   return stored;
 }
 
-export function uploadImage(opts: UploadOptions): Promise<StoredObject> {
-  return uploadFile({ ...opts, allowedTypes: opts.allowedTypes ?? IMAGE_TYPES });
+/** Scale large JPEG/PNG/WebP photos down and re-encode as WebP; falls back to the original file on any failure. */
+async function prepareImage(file: File, maxEdge: number): Promise<File> {
+  if (typeof document === "undefined" || typeof createImageBitmap === "undefined") return file;
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return file;
+  try {
+    // Apply EXIF rotation so portrait phone photos are not stored sideways.
+    const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const scale = Math.min(1, maxEdge / Math.max(bmp.width, bmp.height));
+    const w = Math.max(1, Math.round(bmp.width * scale));
+    const h = Math.max(1, Math.round(bmp.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bmp, 0, 0, w, h);
+    bmp.close?.();
+    const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/webp", 0.82));
+    if (!blob || (scale === 1 && blob.size >= file.size)) return file;
+    return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".webp", {
+      type: "image/webp",
+      lastModified: file.lastModified,
+    });
+  } catch {
+    return file;
+  }
+}
+
+// Banners are shown full-width (sharp on wide / retina screens); product photos are small cards.
+const BANNER_BUCKETS: readonly string[] = ["offers", "categories", "shop-collections"];
+
+export async function uploadImage(opts: UploadOptions & { maxEdge?: number }): Promise<StoredObject> {
+  const maxEdge = opts.maxEdge ?? (BANNER_BUCKETS.includes(opts.bucket) ? 2400 : 1200);
+  const file = await prepareImage(opts.file, maxEdge);
+  return uploadFile({ ...opts, file, allowedTypes: opts.allowedTypes ?? IMAGE_TYPES });
 }
 
 /**

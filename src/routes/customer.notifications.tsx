@@ -30,43 +30,37 @@ function NotificationsPage() {
   });
 
   return (
-    <div className="px-4 py-4">
-      <h1 className="font-display text-2xl font-extrabold mb-4">Notifications</h1>
+    <div className="space-y-4 px-4 pb-6 pt-4">
+      <h1 className="large-title">Notifications</h1>
 
       {notifications.isLoading ? (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 rounded-2xl" />
+            <Skeleton key={i} className="h-16 rounded-xl" />
           ))}
         </div>
       ) : notifications.data?.length === 0 ? (
-        <div className="text-center py-16">
-          <Bell className="h-14 w-14 mx-auto text-muted-foreground" />
-          <p className="mt-3 text-sm text-muted-foreground">No notifications yet</p>
+        <div className="py-20 text-center">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-tint-sky text-foreground/70">
+            <Bell className="h-5 w-5" strokeWidth={1.8} />
+          </div>
+          <h2 className="mt-4 text-subtitle font-semibold">You're all caught up</h2>
+          <p className="mt-1 text-meta text-muted-foreground">Order updates will appear here.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="overflow-hidden rounded-xl border border-border/70 bg-card">
           {notifications.data?.map((n) => (
-            <div
-              key={n.id}
-              className={`rounded-2xl border border-border bg-card p-4 shadow-card ${
-                n.read ? "opacity-70" : ""
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h3 className="font-bold text-sm">{n.title}</h3>
-                  {n.body && (
-                    <p className="text-sm text-muted-foreground mt-1">{n.body}</p>
-                  )}
+            <div key={n.id} className={`border-b border-border/60 p-3 last:border-b-0 ${n.read ? "opacity-70" : ""}`}>
+              <div className="flex items-start gap-3">
+                <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-primary"}`} />
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-meta font-semibold">{n.title}</h3>
+                  {n.body && <p className="mt-0.5 text-small text-muted-foreground">{n.body}</p>}
+                  <p className="mt-1.5 text-caption text-muted-foreground">
+                    {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                  </p>
                 </div>
-                {!n.read && (
-                  <span className="shrink-0 mt-1 h-2.5 w-2.5 rounded-full bg-primary" />
-                )}
               </div>
-              <p className="text-[11px] text-muted-foreground mt-2">
-                {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
-              </p>
             </div>
           ))}
         </div>

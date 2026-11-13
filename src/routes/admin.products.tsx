@@ -117,22 +117,25 @@ function Page() {
   if (filter === "low-stock") filtered = filtered.filter(p => p.stock <= LOW_STOCK);
 
   return (
-    <div className="p-4 max-w-6xl mx-auto space-y-4">
-      <div className="flex items-center gap-3">
-        <h1 className="text-xl font-display font-extrabold flex-1">
-          Products
-          {filter === "low-stock" && <span className="ml-2 text-xs bg-destructive/15 text-destructive px-2 py-1 rounded-full inline-flex items-center gap-1"><AlertTriangle className="h-3 w-3" />Low stock</span>}
-        </h1>
+    <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-4 md:px-6 md:py-6">
+      <div className="flex items-end gap-3">
+        <div className="flex-1">
+          <h1 className="large-title">Products</h1>
+          <p className="mt-1 flex items-center gap-2 text-body text-muted-foreground">
+            Catalogue and stock across the marketplace
+            {filter === "low-stock" && <span className="inline-flex items-center gap-1 rounded-full bg-tint-rose px-2.5 py-0.5 text-caption font-semibold text-[oklch(0.45_0.12_15)]"><AlertTriangle className="h-3 w-3" />Low stock</span>}
+          </p>
+        </div>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }}>
           <DialogTrigger asChild><Button onClick={() => setEditing(null)}><Plus className="h-4 w-4 mr-1" />Add</Button></DialogTrigger>
           <ProductDialog initial={editing} categories={cats} onSave={(p) => save.mutate(p)} saving={save.isPending} />
         </Dialog>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-2">
-        <Input placeholder="Search products..." value={q} onChange={(e) => setQ(e.target.value)} className="flex-1" />
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Input placeholder="Search products" value={q} onChange={(e) => setQ(e.target.value)} className="flex-1" />
         <Select value={catFilter} onValueChange={setCatFilter}>
-          <SelectTrigger className="sm:w-56"><SelectValue placeholder="All categories" /></SelectTrigger>
+          <SelectTrigger className="h-11 rounded-xl border-0 bg-secondary sm:w-56"><SelectValue placeholder="All categories" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All categories</SelectItem>
             {cats.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
@@ -141,34 +144,34 @@ function Page() {
       </div>
 
       {isLoading ? (
-        <p className="text-muted-foreground">Loading...</p>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{[0, 1, 2].map((i) => <div key={i} className="h-36 rounded-xl shimmer" />)}</div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-3">
           {filtered.map((p) => (
-            <div key={p.id} className="rounded-2xl border border-border bg-card overflow-hidden">
-              <div className="flex gap-3 p-3">
-                <div className="h-20 w-20 shrink-0 rounded-xl bg-secondary overflow-hidden grid place-items-center">
+            <div key={p.id} className="overflow-hidden rounded-xl border border-border/70 bg-card">
+              <div className="flex gap-3.5 p-4">
+                <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-xl bg-secondary">
                   {p.image_url ? <StorageImg loading="lazy" decoding="async" src={p.image_url} alt={p.name} className="h-full w-full object-cover" /> : <Package className="h-6 w-6 text-muted-foreground" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold truncate">{p.name}</div>
-                  <div className="text-xs text-muted-foreground truncate">{p.unit} · {p.brand ?? "—"}</div>
+                  <div className="truncate text-subtitle font-semibold">{p.name}</div>
+                  <div className="truncate text-small text-muted-foreground">{p.unit} · {p.brand ?? "—"}</div>
                   <div className="mt-1 flex items-center gap-2">
-                    <span className="font-bold text-primary">{rupees(p.price)}</span>
+                    <span className="font-semibold">{rupees(p.price)}</span>
                     {p.mrp > p.price && <span className="text-xs line-through text-muted-foreground">{rupees(p.mrp)}</span>}
                   </div>
-                  <div className={`text-xs mt-1 ${p.stock <= LOW_STOCK ? "text-destructive font-bold" : "text-muted-foreground"}`}>
+                  <div className={`mt-1 text-small ${p.stock <= LOW_STOCK ? "font-semibold text-destructive" : "text-muted-foreground"}`}>
                     Stock: {p.stock}
                   </div>
                 </div>
               </div>
-              <div className="flex border-t border-border">
-                <button onClick={() => { setEditing(p); setOpen(true); }} className="flex-1 flex items-center justify-center gap-1 py-2 text-sm font-semibold hover:bg-secondary"><Pencil className="h-4 w-4" />Edit</button>
-                <button onClick={() => setConfirmDel(p)} className="flex-1 flex items-center justify-center gap-1 py-2 text-sm font-semibold text-destructive hover:bg-secondary border-l border-border"><Trash2 className="h-4 w-4" />Delete</button>
+              <div className="flex border-t border-border/70">
+                <button onClick={() => { setEditing(p); setOpen(true); }} className="press flex flex-1 items-center justify-center gap-1.5 py-3 text-body font-medium hover:bg-secondary/60"><Pencil className="h-4 w-4" />Edit</button>
+                <button onClick={() => setConfirmDel(p)} className="press flex flex-1 items-center justify-center gap-1.5 border-l border-border/70 py-3 text-body font-medium text-destructive hover:bg-secondary/60"><Trash2 className="h-4 w-4" />Delete</button>
               </div>
             </div>
           ))}
-          {filtered.length === 0 && <p className="text-muted-foreground col-span-full text-center py-8">No products found.</p>}
+          {filtered.length === 0 && <div className="col-span-full rounded-xl border border-border/70 bg-card px-6 py-10 text-center"><div className="text-subtitle font-semibold">No products found</div><p className="mt-0.5 text-meta text-muted-foreground">Try a different search or category.</p></div>}
         </div>
       )}
 
@@ -214,13 +217,13 @@ function ProductDialog({ initial, categories, onSave, saving }: { initial: Produ
     <DialogContent className="max-h-[90vh] overflow-y-auto">
       <DialogHeader><DialogTitle>{initial ? "Edit product" : "New product"}</DialogTitle></DialogHeader>
       <div className="space-y-3">
-        <div><label className="text-xs font-bold">Name</label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
+        <div><label className="text-meta font-medium">Name</label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="text-xs font-bold">Slug</label><Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder={slugify(name)} /></div>
-          <div><label className="text-xs font-bold">Brand</label><Input value={brand} onChange={(e) => setBrand(e.target.value)} /></div>
+          <div><label className="text-meta font-medium">Slug</label><Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder={slugify(name)} /></div>
+          <div><label className="text-meta font-medium">Brand</label><Input value={brand} onChange={(e) => setBrand(e.target.value)} /></div>
         </div>
         <div>
-          <label className="text-xs font-bold">Categories</label>
+          <label className="text-meta font-medium">Categories</label>
           <MultiCategorySelect
             options={categories}
             value={categoryIds}
@@ -228,18 +231,18 @@ function ProductDialog({ initial, categories, onSave, saving }: { initial: Produ
             max={MAX_PRODUCT_CATEGORIES}
           />
         </div>
-        <div><label className="text-xs font-bold">Description</label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} /></div>
+        <div><label className="text-meta font-medium">Description</label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} /></div>
         <ImageInput value={imageUrl} onChange={setImageUrl} bucket="product-images" label="Product image" required />
         <div className="grid grid-cols-3 gap-2">
-          <div><label className="text-xs font-bold">Price ₹</label><Input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} /></div>
-          <div><label className="text-xs font-bold">MRP ₹</label><Input type="number" value={mrp} onChange={(e) => setMrp(Number(e.target.value))} /></div>
-          <div><label className="text-xs font-bold">Stock</label><Input type="number" value={stock} onChange={(e) => setStock(Number(e.target.value))} /></div>
+          <div><label className="text-meta font-medium">Price ₹</label><Input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} /></div>
+          <div><label className="text-meta font-medium">MRP ₹</label><Input type="number" value={mrp} onChange={(e) => setMrp(Number(e.target.value))} /></div>
+          <div><label className="text-meta font-medium">Stock</label><Input type="number" value={stock} onChange={(e) => setStock(Number(e.target.value))} /></div>
         </div>
-        <div><label className="text-xs font-bold">Unit (e.g. 500g, 1L)</label><Input value={unit} onChange={(e) => setUnit(e.target.value)} /></div>
+        <div><label className="text-meta font-medium">Unit (e.g. 500g, 1L)</label><Input value={unit} onChange={(e) => setUnit(e.target.value)} /></div>
         <div className="flex flex-wrap gap-4 pt-2">
-          <label className="flex items-center gap-2 text-sm"><Switch checked={available} onCheckedChange={setAvailable} />Available</label>
-          <label className="flex items-center gap-2 text-sm"><Switch checked={featured} onCheckedChange={setFeatured} />Featured</label>
-          <label className="flex items-center gap-2 text-sm"><Switch checked={bestseller} onCheckedChange={setBestseller} />Bestseller</label>
+          <label className="flex items-center gap-2 text-body"><Switch checked={available} onCheckedChange={setAvailable} />Available</label>
+          <label className="flex items-center gap-2 text-body"><Switch checked={featured} onCheckedChange={setFeatured} />Featured</label>
+          <label className="flex items-center gap-2 text-body"><Switch checked={bestseller} onCheckedChange={setBestseller} />Bestseller</label>
         </div>
       </div>
       <DialogFooter>

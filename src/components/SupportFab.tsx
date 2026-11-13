@@ -11,21 +11,21 @@ export function SupportFab({ className = "" }: { className?: string }) {
 
   return (
     <>
-      <div className={"fixed right-4 bottom-24 md:bottom-6 z-40 flex flex-col items-end gap-2 " + className}>
+      <div className={"fixed right-4 bottom-[calc(84px+env(safe-area-inset-bottom))] md:bottom-6 z-40 flex flex-col items-end gap-2 " + className}>
         <Button
           onClick={() => nav({ to: "/support/my-tickets" as any })}
           variant="secondary"
           size="sm"
-          className="rounded-full shadow-card text-xs"
+          className="rounded-full border border-border/70 bg-card text-small shadow-soft"
         >
           My tickets
         </Button>
         <Button
           onClick={() => setOpen(true)}
           aria-label="Help and Support"
-          className="rounded-full h-14 w-14 p-0 gradient-primary text-primary-foreground shadow-glow"
+          className="h-12 w-12 rounded-full p-0 shadow-float"
         >
-          <LifeBuoy className="h-6 w-6" />
+          <LifeBuoy className="h-5 w-5" />
         </Button>
       </div>
       <SupportTicketForm open={open} onOpenChange={setOpen} />

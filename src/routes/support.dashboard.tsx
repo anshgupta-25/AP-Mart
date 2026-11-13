@@ -14,10 +14,10 @@ export const Route = createFileRoute("/support/dashboard")({
 });
 
 const STATUS_TONE: Record<string, string> = {
-  open: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300",
-  assigned: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
-  in_progress: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
-  resolved: "bg-green-500/15 text-green-700 dark:text-green-300",
+  open: "bg-tint-sun text-foreground",
+  assigned: "bg-tint-sky text-foreground",
+  in_progress: "bg-tint-sky text-foreground",
+  resolved: "bg-primary-soft text-primary-ink",
   closed: "bg-muted text-muted-foreground",
 };
 
@@ -55,17 +55,17 @@ function Page() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["support-dash-complaints"] });
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <h1 className="font-display text-3xl font-extrabold">Support overview</h1>
+    <div className="space-y-5 px-4 pb-6 pt-4 md:px-6">
+      <h1 className="large-title">Support overview</h1>
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat icon={<Inbox className="h-4 w-4" />} label="Total" value={data.data?.total ?? 0} />
-        <Stat icon={<Timer className="h-4 w-4" />} label="Open" value={data.data?.open ?? 0} />
-        <Stat icon={<AlertCircle className="h-4 w-4" />} label="Unassigned" value={data.data?.unassigned ?? 0} />
-        <Stat icon={<CheckCircle2 className="h-4 w-4" />} label="Resolved" value={data.data?.resolved ?? 0} />
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <Stat tint="bg-tint-sky" icon={<Inbox className="h-[18px] w-[18px]" />} label="Total" value={data.data?.total ?? 0} />
+        <Stat tint="bg-tint-sun" icon={<Timer className="h-[18px] w-[18px]" />} label="Open" value={data.data?.open ?? 0} />
+        <Stat tint="bg-tint-rose" icon={<AlertCircle className="h-[18px] w-[18px]" />} label="Unassigned" value={data.data?.unassigned ?? 0} />
+        <Stat tint="bg-tint-mint" icon={<CheckCircle2 className="h-[18px] w-[18px]" />} label="Resolved" value={data.data?.resolved ?? 0} />
       </section>
 
-      <section className="grid lg:grid-cols-2 gap-4">
+      <section className="grid gap-4 lg:grid-cols-2">
         <TicketList title="Assigned to me" items={data.data?.mine ?? []} onDone={invalidate} />
         <TicketList title="Unassigned queue" items={data.data?.queue ?? []} onDone={invalidate} />
       </section>
@@ -75,39 +75,40 @@ function Page() {
   );
 }
 
-function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
+function Stat({ icon, label, value, tint }: { icon: React.ReactNode; label: string; value: number; tint: string }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-4">
-      <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">{icon}{label}</div>
-      <div className="font-display text-2xl font-extrabold mt-1">{value}</div>
+    <div className={`rounded-xl p-3.5 ${tint}`}>
+      <div className="text-foreground/60">{icon}</div>
+      <div className="mt-2.5 text-page font-bold leading-none tracking-tight">{value}</div>
+      <div className="mt-1 text-small text-foreground/60">{label}</div>
     </div>
   );
 }
 
 function TicketList({ title, items, onDone }: { title: string; items: any[]; onDone: () => void }) {
   return (
-    <div className="rounded-2xl border border-border bg-card">
-      <div className="px-4 py-3 border-b border-border font-bold">
-        {title} <span className="text-xs text-muted-foreground font-normal">({items.length})</span>
+    <div className="overflow-hidden rounded-xl border border-border/70 bg-card">
+      <div className="hairline-b px-4 py-3 section-title">
+        {title} <span className="text-small font-normal text-muted-foreground">({items.length})</span>
       </div>
       {items.length === 0 ? (
-        <div className="p-6 text-sm text-muted-foreground">Nothing here.</div>
+        <div className="p-6 text-center text-small text-muted-foreground">Nothing here.</div>
       ) : (
-        <ul className="divide-y divide-border">
+        <ul className="divide-y divide-border/60">
           {items.map((t) => (
-            <li key={t.id} className="p-4 space-y-3">
+            <li key={t.id} className="space-y-2.5 p-4">
               <header className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-base truncate">{t.title}</span>
-                    <span className={`text-[10px] uppercase rounded-full px-2 py-0.5 font-bold ${STATUS_TONE[t.status] ?? "bg-secondary"}`}>
+                    <span className="truncate text-body font-medium">{t.title}</span>
+                    <span className={`text-caption capitalize rounded-full px-2 py-0.5 font-semibold ${STATUS_TONE[t.status] ?? "bg-secondary"}`}>
                       {t.status.replace(/_/g, " ")}
                     </span>
-                    <span className="text-[10px] uppercase rounded-full bg-secondary px-2 py-0.5 font-bold">
+                    <span className="text-caption capitalize rounded-full bg-secondary px-2 py-0.5 font-semibold">
                       {t.role_at_creation}
                     </span>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
+                  <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-small text-muted-foreground">
                     <span>{t.ticket_number}</span>·
                     <span>{t.category.replace(/_/g, " ")}</span>·
                     <span>{new Date(t.created_at).toLocaleString()}</span>
@@ -117,7 +118,7 @@ function TicketList({ title, items, onDone }: { title: string; items: any[]; onD
                   <Link
                     to="/support/tickets/$id"
                     params={{ id: t.id }}
-                    className="inline-flex items-center gap-1 text-xs font-bold rounded-full bg-secondary px-3 py-1.5 hover:bg-secondary/70"
+                    className="press inline-flex h-8 items-center gap-1 rounded-full bg-secondary px-3.5 text-small font-semibold"
                   >
                     <ExternalLink className="h-3.5 w-3.5" /> Open
                   </Link>
@@ -128,12 +129,12 @@ function TicketList({ title, items, onDone }: { title: string; items: any[]; onD
               </header>
 
               {t.description && (
-                <p className="text-sm text-foreground/90 whitespace-pre-wrap">{t.description}</p>
+                <p className="whitespace-pre-wrap text-small leading-relaxed text-foreground/80">{t.description}</p>
               )}
 
-              <div className="grid sm:grid-cols-2 gap-2 text-xs">
-                <div className="rounded-xl bg-secondary/40 p-3 space-y-1">
-                  <div className="font-bold uppercase text-[10px] text-muted-foreground flex items-center gap-1">
+              <div className="grid gap-2 text-small sm:grid-cols-2">
+                <div className="space-y-1 rounded-lg bg-secondary/70 p-3">
+                  <div className="flex items-center gap-1 text-caption font-semibold text-muted-foreground">
                     <User className="h-3 w-3" /> Raised by
                   </div>
                   <div className="font-semibold">{t.full_name || "—"}</div>
@@ -151,8 +152,8 @@ function TicketList({ title, items, onDone }: { title: string; items: any[]; onD
                 </div>
 
                 {t.role_at_creation === "shopkeeper" && (t.shop_name || t.shop_address) && (
-                  <div className="rounded-xl bg-secondary/40 p-3 space-y-1">
-                    <div className="font-bold uppercase text-[10px] text-muted-foreground flex items-center gap-1">
+                  <div className="space-y-1 rounded-lg bg-secondary/70 p-3">
+                    <div className="flex items-center gap-1 text-caption font-semibold text-muted-foreground">
                       <Store className="h-3 w-3" /> Shop
                     </div>
                     <div className="font-semibold">{t.shop_name || "—"}</div>
@@ -200,19 +201,18 @@ function ResolveButton({ ticketId, onDone }: { ticketId: string; onDone: () => v
   if (!open) {
     return (
       <Button size="sm" onClick={() => setOpen(true)}
-        className="h-8 bg-green-600 hover:bg-green-700 text-white text-xs font-bold gap-1">
+        className="h-8 gap-1 rounded-full px-3.5 text-small">
         <CheckCircle2 className="h-3.5 w-3.5" /> Resolve
       </Button>
     );
   }
   return (
-    <div className="w-full mt-2 space-y-2 rounded-xl border border-green-500/30 bg-green-500/5 p-3">
+    <div className="mt-2 w-full space-y-2 rounded-xl bg-primary-soft p-3">
       <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)}
         placeholder="Resolution notes (optional) — sent to user" />
       <div className="flex justify-end gap-2">
         <Button size="sm" variant="ghost" onClick={() => { setOpen(false); setNotes(""); }}>Cancel</Button>
-        <Button size="sm" onClick={resolve} disabled={busy}
-          className="bg-green-600 hover:bg-green-700 text-white gap-1">
+        <Button size="sm" onClick={resolve} disabled={busy} className="gap-1">
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
           Mark resolved
         </Button>

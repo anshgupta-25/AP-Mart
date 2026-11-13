@@ -3,14 +3,12 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { RoleShell } from "@/components/RoleShell";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { DELIVERY_NAV } from "./delivery.dashboard";
+import { PageHeader } from "@/components/data";
 import { Truck, User as UserIcon, LogOut, Star, CheckCircle2, Clock, Mail, Power, ShieldCheck, Bike, LifeBuoy, MessageCircle, ChevronRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { SupportTicketForm } from "@/components/SupportTicketForm";
@@ -98,24 +96,27 @@ function Page() {
   const initials = (profile?.full_name || partner?.name || user?.email || "D").trim().charAt(0).toUpperCase();
 
   return (
-    <RoleShell role="delivery" nav={DELIVERY_NAV} requireRoles={["delivery", "admin"]}>
-      <div className="p-4 md:p-6 max-w-3xl space-y-6">
-        {/* Hero */}
-        <div className="rounded-3xl gradient-hero border border-border p-5">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16 ring-2 ring-primary/30">
+    <>
+      <div className="space-y-5 px-4 py-4 md:px-6">
+        <PageHeader title="Account" />
+
+        <div className="rounded-xl border border-border/70 bg-card p-4">
+          <div className="flex items-center gap-3.5">
+            <Avatar className="h-14 w-14">
               <AvatarImage src={profile?.avatar_url || undefined} />
-              <AvatarFallback className="font-bold text-lg">{initials}</AvatarFallback>
+              <AvatarFallback className="bg-primary-soft text-base font-semibold text-primary-ink">{initials}</AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <div className="font-display text-xl font-extrabold truncate">{profile?.full_name || partner?.name || "Delivery Partner"}</div>
-              <div className="text-xs text-muted-foreground inline-flex items-center gap-1 truncate"><Mail className="h-3 w-3" />{user?.email}</div>
-              <div className="mt-1 flex flex-wrap items-center gap-1">
-                <span className={`text-[10px] font-bold uppercase rounded-full px-2 py-0.5 inline-flex items-center gap-1 ${partner?.is_online ? "bg-primary/15 text-primary" : "bg-secondary text-muted-foreground"}`}>
+              <div className="truncate text-subtitle font-semibold">{profile?.full_name || partner?.name || "Delivery Partner"}</div>
+              <div className="mt-0.5 flex items-center gap-1 truncate text-small text-muted-foreground">
+                <Mail className="h-3.5 w-3.5 shrink-0" />{user?.email}
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-caption font-semibold ${partner?.is_online ? "bg-primary-soft text-primary-ink" : "bg-secondary text-muted-foreground"}`}>
                   <Power className="h-3 w-3" />{partner?.is_online ? "Online" : "Offline"}
                 </span>
                 {(roles ?? []).map((r: string) => (
-                  <span key={r} className="text-[10px] font-bold uppercase rounded-full bg-secondary px-2 py-0.5 inline-flex items-center gap-1">
+                  <span key={r} className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-0.5 text-caption font-semibold capitalize">
                     <ShieldCheck className="h-3 w-3" />{r}
                   </span>
                 ))}
@@ -123,30 +124,28 @@ function Page() {
             </div>
           </div>
           {partner && (
-            <div className="mt-4 flex items-center justify-between rounded-2xl bg-card/60 backdrop-blur border border-border p-3">
+            <div className="mt-3.5 flex items-center justify-between rounded-lg bg-secondary px-3.5 py-2.5">
               <div>
-                <div className="text-sm font-bold">Availability</div>
-                <div className="text-xs text-muted-foreground">Toggle to accept new orders.</div>
+                <div className="text-body font-semibold">Availability</div>
+                <div className="text-small text-muted-foreground">Turn on to accept new orders.</div>
               </div>
               <Switch checked={partner.is_online ?? false} onCheckedChange={toggleOnline} />
             </div>
           )}
         </div>
 
-        {/* Stats */}
         {partner && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard icon={CheckCircle2} label="Delivered" value={String(stats.data?.delivered ?? "—")} />
-            <StatCard icon={Truck} label="Active" value={String(stats.data?.active ?? "—")} />
-            <StatCard icon={Clock} label="Today" value={stats.data ? `${stats.data.todayHours.toFixed(1)}h` : "—"} />
-            <StatCard icon={Star} label="Rating" value={partner.rating ? Number(partner.rating).toFixed(1) : "—"} />
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard icon={CheckCircle2} label="Delivered" value={String(stats.data?.delivered ?? "—")} tint="bg-tint-mint" />
+            <StatCard icon={Truck} label="Active" value={String(stats.data?.active ?? "—")} tint="bg-tint-sky" />
+            <StatCard icon={Clock} label="Today" value={stats.data ? `${stats.data.todayHours.toFixed(1)}h` : "—"} tint="bg-tint-peach" />
+            <StatCard icon={Star} label="Rating" value={partner.rating ? Number(partner.rating).toFixed(1) : "—"} tint="bg-tint-sun" />
           </div>
         )}
 
-        {/* Personal info */}
-        <section className="rounded-3xl border border-border bg-card p-5 shadow-card">
-          <h2 className="font-display text-lg font-bold flex items-center gap-2 mb-4"><UserIcon className="h-5 w-5 text-primary" /> Personal info</h2>
-          <div className="grid md:grid-cols-2 gap-3">
+        <section className="space-y-3">
+          <h2 className="section-title">Personal info</h2>
+          <div className="space-y-3.5 rounded-xl border border-border/70 bg-card p-4">
             <Field label="Full name">
               <Input value={profile?.full_name ?? ""} onChange={(e) => setProfile({ ...profile, full_name: e.target.value })} placeholder="Your name" />
             </Field>
@@ -157,60 +156,50 @@ function Page() {
             <Field label="Avatar URL">
               <Input value={profile?.avatar_url ?? ""} onChange={(e) => setProfile({ ...profile, avatar_url: e.target.value })} placeholder="https://…" />
             </Field>
-          </div>
-          <div className="mt-4 flex justify-end">
-            <Button onClick={saveProfile} disabled={savingProfile} className="rounded-xl gradient-primary text-primary-foreground">Save profile</Button>
+            <Button onClick={saveProfile} disabled={savingProfile} className="h-11 w-full rounded-xl">Save profile</Button>
           </div>
         </section>
 
-        {/* Partner info */}
         {partner && (
-          <section className="rounded-3xl border border-border bg-card p-5 shadow-card">
-            <h2 className="font-display text-lg font-bold flex items-center gap-2 mb-4"><Bike className="h-5 w-5 text-primary" /> Delivery details</h2>
-            <div className="grid md:grid-cols-2 gap-3">
+          <section className="space-y-3">
+            <h2 className="section-title">Delivery details</h2>
+            <div className="space-y-3.5 rounded-xl border border-border/70 bg-card p-4">
               <Field label="Display name">
                 <Input value={partner.name ?? ""} onChange={(e) => setPartner({ ...partner, name: e.target.value })} />
               </Field>
               <Field label="Partner phone">
                 <Input value={partner.phone ?? ""} onChange={(e) => setPartner({ ...partner, phone: e.target.value })} placeholder="Number customers see" />
               </Field>
-              <Field label="Vehicle" className="md:col-span-2">
+              <Field label="Vehicle">
                 <Input value={partner.vehicle ?? ""} onChange={(e) => setPartner({ ...partner, vehicle: e.target.value })} placeholder="e.g. Bike — MH12 AB 1234" />
               </Field>
-            </div>
-            <div className="mt-4 flex items-center justify-between flex-wrap gap-3">
-              <div className="text-xs text-muted-foreground">
-                This week: <span className="font-bold text-foreground">{stats.data?.weekHours.toFixed(1) ?? "0.0"}h</span> worked
+              <div className="text-small text-muted-foreground">
+                This week: <span className="font-semibold text-foreground">{stats.data?.weekHours.toFixed(1) ?? "0.0"}h</span> worked
               </div>
-              <Button onClick={savePartner} disabled={savingPartner} className="rounded-xl gradient-primary text-primary-foreground">Save details</Button>
+              <Button onClick={savePartner} disabled={savingPartner} className="h-11 w-full rounded-xl">Save details</Button>
             </div>
           </section>
         )}
 
-        {/* Help & Support */}
-        <section className="rounded-3xl border border-border bg-card p-5 shadow-card">
-          <h2 className="font-display text-lg font-bold flex items-center gap-2 mb-4"><LifeBuoy className="h-5 w-5 text-primary" /> Help & Support</h2>
-          <div className="grid gap-2">
-            <Link to="/support/my-tickets" className="flex items-center justify-between rounded-2xl border border-border bg-background hover:bg-secondary transition p-3">
+        <section className="space-y-3">
+          <h2 className="section-title">Help & support</h2>
+          <div className="divide-y divide-border/60 overflow-hidden rounded-xl border border-border/70 bg-card">
+            <Link to="/support/my-tickets" className="press flex min-h-12 items-center justify-between gap-3 px-4 py-2.5">
               <div className="flex items-center gap-3">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/15 text-primary"><MessageCircle className="h-4 w-4" /></span>
+                <span className="grid h-9 w-9 place-items-center rounded-lg bg-tint-mint text-primary-ink"><MessageCircle className="h-4 w-4" /></span>
                 <div>
-                  <div className="text-sm font-bold">My tickets</div>
-                  <div className="text-xs text-muted-foreground">View your past support requests</div>
+                  <div className="text-body font-medium">My tickets</div>
+                  <div className="text-small text-muted-foreground">View past support requests</div>
                 </div>
               </div>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </Link>
-            <button
-              type="button"
-              onClick={() => setTicketOpen(true)}
-              className="flex w-full items-center justify-between rounded-2xl border border-border bg-background hover:bg-secondary transition p-3 text-left"
-            >
+            <button type="button" onClick={() => setTicketOpen(true)} className="press flex min-h-12 w-full items-center justify-between gap-3 px-4 py-2.5 text-left">
               <div className="flex items-center gap-3">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/15 text-primary"><LifeBuoy className="h-4 w-4" /></span>
+                <span className="grid h-9 w-9 place-items-center rounded-lg bg-tint-sky text-foreground/70"><LifeBuoy className="h-4 w-4" /></span>
                 <div>
-                  <div className="text-sm font-bold">Contact support</div>
-                  <div className="text-xs text-muted-foreground">Raise a new ticket for any issue</div>
+                  <div className="text-body font-medium">Contact support</div>
+                  <div className="text-small text-muted-foreground">Raise a new ticket</div>
                 </div>
               </div>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -219,33 +208,30 @@ function Page() {
         </section>
         <SupportTicketForm open={ticketOpen} onOpenChange={setTicketOpen} />
 
-        <Separator />
-
-        <div className="flex justify-end">
-          <Button onClick={onSignOut} variant="outline" className="rounded-xl text-destructive hover:bg-destructive/10">
-            <LogOut className="h-4 w-4 mr-2" /> Sign out
-          </Button>
-        </div>
+        <Button onClick={onSignOut} variant="secondary" className="h-11 w-full rounded-xl text-destructive">
+          <LogOut className="h-4 w-4" /> Sign out
+        </Button>
         <DeleteAccountSection />
       </div>
-    </RoleShell>
+    </>
   );
 }
 
 function Field({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={className}>
-      <label className="text-xs font-bold text-muted-foreground">{label}</label>
-      <div className="mt-1">{children}</div>
+      <label className="text-small font-medium text-muted-foreground">{label}</label>
+      <div className="mt-1.5">{children}</div>
     </div>
   );
 }
 
-function StatCard({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+function StatCard({ icon: Icon, label, value, tint }: { icon: any; label: string; value: string; tint: string }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-4">
-      <div className="flex items-center gap-2 text-muted-foreground text-xs font-semibold"><Icon className="h-4 w-4 text-primary" />{label}</div>
-      <div className="mt-1 font-display text-xl font-extrabold truncate">{value}</div>
+    <div className={`rounded-xl p-3.5 ${tint}`}>
+      <Icon className="h-[18px] w-[18px] text-foreground/60" />
+      <div className="mt-2.5 text-page font-bold leading-none tracking-tight">{value}</div>
+      <div className="mt-1 text-small text-foreground/60">{label}</div>
     </div>
   );
 }

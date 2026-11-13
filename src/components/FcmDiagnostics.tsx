@@ -76,13 +76,13 @@ export function FcmDiagnostics() {
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+    <div className="space-y-4 rounded-xl border border-border/70 bg-card p-4">
       <div className="flex items-center gap-2">
-        <BellRing className="h-5 w-5 text-primary" />
-        <h2 className="font-display font-bold">Firebase Cloud Messaging</h2>
+        <BellRing className="h-4 w-4 text-primary" />
+        <h2 className="section-title">Firebase Cloud Messaging</h2>
       </div>
 
-      <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+      <dl className="grid grid-cols-1 gap-2 text-small sm:grid-cols-2">
         <Row label="Config">
           {d?.configured ? <Badge>Ready</Badge> : <Badge variant="destructive">Missing web push keys</Badge>}
         </Row>
@@ -98,7 +98,7 @@ export function FcmDiagnostics() {
       </dl>
 
       {d?.token && (
-        <p className="break-all rounded-xl bg-secondary/60 p-3 font-mono text-[11px] text-muted-foreground">
+        <p className="break-all rounded-lg bg-secondary/60 p-3 font-mono text-caption text-muted-foreground">
           {d.token.slice(0, 24)}…{d.token.slice(-12)}
         </p>
       )}
@@ -107,7 +107,7 @@ export function FcmDiagnostics() {
         <Button onClick={handleEnable} disabled={busy || !user}>
           <Bell className="mr-2 h-4 w-4" /> Enable on this device
         </Button>
-        <Button variant="outline" onClick={handleTest} disabled={busy || !user}>
+        <Button variant="secondary" onClick={handleTest} disabled={busy || !user}>
           <Send className="mr-2 h-4 w-4" /> Send test push
         </Button>
         <Button variant="ghost" onClick={refresh} disabled={busy}>
@@ -115,7 +115,7 @@ export function FcmDiagnostics() {
         </Button>
       </div>
 
-      <p className="text-xs text-muted-foreground">
+      <p className="text-small leading-relaxed text-muted-foreground">
         In-app notification history and realtime toasts continue to come from the database. Firebase only delivers
         the system-level push.
       </p>
@@ -125,7 +125,7 @@ export function FcmDiagnostics() {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2">
+    <div className="flex min-h-10 items-center justify-between gap-3 rounded-lg bg-secondary/70 px-3 py-2">
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="flex min-w-0 items-center">{children}</dd>
     </div>

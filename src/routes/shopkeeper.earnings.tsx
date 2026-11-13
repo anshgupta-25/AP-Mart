@@ -12,8 +12,6 @@ import {
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { RoleShell } from "@/components/RoleShell";
-import { SHOPKEEPER_NAV } from "./shopkeeper.dashboard";
 import { rupees } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -331,30 +329,28 @@ function Page() {
 
   if (!shopId) {
     return (
-      <RoleShell role="shopkeeper" nav={SHOPKEEPER_NAV} requireRoles={["shopkeeper","admin"]}>
-        <div className="p-6">
-          <h1 className="font-display text-2xl font-bold">Earnings</h1>
-          <div className="mt-6 rounded-2xl border border-border bg-card p-6">
-            <p className="text-sm text-muted-foreground">Loading your shop… If this persists, ask an admin to assign one.</p>
-          </div>
+      <div className="mx-auto max-w-6xl space-y-5 px-4 py-4 md:px-6">
+        <h1 className="large-title">Earnings</h1>
+        <div className="rounded-xl bg-card p-4 border border-border/70">
+          <p className="text-body text-muted-foreground">Loading your shop… If this persists, ask an admin to assign one.</p>
         </div>
-      </RoleShell>
+      </div>
     );
   }
 
   return (
-    <RoleShell role="shopkeeper" nav={SHOPKEEPER_NAV} requireRoles={["shopkeeper","admin"]}>
-      <div className="p-4 md:p-6 space-y-6 print:p-0">
+    <>
+      <div className="mx-auto max-w-6xl space-y-5 px-4 py-4 md:px-6 print:p-0">
         {/* Header + filters */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 print:hidden">
           <div>
-            <h1 className="font-display text-3xl font-extrabold">Earnings</h1>
-            <p className="text-sm text-muted-foreground">Analytics for your shop · <span className="font-semibold text-foreground">{range.label}</span></p>
+            <h1 className="large-title">Earnings</h1>
+            <p className="mt-1 text-body text-muted-foreground">Your shop · <span className="font-medium text-foreground">{range.label}</span></p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="rounded-xl"><CalendarIcon className="h-4 w-4 mr-2" />{range.label}</Button>
+                <Button variant="secondary" size="sm"><CalendarIcon className="h-4 w-4 mr-2" />{range.label}</Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 {PRESETS.map(p => (
@@ -371,7 +367,7 @@ function Page() {
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm" className="rounded-xl"><Download className="h-4 w-4 mr-2" />Export</Button>
+                <Button size="sm"><Download className="h-4 w-4 mr-2" />Export</Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={exportCSV}><FileText className="h-4 w-4 mr-2" />CSV</DropdownMenuItem>
@@ -383,7 +379,7 @@ function Page() {
         </div>
 
         {/* Summary KPIs */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Kpi label="Today" value={rupees(lifetime.today)} icon={<IndianRupee className="h-4 w-4" />} accent="primary" />
           <Kpi label="Yesterday" value={rupees(lifetime.yesterday)} icon={<IndianRupee className="h-4 w-4" />} />
           <Kpi label="This Week" value={rupees(lifetime.week)} icon={<IndianRupee className="h-4 w-4" />} />
@@ -394,7 +390,7 @@ function Page() {
           <Kpi label="Available Balance" value={rupees(lifetime.available)} icon={<Wallet className="h-4 w-4" />} accent="primary" />
         </section>
 
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Kpi label="Total Orders" value={String(lifetime.totalOrders)} icon={<Package className="h-4 w-4" />} />
           <Kpi label="Completed" value={String(lifetime.completed)} icon={<CheckCircle2 className="h-4 w-4" />} />
           <Kpi label="Cancelled" value={String(lifetime.cancelled)} icon={<XCircle className="h-4 w-4" />} />
@@ -402,19 +398,19 @@ function Page() {
         </section>
 
         {/* Period highlight w/ comparison */}
-        <section className="rounded-2xl border border-border bg-card p-4 md:p-5">
+        <section className="rounded-xl bg-tint-mint p-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <div className="text-xs font-semibold uppercase text-muted-foreground">{range.label}</div>
-              <div className="font-display text-3xl md:text-4xl font-extrabold mt-1">{rupees(kpis.netRevenue)}</div>
-              <div className={`mt-1 inline-flex items-center gap-1 text-xs font-bold ${changePct >= 0 ? "text-success-foreground" : "text-destructive"}`}>
+              <div className="eyebrow">{range.label}</div>
+              <div className="mt-1 text-page font-semibold tracking-tight">{rupees(kpis.netRevenue)}</div>
+              <div className={`mt-1 inline-flex items-center gap-1 text-meta font-semibold ${changePct >= 0 ? "text-success-foreground" : "text-destructive"}`}>
                 {changePct >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                 {changePct >= 0 ? "+" : ""}{changePct}% vs previous period
               </div>
             </div>
             <div className="flex gap-2 flex-wrap">
               {(["earnings","orders","profit","refunds"] as const).map(m => (
-                <Button key={m} size="sm" variant={chartMetric === m ? "default" : "outline"} onClick={() => setChartMetric(m)} className="rounded-xl capitalize">{m}</Button>
+                <Button key={m} size="sm" variant={chartMetric === m ? "default" : "secondary"} onClick={() => setChartMetric(m)} className="rounded-full capitalize">{m}</Button>
               ))}
             </div>
           </div>
@@ -444,8 +440,8 @@ function Page() {
 
         {/* P&L */}
         <section>
-          <h2 className="font-bold mb-3">Profit & Loss</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <h2 className="section-title mb-3">Profit & loss</h2>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <Kpi label="Gross Sales" value={rupees(kpis.grossSales)} />
             <Kpi label="Total Discounts" value={rupees(kpis.discounts)} />
             <Kpi label="Delivery Charges" value={rupees(kpis.deliveryCharges)} />
@@ -459,8 +455,8 @@ function Page() {
 
         {/* Order stats */}
         <section>
-          <h2 className="font-bold mb-3">Order Statistics ({range.label})</h2>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <h2 className="section-title mb-3">Orders</h2>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
             <Kpi label="Total" value={String(kpis.total)} />
             <Kpi label="Completed" value={String(kpis.completed)} />
             <Kpi label="Pending" value={String(kpis.pending)} />
@@ -471,20 +467,20 @@ function Page() {
 
         {/* Top SKUs */}
         <section>
-          <h2 className="font-bold mb-3">Best Selling Products</h2>
-          <div className="rounded-2xl border border-border bg-card overflow-hidden">
-            <div className="grid grid-cols-12 px-4 py-2 text-[11px] font-bold uppercase text-muted-foreground border-b border-border bg-secondary/30">
+          <h2 className="section-title mb-3">Best sellers</h2>
+          <div className="overflow-hidden rounded-xl bg-card border border-border/70">
+            <div className="grid grid-cols-12 border-b border-border/60 bg-secondary/50 px-4 py-2.5 text-small font-medium text-muted-foreground">
               <div className="col-span-6">Product</div>
               <div className="col-span-3 text-right">Qty Sold</div>
               <div className="col-span-3 text-right">Revenue</div>
             </div>
             {(topSkuQuery.data ?? []).length === 0 ? (
-              <div className="p-6 text-sm text-muted-foreground text-center">No sales in this period.</div>
+              <div className="p-8 text-center text-body text-muted-foreground">No sales in this period.</div>
             ) : (topSkuQuery.data ?? []).map(row => (
-              <div key={row.name} className="grid grid-cols-12 px-4 py-3 text-sm border-t border-border first:border-t-0">
+              <div key={row.name} className="grid min-h-12 grid-cols-12 items-center border-t border-border/60 px-4 py-3 text-body first:border-t-0">
                 <div className="col-span-6 truncate font-semibold">{row.name}</div>
                 <div className="col-span-3 text-right">{row.qty}</div>
-                <div className="col-span-3 text-right font-bold text-primary">{rupees(row.revenue)}</div>
+                <div className="col-span-3 text-right font-semibold">{rupees(row.revenue)}</div>
               </div>
             ))}
           </div>
@@ -493,41 +489,60 @@ function Page() {
         {/* Transactions */}
         <section>
           <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-            <h2 className="font-bold">Recent Transactions</h2>
+            <h2 className="section-title">Recent transactions</h2>
             <div className="relative w-full max-w-xs">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Search order, customer…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9" />
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input placeholder="Search order or customer" value={search} onChange={e => setSearch(e.target.value)} className="h-10 pl-10" />
             </div>
           </div>
-          <div className="rounded-2xl border border-border bg-card overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-secondary/30 text-[11px] uppercase text-muted-foreground">
+          <div className="overflow-hidden rounded-xl bg-card border border-border/70">
+            <div className="divide-y divide-border/60 md:hidden">
+              {pageRows.length === 0 ? (
+                <div className="p-4 text-center text-meta text-muted-foreground">No transactions.</div>
+              ) : pageRows.map(o => (
+                <div key={o.id} className="flex items-start justify-between gap-3 p-3.5">
+                  <div className="min-w-0">
+                    <div className="text-body font-semibold">{o.order_number}</div>
+                    <div className="truncate text-small text-muted-foreground">{o.address?.name ?? "—"} · <span className="uppercase">{o.payment_method}</span></div>
+                    <div className="text-caption text-muted-foreground">{new Date(o.placed_at).toLocaleString()}</div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <div className="text-body font-semibold">{rupees(o.total)}</div>
+                    <div className="mt-1"><StatusPill status={o.status} /></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden overflow-x-auto md:block">
+            <table className="w-full text-body">
+              <thead className="bg-secondary/50 text-small font-medium text-muted-foreground">
                 <tr>
-                  <th className="text-left px-4 py-2">Order</th>
-                  <th className="text-left px-4 py-2">Customer</th>
-                  <th className="text-left px-4 py-2">Date</th>
-                  <th className="text-left px-4 py-2">Payment</th>
-                  <th className="text-left px-4 py-2">Status</th>
-                  <th className="text-right px-4 py-2">Amount</th>
+                  <th className="px-4 py-2.5 text-left font-medium">Order</th>
+                  <th className="px-4 py-2.5 text-left font-medium">Customer</th>
+                  <th className="px-4 py-2.5 text-left font-medium">Date</th>
+                  <th className="px-4 py-2.5 text-left font-medium">Payment</th>
+                  <th className="px-4 py-2.5 text-left font-medium">Status</th>
+                  <th className="px-4 py-2.5 text-right font-medium">Amount</th>
                 </tr>
               </thead>
               <tbody>
                 {pageRows.length === 0 ? (
-                  <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">No transactions.</td></tr>
+                  <tr><td colSpan={6} className="p-4 text-center text-muted-foreground">No transactions.</td></tr>
                 ) : pageRows.map(o => (
-                  <tr key={o.id} className="border-t border-border">
-                    <td className="px-4 py-2 font-semibold">{o.order_number}</td>
-                    <td className="px-4 py-2 truncate max-w-[160px]">{o.address?.name ?? "—"}</td>
-                    <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">{new Date(o.placed_at).toLocaleString()}</td>
-                    <td className="px-4 py-2 uppercase text-xs">{o.payment_method}</td>
-                    <td className="px-4 py-2"><StatusPill status={o.status} /></td>
-                    <td className="px-4 py-2 text-right font-bold">{rupees(o.total)}</td>
+                  <tr key={o.id} className="border-t border-border/60">
+                    <td className="px-4 py-3 font-semibold">{o.order_number}</td>
+                    <td className="px-4 py-3 truncate max-w-[160px]">{o.address?.name ?? "—"}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{new Date(o.placed_at).toLocaleString()}</td>
+                    <td className="px-4 py-3 uppercase text-xs">{o.payment_method}</td>
+                    <td className="px-4 py-3"><StatusPill status={o.status} /></td>
+                    <td className="px-4 py-3 text-right font-bold">{rupees(o.total)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
             {pageCount > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-border text-sm">
+              <div className="flex items-center justify-between border-t border-border/60 px-4 py-3 text-body">
                 <div className="text-muted-foreground">Page {page} of {pageCount} · {filteredTxns.length} rows</div>
                 <div className="flex gap-2">
                   <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(p => p-1)}>Prev</Button>
@@ -540,8 +555,8 @@ function Page() {
 
         {/* Settlement */}
         <section>
-          <h2 className="font-bold mb-3">Settlement</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <h2 className="section-title mb-3">Settlement</h2>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <Kpi label="Available Balance" value={rupees(lifetime.available)} accent="primary" />
             <Kpi label="Pending Settlement" value={rupees(lifetime.pendingSettle)} />
             <Kpi label="Last Settlement" value="—" hint="No payouts yet" />
@@ -549,7 +564,7 @@ function Page() {
           </div>
         </section>
       </div>
-    </RoleShell>
+    </>
   );
 }
 
@@ -562,22 +577,22 @@ function nextFriday() {
 
 function Kpi({ label, value, icon, accent, hint }: { label: string; value: string; icon?: React.ReactNode; accent?: "primary"; hint?: string }) {
   return (
-    <div className={`rounded-2xl border border-border p-4 ${accent === "primary" ? "bg-primary/5" : "bg-card"}`}>
-      <div className="flex items-center justify-between">
-        <div className="text-[11px] font-bold uppercase text-muted-foreground">{label}</div>
-        {icon && <div className={`h-7 w-7 rounded-lg grid place-items-center ${accent === "primary" ? "bg-primary/15 text-primary" : "bg-secondary text-muted-foreground"}`}>{icon}</div>}
+    <div className={`rounded-xl border border-border/70 p-3.5 ${accent === "primary" ? "bg-primary-soft" : "bg-card"}`}>
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-small text-muted-foreground">{label}</div>
+        {icon && <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${accent === "primary" ? "bg-card/70 text-primary-ink" : "bg-secondary text-muted-foreground"}`}>{icon}</div>}
       </div>
-      <div className={`font-display text-2xl font-extrabold mt-2 ${accent === "primary" ? "text-primary" : ""}`}>{value}</div>
-      {hint && <div className="text-[11px] text-muted-foreground mt-0.5">{hint}</div>}
+      <div className={`mt-2 text-xl font-semibold tracking-tight ${accent === "primary" ? "text-primary-ink" : ""}`}>{value}</div>
+      {hint && <div className="mt-0.5 text-small text-muted-foreground">{hint}</div>}
     </div>
   );
 }
 
 function StatusPill({ status }: { status: string }) {
   const cls =
-    DELIVERED.has(status) ? "bg-success/15 text-success-foreground" :
-    CANCELLED.has(status) ? "bg-destructive/15 text-destructive" :
-    REFUNDED.has(status) ? "bg-warning/15 text-warning-foreground" :
+    DELIVERED.has(status) ? "bg-primary-soft text-primary-ink" :
+    CANCELLED.has(status) ? "bg-tint-rose text-destructive" :
+    REFUNDED.has(status) ? "bg-tint-sun text-warning-foreground" :
     "bg-secondary text-foreground";
-  return <span className={`inline-block text-[10px] font-bold uppercase rounded-full px-2 py-0.5 ${cls}`}>{status.replace(/_/g," ")}</span>;
+  return <span className={`inline-block rounded-full px-2.5 py-0.5 text-caption font-semibold capitalize ${cls}`}>{status.replace(/_/g," ")}</span>;
 }

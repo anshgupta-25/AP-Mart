@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { LifeBuoy, Plus } from "lucide-react";
 import { SupportTicketForm } from "@/components/SupportTicketForm";
 
 export const Route = createFileRoute("/support/my-tickets")({
@@ -31,29 +31,34 @@ function Page() {
   });
 
   return (
-    <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-extrabold">My support tickets</h1>
-        <Button onClick={() => setOpen(true)} className="gradient-primary text-primary-foreground">
-          <Plus className="h-4 w-4 mr-1" /> New ticket
+    <div className="mx-auto max-w-3xl space-y-4 px-4 pb-6 pt-4">
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="large-title">Support</h1>
+        <Button size="sm" onClick={() => setOpen(true)} className="rounded-full px-3.5">
+          <Plus className="h-4 w-4" /> New ticket
         </Button>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-border/70 bg-card">
         {(tickets.data ?? []).length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">
-            You haven't created any tickets yet.
+          <div className="p-8 text-center">
+            <div className="mx-auto grid h-10 w-10 place-items-center rounded-full bg-tint-sky text-foreground/70">
+              <LifeBuoy className="h-5 w-5" />
+            </div>
+            <div className="mt-2.5 text-body font-semibold">No tickets yet</div>
+            <p className="mt-0.5 text-small text-muted-foreground">Need help? Raise a ticket and we'll get back to you.</p>
+            <Button onClick={() => setOpen(true)} className="mt-4 h-9 rounded-full px-5">New ticket</Button>
           </div>
         ) : (
-          <ul className="divide-y divide-border">
+          <ul className="divide-y divide-border/60">
             {tickets.data!.map(t => (
               <li key={t.id}>
-                <Link to="/support/ticket/$id" params={{ id: t.id }} className="block p-4 hover:bg-secondary/40">
+                <Link to="/support/ticket/$id" params={{ id: t.id }} className="press block min-h-12 px-4 py-3">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold truncate">{t.title}</span>
-                    <span className="text-[10px] uppercase rounded-full bg-secondary px-2 py-0.5 font-bold">{t.status.replace(/_/g, " ")}</span>
+                    <span className="truncate text-body font-medium">{t.title}</span>
+                    <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-caption font-semibold capitalize">{t.status.replace(/_/g, " ")}</span>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
+                  <div className="mt-0.5 text-caption text-muted-foreground">
                     {t.ticket_number} · {t.category.replace(/_/g, " ")} · {new Date(t.created_at).toLocaleString()}
                   </div>
                 </Link>

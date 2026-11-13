@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "start": "node --env-file-if-exists=.env .output/server/index.mjs",
+    "typecheck": "tsc --noEmit",
     "build:mobile": "vite build --mode mobile && cap sync android",
     "android:open": "cap open android",
     "android:bundle": "npm run build:mobile && cd android && ./gradlew bundleRelease"

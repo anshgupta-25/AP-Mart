@@ -121,7 +121,7 @@ export function MultiImageInput({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-bold">
+        <label className="text-meta font-medium text-foreground/80">
           {label} {required && <span className="text-destructive">*</span>}
           <span className="ml-2 font-normal text-muted-foreground">
             {value.length}/{MAX_IMAGES}
@@ -150,11 +150,11 @@ export function MultiImageInput({
       {value.length > 0 && (
         <>
           {/* Cover */}
-          <div className="rounded-xl border border-border p-2 bg-secondary/30">
-            <div className="text-[11px] font-bold text-muted-foreground mb-1 flex items-center gap-1">
-              <Star className="h-3 w-3 fill-current text-yellow-500" /> Cover image
+          <div className="rounded-xl bg-secondary p-3">
+            <div className="mb-2 flex items-center gap-1.5 text-small font-medium text-muted-foreground">
+              <Star className="h-3.5 w-3.5 fill-accent text-accent" /> Cover image
             </div>
-            <div className="relative rounded-lg overflow-hidden w-full max-w-[220px] aspect-square bg-card">
+            <div className="relative aspect-square w-full max-w-[220px] overflow-hidden rounded-xl bg-card">
               <StorageImg
                 loading="lazy"
                 decoding="async"
@@ -176,7 +176,7 @@ export function MultiImageInput({
           {/* Gallery */}
           {value.length > 1 && (
             <div>
-              <div className="text-[11px] font-bold text-muted-foreground mb-1">
+              <div className="mb-1.5 text-small font-medium text-muted-foreground">
                 Gallery (drag to reorder)
               </div>
               <div className="flex gap-2 overflow-x-auto pb-2">
@@ -190,7 +190,7 @@ export function MultiImageInput({
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={() => onDrop(idx)}
                       className={cn(
-                        "relative shrink-0 w-24 aspect-square rounded-lg overflow-hidden border border-border bg-card group",
+                        "relative aspect-square w-24 shrink-0 overflow-hidden rounded-xl bg-card border border-border/70 group",
                         dragIdx === idx && "opacity-50",
                       )}
                     >
@@ -217,7 +217,7 @@ export function MultiImageInput({
                       <button
                         type="button"
                         onClick={() => setCover(idx)}
-                        className="absolute inset-x-0 bottom-0 text-[10px] font-bold py-1 bg-background/85 hover:bg-primary hover:text-primary-foreground flex items-center justify-center gap-1"
+                        className="absolute inset-x-0 bottom-0 text-caption font-semibold py-1.5 bar-blur hover:bg-primary hover:text-primary-foreground flex items-center justify-center gap-1"
                       >
                         <Star className="h-3 w-3" /> Set as cover
                       </button>
@@ -235,10 +235,10 @@ export function MultiImageInput({
           {previews.map((url) => (
             <div
               key={url}
-              className="relative shrink-0 w-24 aspect-square rounded-lg overflow-hidden border border-border"
+              className="relative aspect-square w-24 shrink-0 overflow-hidden rounded-xl bg-secondary"
             >
               <img src={url} alt="Selected image preview" className="w-full h-full object-cover" />
-              <span className="absolute inset-x-0 bottom-0 bg-background/85 px-1 py-0.5 text-center text-[10px]">
+              <span className="absolute inset-x-0 bottom-0 bg-background/85 px-1 py-0.5 text-center text-micro">
                 {busy ? "Uploading…" : "Preview"}
               </span>
             </div>
@@ -247,7 +247,7 @@ export function MultiImageInput({
       )}
 
       {required && value.length === 0 && (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-caption text-muted-foreground">
           Upload 1–6 images (JPG, PNG or WEBP, up to 10 MB each). The first image becomes the cover.
         </p>
       )}

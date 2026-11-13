@@ -153,7 +153,7 @@ export function RouteMap({
 
   if (valid.length === 0) {
     return (
-      <div className={`${height} w-full rounded-2xl border border-dashed border-border grid place-items-center text-sm text-muted-foreground ${className ?? ""}`}>
+      <div className={`${height} w-full rounded-xl bg-secondary grid place-items-center text-small text-muted-foreground ${className ?? ""}`}>
         No coordinates available
       </div>
     );
@@ -164,14 +164,14 @@ export function RouteMap({
 
   return (
     <div className={className}>
-      <div ref={containerRef} className={`${height} w-full rounded-2xl overflow-hidden border border-border ${ready ? "" : "bg-secondary animate-pulse"}`} />
+      <div ref={containerRef} className={`${height} w-full overflow-hidden rounded-xl ${ready ? "" : "bg-secondary animate-pulse"}`} />
       {valid.length > 1 && (
-        <div className="mt-2 text-xs text-muted-foreground flex items-center gap-3 flex-wrap">
+        <div className="mt-2 flex flex-wrap items-center gap-3 text-small text-muted-foreground">
           <span>
-            Distance: <span className="font-bold text-foreground">{(routeKm ?? distanceKm).toFixed(2)} km</span>
+            Distance: <span className="font-semibold text-foreground">{(routeKm ?? distanceKm).toFixed(2)} km</span>
           </span>
           {showEta && etaMin != null && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 text-primary px-2 py-0.5 font-bold">
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2 py-0.5 text-caption font-semibold text-primary-ink">
               ETA ~{etaMin} min
             </span>
           )}

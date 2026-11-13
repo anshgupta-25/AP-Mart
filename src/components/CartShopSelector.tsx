@@ -100,39 +100,34 @@ export function CartShopSelector({
 
   return (
     <>
-      <div className="mb-3 rounded-2xl border border-border bg-card p-3 shadow-card">
+      <div className="rounded-xl border border-border/70 bg-card p-3">
         <div className="flex items-start gap-3">
-          <div className="h-11 w-11 rounded-xl bg-primary/10 grid place-items-center text-primary shrink-0">
-            <Store className="h-5 w-5" />
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-tint-mint text-primary-ink">
+            <Store className="h-4 w-4" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                Delivering from
-              </span>
+              <span className="eyebrow">Delivering from</span>
               {autoAssigned && currentShopId && (
-                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold rounded-full bg-primary/15 text-primary px-1.5 py-0.5">
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2 py-0.5 text-caption font-medium text-primary-ink">
                   <Sparkles className="h-2.5 w-2.5" /> Auto selected
                 </span>
               )}
             </div>
             {noShops ? (
-              <div className="font-bold text-sm text-destructive">
+              <div className="text-meta font-semibold text-destructive">
                 Sorry, all shops selling these products are currently closed or out of stock.
               </div>
 
             ) : (
               <>
-                <div className="font-bold text-sm truncate">{displayName}</div>
-                <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground flex-wrap">
+                <div className="truncate text-body font-semibold">{displayName}</div>
+                <div className="mt-0.5 flex items-center gap-2 text-caption text-muted-foreground flex-wrap">
                   {displayAddress && (
                     <span className="inline-flex items-center gap-0.5 truncate">
                       <MapPin className="h-3 w-3" /> {displayAddress}
                     </span>
                   )}
-                  <span className="inline-flex items-center gap-0.5">
-                    <Star className="h-3 w-3 fill-current text-warning" /> 4.8
-                  </span>
                   {displayDistance != null && (
                     <span className="inline-flex items-center gap-0.5">
                       <MapPin className="h-3 w-3" /> {displayDistance} km
@@ -146,10 +141,10 @@ export function CartShopSelector({
             )}
           </div>
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             onClick={() => setOpen(true)}
-            className="rounded-lg shrink-0"
+            className="h-8 shrink-0 rounded-full px-3"
             disabled={shops.length === 0}
           >
             Change shop <ChevronRight className="h-3 w-3 ml-0.5" />
@@ -165,14 +160,14 @@ export function CartShopSelector({
               Shops in your PIN code that stock every item in your cart.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+          <div className="max-h-[60vh] space-y-3 overflow-y-auto">
             {shopsQuery.isLoading ? (
               <>
-                <Skeleton className="h-24 rounded-2xl" />
-                <Skeleton className="h-24 rounded-2xl" />
+                <Skeleton className="h-20 rounded-xl" />
+                <Skeleton className="h-20 rounded-xl" />
               </>
             ) : shops.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">
+              <p className="py-8 text-center text-meta text-muted-foreground">
                 No shops in your PIN code can fulfill this cart right now.
               </p>
             ) : (
@@ -181,27 +176,24 @@ export function CartShopSelector({
                 return (
                   <div
                     key={s.shop_id}
-                    className={`rounded-2xl border-2 p-3 transition ${isActive ? "border-primary bg-primary/5" : "border-border bg-card"}`}
+                    className={`rounded-xl p-3 transition-colors ${isActive ? "bg-primary-soft ring-1 ring-primary" : "bg-secondary/60"}`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-sm truncate">{s.shop_name}</span>
+                          <span className="truncate text-body font-semibold">{s.shop_name}</span>
                           {s.shop_id === cheapestId && shops.length > 1 && (
-                            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold uppercase rounded-full bg-success/20 text-success-foreground px-1.5 py-0.5">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2 py-0.5 text-caption font-medium text-primary-ink">
                               <TrendingDown className="h-3 w-3" /> Lowest
                             </span>
                           )}
                           {s.shop_id === fastestId && shops.length > 1 && s.shop_id !== cheapestId && (
-                            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold uppercase rounded-full bg-primary/15 text-primary px-1.5 py-0.5">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-tint-sky px-2 py-0.5 text-caption font-medium text-foreground">
                               <Zap className="h-3 w-3" /> Fastest
                             </span>
                           )}
                         </div>
-                        <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                          <span className="inline-flex items-center gap-0.5">
-                            <Star className="h-3 w-3 fill-current text-warning" />4.8
-                          </span>
+                        <div className="mt-1 flex flex-wrap items-center gap-3 text-caption text-muted-foreground">
                           {s.distance_km != null && (
                             <span className="inline-flex items-center gap-0.5">
                               <MapPin className="h-3 w-3" />
@@ -214,22 +206,22 @@ export function CartShopSelector({
                           </span>
                         </div>
                         {s.shop_address && (
-                          <div className="mt-1 text-[11px] text-muted-foreground truncate">{s.shop_address}</div>
+                          <div className="mt-1 text-caption text-muted-foreground truncate">{s.shop_address}</div>
                         )}
                       </div>
                       <div className="text-right shrink-0">
-                        <div className="font-bold text-sm text-primary">{rupees(s.price)}</div>
+                        <div className="text-body font-semibold">{rupees(s.price)}</div>
                         {s.mrp > s.price && (
-                          <div className="text-[11px] text-muted-foreground line-through">{rupees(s.mrp)}</div>
+                          <div className="text-caption text-muted-foreground line-through">{rupees(s.mrp)}</div>
                         )}
                       </div>
                     </div>
                     <div className="mt-2 flex justify-end">
                       <Button
                         size="sm"
-                        variant={isActive ? "secondary" : "default"}
+                        variant={isActive ? "outline" : "default"}
                         onClick={() => select(s)}
-                        className="rounded-lg h-8"
+                        className="h-8 rounded-full px-4"
                         disabled={isActive}
                       >
                         {isActive ? (
