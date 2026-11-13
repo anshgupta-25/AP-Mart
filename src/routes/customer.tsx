@@ -9,7 +9,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { StorefrontShell } from "@/components/shell/StorefrontShell";
 import { useCustomerCatalogRealtime } from "@/hooks/useCustomerProducts";
-import { useDeliveryContext } from "@/hooks/useDeliveryContext";
+import { AddressPromptSheet } from "@/components/customer/AddressPrompt";
 
 export const Route = createFileRoute("/customer")({
   head: () => ({ meta: [{ title: "AP Mart — Groceries from shops near you" }] }),
@@ -20,7 +20,6 @@ function CustomerShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { user, loading, roles } = useAuth();
   const navigate = useNavigate();
-  const { hasAddress, ready: addressReady } = useDeliveryContext();
   useCustomerCatalogRealtime();
 
   const onSetup = pathname.startsWith("/customer/address-setup");
@@ -36,18 +35,8 @@ function CustomerShell() {
     else if (r.includes("delivery")) navigate({ to: "/delivery/dashboard", replace: true });
   }, [user, loading, roles, navigate]);
 
-  // Every customer must have a default delivery address before browsing —
-  // this also covers accounts created by an admin via role assignment.
-  useEffect(() => {
-    if (loading || !user || onSetup) return;
-    if (addressReady && !hasAddress) {
-      navigate({
-        to: "/customer/address-setup",
-        search: { next: pathname } as never,
-        replace: true,
-      });
-    }
-  }, [loading, user, onSetup, addressReady, hasAddress, navigate, pathname]);
+  // Customers can browse before adding an address. AddressPromptSheet asks for one on top of
+  // the storefront (dismissible for the session); checkout still requires an address.
 
   if (pathname === "/customer") return <Navigate to="/customer/home" replace />;
 
@@ -56,6 +45,7 @@ function CustomerShell() {
   return (
     <StorefrontShell>
       <Outlet />
+      <AddressPromptSheet />
     </StorefrontShell>
   );
 }

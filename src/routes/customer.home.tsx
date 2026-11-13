@@ -10,6 +10,7 @@ import { ProductRail } from "@/components/customer/ProductRail";
 import { useCustomerProducts } from "@/hooks/useCustomerProducts";
 import { useDeliveryContext, useEligibleShopCount } from "@/hooks/useDeliveryContext";
 import { NoShopsNotice } from "@/components/customer/NoShopsNotice";
+import { AddressBanner } from "@/components/customer/AddressPrompt";
 
 export const Route = createFileRoute("/customer/home")({
   head: () => ({
@@ -25,7 +26,7 @@ export const Route = createFileRoute("/customer/home")({
 });
 
 function CustomerHome() {
-  const { refresh } = useDeliveryContext();
+  const { refresh, hasAddress } = useDeliveryContext();
   const eligibleShops = useEligibleShopCount();
 
   const categories = useQuery({
@@ -47,6 +48,7 @@ function CustomerHome() {
   if (eligibleShops.isSuccess && eligibleShops.data === 0) {
     return (
       <NoShopsNotice
+        hasAddress={hasAddress}
         onRefresh={() => {
           refresh();
           eligibleShops.refetch();
@@ -57,6 +59,7 @@ function CustomerHome() {
 
   return (
     <div className="space-y-6 pt-4">
+      <AddressBanner />
       <HeroBannerCarousel />
       <CollectionChips />
 
