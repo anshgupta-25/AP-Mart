@@ -183,8 +183,8 @@ function Page() {
 
   return (
     <div className="mx-auto grid max-w-6xl gap-4 px-4 pb-8 pt-4 md:px-6 lg:grid-cols-3">
-      <div className="space-y-4 lg:col-span-2">
-        <div className="rounded-xl border border-border/70 bg-card p-4">
+      <div className="space-y-5 lg:col-span-2">
+        <div className="rounded-2xl border border-border/50 bg-card p-5 shadow-soft">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="min-w-0">
               <div className="eyebrow capitalize">
@@ -197,11 +197,6 @@ function Page() {
                 {t.category.replace(/_/g, " ")} · created {new Date(t.created_at).toLocaleString()}
               </div>
             </div>
-            <span
-              className={`rounded-full px-2.5 py-1 text-caption font-semibold capitalize ${STATUS_TONE[t.status] ?? "bg-secondary"}`}
-            >
-              {t.status.replace(/_/g, " ")}
-            </span>
           </div>
           <p className="mt-3 whitespace-pre-wrap text-body leading-relaxed">{t.description}</p>
           {(ctx.data?.attachments ?? []).length > 0 && (
@@ -238,25 +233,28 @@ function Page() {
           )}
         </div>
 
-        {/* Actions */}
-        <div className="space-y-3 rounded-xl border border-border/50 bg-card p-3.5 shadow-soft">
+        {/* Status */}
+        <section className="space-y-4 rounded-2xl border border-border/50 bg-card p-5 shadow-soft">
+          <div className="flex items-center justify-between">
+            <h2 className="eyebrow">Status</h2>
+            <span
+              className={`rounded-full px-3 py-1 text-caption font-semibold capitalize ${STATUS_TONE[t.status] ?? "bg-secondary"}`}
+            >
+              {t.status.replace(/_/g, " ")}
+            </span>
+          </div>
+
           {isDone ? (
-            <div className="flex items-center gap-2.5">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary-soft text-primary-ink">
-                <CheckCircle2 className="h-[18px] w-[18px]" />
-              </span>
-              <div className="min-w-0 flex-1 leading-tight">
+            <div className="flex items-center justify-between gap-4 rounded-xl bg-secondary/60 p-4">
+              <div className="min-w-0 leading-snug">
                 <div className="text-body font-semibold capitalize">{t.status}</div>
-                <div className="text-small text-muted-foreground">
-                  {t.resolved_at
-                    ? new Date(t.resolved_at).toLocaleString()
-                    : "No further action needed"}
+                <div className="mt-0.5 text-small text-muted-foreground">
+                  {t.resolved_at ? new Date(t.resolved_at).toLocaleString() : "No action needed"}
                 </div>
               </div>
               <Button
-                size="sm"
                 variant="outline"
-                className="gap-1.5"
+                className="h-10 shrink-0 gap-2 px-4"
                 disabled={!!statusBusy}
                 onClick={() => setStatus("open", "Ticket reopened")}
               >
@@ -265,9 +263,9 @@ function Page() {
               </Button>
             </div>
           ) : (
-            <>
+            <div className="space-y-3">
               <Button
-                className="h-10 w-full gap-2 rounded-xl text-[14px]"
+                className="h-12 w-full gap-2 rounded-xl text-[15px]"
                 disabled={!!statusBusy}
                 onClick={() => setStatus("resolved", "Ticket resolved. User notified.")}
               >
@@ -278,11 +276,10 @@ function Page() {
                 )}
                 Resolve issue
               </Button>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <Button
-                  size="sm"
                   variant="secondary"
-                  className="gap-1.5"
+                  className="h-11 gap-2 rounded-xl"
                   disabled={!!statusBusy || t.status === "in_progress"}
                   onClick={() => setStatus("in_progress", "Marked in progress")}
                 >
@@ -290,19 +287,8 @@ function Page() {
                   In progress
                 </Button>
                 <Button
-                  size="sm"
                   variant="secondary"
-                  className="gap-1.5"
-                  disabled={!user}
-                  onClick={() => user && assign(user.id)}
-                >
-                  <UserCheck />
-                  Assign me
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="gap-1.5"
+                  className="h-11 gap-2 rounded-xl"
                   disabled={!!statusBusy}
                   onClick={() => setStatus("closed", "Ticket closed")}
                 >
@@ -310,25 +296,41 @@ function Page() {
                   Close
                 </Button>
               </div>
-            </>
+            </div>
           )}
-          <Select onValueChange={assign}>
-            <SelectTrigger>
-              <SelectValue placeholder="Reassign to another agent…" />
-            </SelectTrigger>
-            <SelectContent>
-              {(agents.data ?? []).map((a) => (
-                <SelectItem key={a.user_id} value={a.user_id}>
-                  {a.display_name ?? a.user_id.slice(0, 8)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        </section>
+
+        {/* Assignment */}
+        <section className="space-y-4 rounded-2xl border border-border/50 bg-card p-5 shadow-soft">
+          <h2 className="eyebrow">Assignment</h2>
+          <div className="space-y-3">
+            <Button
+              variant="outline"
+              className="h-11 w-full gap-2 rounded-xl"
+              disabled={!user}
+              onClick={() => user && assign(user.id)}
+            >
+              <UserCheck />
+              Assign to me
+            </Button>
+            <Select onValueChange={assign}>
+              <SelectTrigger className="h-11 rounded-xl px-4">
+                <SelectValue placeholder="Reassign to another agent…" />
+              </SelectTrigger>
+              <SelectContent>
+                {(agents.data ?? []).map((a) => (
+                  <SelectItem key={a.user_id} value={a.user_id}>
+                    {a.display_name ?? a.user_id.slice(0, 8)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </section>
 
         {/* Conversation */}
-        <div className="space-y-3 rounded-xl border border-border/70 bg-card p-4">
-          <h2 className="section-title">Conversation</h2>
+        <div className="space-y-4 rounded-2xl border border-border/50 bg-card p-5 shadow-soft">
+          <h2 className="eyebrow">Conversation</h2>
           <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
             {(messages.data ?? []).map((m) => {
               const mine = m.sender_role === "support";
@@ -360,7 +362,7 @@ function Page() {
               </div>
             )}
           </div>
-          <div className="bar-blur hairline-t sticky bottom-[calc(60px+env(safe-area-inset-bottom))] -mx-4 -mb-4 space-y-2 rounded-b-xl px-4 py-3 md:bottom-0">
+          <div className="bar-blur hairline-t sticky bottom-[calc(60px+env(safe-area-inset-bottom))] -mx-5 -mb-5 space-y-3 rounded-b-2xl px-5 py-4 md:bottom-0">
             <div className="flex items-end gap-2">
               <Textarea
                 value={reply}
