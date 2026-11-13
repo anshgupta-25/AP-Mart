@@ -20,9 +20,16 @@ export interface PortalNav {
   sidebar?: NavGroup[];
 }
 
-export function isNavActive(pathname: string, to: string) {
-  const base = to.split("?")[0];
-  return pathname === base || pathname.startsWith(base + "/");
+/**
+ * Does `to` match the current location? Items with a query string
+ * (e.g. "/admin/products?filter=low-stock") also need those params in `search`.
+ */
+export function isNavActive(pathname: string, to: string, search = "") {
+  const [base, qs] = to.split("?");
+  if (!(pathname === base || pathname.startsWith(base + "/"))) return false;
+  if (!qs) return true;
+  const current = new URLSearchParams(search);
+  return [...new URLSearchParams(qs)].every(([k, v]) => current.get(k) === v);
 }
 
 export function allNavItems(nav: PortalNav): NavItem[] {
@@ -41,9 +48,14 @@ export function sidebarGroups(nav: PortalNav): NavGroup[] {
   return [{ label: "", items: nav.tabs }, ...(nav.more ?? [])];
 }
 
-/** Best match for the current path (longest matching prefix). */
-export function currentNavItem(nav: PortalNav, pathname: string): NavItem | undefined {
+const queryParamCount = (to: string) => [...new URLSearchParams(to.split("?")[1] ?? "")].length;
+
+/** The single best match: longest matching path, then most matching query params. */
+export function currentNavItem(nav: PortalNav, pathname: string, search = ""): NavItem | undefined {
   return allNavItems(nav)
-    .filter((i) => isNavActive(pathname, i.to))
-    .sort((a, b) => b.to.length - a.to.length)[0];
+    .filter((i) => isNavActive(pathname, i.to, search))
+    .sort(
+      (a, b) =>
+        b.to.split("?")[0].length - a.to.split("?")[0].length || queryParamCount(b.to) - queryParamCount(a.to),
+    )[0];
 }

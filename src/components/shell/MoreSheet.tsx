@@ -1,18 +1,19 @@
 import { Link } from "@tanstack/react-router";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { isNavActive, type NavGroup } from "@/lib/nav/types";
+import type { NavGroup } from "@/lib/nav/types";
 
 export function MoreSheet({
   open,
   onOpenChange,
   groups,
-  pathname,
+  activeTo,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   groups: NavGroup[];
-  pathname: string;
+  /** `to` of the current nav item (from currentNavItem). */
+  activeTo?: string;
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -27,7 +28,7 @@ export function MoreSheet({
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {g.items.map((i) => {
                   const Icon = i.icon;
-                  const active = isNavActive(pathname, i.to);
+                  const active = i.to === activeTo;
                   const [path, qs] = i.to.split("?");
                   const search = qs ? Object.fromEntries(new URLSearchParams(qs)) : undefined;
                   return (

@@ -8,6 +8,7 @@ import { StorageImg } from "@/components/StorageImg";
 import { CategoryGroups } from "@/components/customer/CategoryGroups";
 import { loadProductCategoriesMap } from "@/lib/productCategories";
 import { useDeliveryContext } from "@/hooks/useDeliveryContext";
+import { useHeaderOffset } from "@/hooks/useHeaderOffset";
 
 const search = z.object({ q: z.string().optional(), chip: z.string().optional() });
 
@@ -34,6 +35,7 @@ const TINTS = ["bg-tint-mint", "bg-tint-sun", "bg-tint-sky", "bg-tint-rose", "bg
 function CategoriesBrowse() {
   const { q: qParam, chip } = Route.useSearch();
   const navigate = useNavigate();
+  const headerH = useHeaderOffset();
   const [query, setQuery] = useState(qParam ?? "");
 
   const categories = useQuery({
@@ -113,7 +115,8 @@ function CategoriesBrowse() {
 
   return (
     <div className="pb-6">
-      <div className="hairline-b sticky top-0 z-30 bg-tint-mint px-4 pb-3 pt-4">
+      {/* Pin below the storefront header (same approach as /products and /category/$slug). */}
+      <div style={{ top: headerH }} className="hairline-b sticky z-30 bg-tint-mint px-4 pb-3 pt-4">
         <h1 className="large-title">Categories</h1>
         <form onSubmit={onSubmitSearch} className="mt-3 flex h-11 items-center gap-2.5 rounded-xl bg-card px-3.5 shadow-soft">
           <Search className="h-[18px] w-[18px] shrink-0 text-foreground" />

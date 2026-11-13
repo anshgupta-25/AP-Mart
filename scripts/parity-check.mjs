@@ -1,5 +1,7 @@
 // Dev-only: fails if the working tree lost any RPC, table, realtime channel, server function or route link
 // that exists on the base ref (default HEAD / main). Usage: node scripts/parity-check.mjs [baseRef]
+// Limits: text-based. It sees whether a path is linked anywhere, not whether it is still in a menu
+// (e.g. a nav tab removed while a "see all" link remains passes). Review nav configs by hand.
 import { execSync } from "node:child_process";
 import { mkdtempSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -27,15 +29,24 @@ function scan(root) {
     for (const m of s.matchAll(/\.from\(\s*["'](\w+)["']/g)) r.table.add(m[1]);
     for (const m of s.matchAll(/\.channel\(\s*[`"']([\w-]+)/g)) r.channel.add(m[1]);
     for (const m of s.matchAll(/\b(createRazorpayOrder|verifyRazorpayPayment|recordPaymentFailure|refundPayment|computeRoute|rankShopsByEta|reverseGeocode|getIntegrationStatus|deleteMyAccount)\b/g)) r.fn.add(m[1]);
-    for (const m of s.matchAll(LINK)) r.link.add(m[1].split("?")[0].replace(/\/$/, "") || "/");
+    for (const m of s.matchAll(LINK)) {
+      // A route's own declaration is not a link to it; counting it hid dropped navigation.
+      if (/createFileRoute\(\s*$/.test(s.slice(Math.max(0, m.index - 20), m.index))) continue;
+      r.link.add(m[1].split("?")[0].replace(/\/$/, "") || "/");
+    }
   }
   return r;
 }
+// Links removed on purpose (path -> reason). The route itself must still exist.
+const INTENTIONALLY_UNLINKED = {
+  "/cart": "old bottom nav linked the /cart login gate; the new Cart tab goes to /customer/cart directly",
+};
+
 const before = scan(join(tmp, "src"));
 const after = scan(join(process.cwd(), "src"));
 let lost = 0;
 for (const k of Object.keys(before)) {
-  const missing = [...before[k]].filter((x) => !after[k].has(x));
+  const missing = [...before[k]].filter((x) => !after[k].has(x) && !(k === "link" && x in INTENTIONALLY_UNLINKED));
   if (missing.length) {
     lost += missing.length;
     console.log(`LOST ${k} (${missing.length}): ${missing.join(", ")}`);

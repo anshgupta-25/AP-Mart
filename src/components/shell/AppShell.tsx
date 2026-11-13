@@ -3,7 +3,7 @@ import { useState, type ReactNode } from "react";
 import { Ellipsis } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LogoMark } from "@/components/Logo";
-import { allNavItems, currentNavItem, isNavActive, sidebarGroups, type NavItem, type PortalNav } from "@/lib/nav/types";
+import { allNavItems, currentNavItem, sidebarGroups, type NavItem, type PortalNav } from "@/lib/nav/types";
 import { MoreSheet } from "./MoreSheet";
 
 function NavLink({ item, className, children }: { item: NavItem; className: string; children: ReactNode }) {
@@ -37,10 +37,12 @@ export function AppShell({
   children?: ReactNode;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const searchStr = useRouterState({ select: (s) => s.location.searchStr });
   const [moreOpen, setMoreOpen] = useState(false);
-  const current = currentNavItem(nav, pathname);
+  // Highlight exactly one item: the best match for the current path + query.
+  const current = currentNavItem(nav, pathname, searchStr);
   const hasMore = !!nav.more?.length;
-  const moreActive = hasMore && nav.more!.some((g) => g.items.some((i) => isNavActive(pathname, i.to))) && !nav.tabs.some((t) => isNavActive(pathname, t.to));
+  const moreActive = hasMore && !!current && !nav.tabs.some((t) => t.to === current.to);
   const groups = sidebarGroups(nav);
 
   return (
@@ -62,7 +64,7 @@ export function AppShell({
                 <div className="space-y-0.5">
                   {g.items.map((i) => {
                     const Icon = i.icon;
-                    const active = isNavActive(pathname, i.to);
+                    const active = current?.to === i.to;
                     return (
                       <NavLink
                         key={i.to}
@@ -90,7 +92,7 @@ export function AppShell({
         <div className="mx-auto flex max-w-2xl">
           {nav.tabs.map((t) => {
             const Icon = t.icon;
-            const active = isNavActive(pathname, t.to);
+            const active = current?.to === t.to;
             const count = t.badge ? badges?.[t.badge] ?? 0 : 0;
             return (
               <NavLink
@@ -131,7 +133,7 @@ export function AppShell({
         </div>
       </nav>
 
-      {hasMore && <MoreSheet open={moreOpen} onOpenChange={setMoreOpen} groups={nav.more!} pathname={pathname} />}
+      {hasMore && <MoreSheet open={moreOpen} onOpenChange={setMoreOpen} groups={nav.more!} activeTo={current?.to} />}
     </div>
   );
 }

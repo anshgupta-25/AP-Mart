@@ -297,7 +297,8 @@ async function prepareImage(file: File, maxEdge: number): Promise<File> {
   if (typeof document === "undefined" || typeof createImageBitmap === "undefined") return file;
   if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return file;
   try {
-    const bmp = await createImageBitmap(file);
+    // Apply EXIF rotation so portrait phone photos are not stored sideways.
+    const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
     const scale = Math.min(1, maxEdge / Math.max(bmp.width, bmp.height));
     const w = Math.max(1, Math.round(bmp.width * scale));
     const h = Math.max(1, Math.round(bmp.height * scale));
@@ -319,8 +320,12 @@ async function prepareImage(file: File, maxEdge: number): Promise<File> {
   }
 }
 
+// Banners are shown full-width (sharp on wide / retina screens); product photos are small cards.
+const BANNER_BUCKETS: readonly string[] = ["offers", "categories", "shop-collections"];
+
 export async function uploadImage(opts: UploadOptions & { maxEdge?: number }): Promise<StoredObject> {
-  const file = await prepareImage(opts.file, opts.maxEdge ?? 1200);
+  const maxEdge = opts.maxEdge ?? (BANNER_BUCKETS.includes(opts.bucket) ? 2400 : 1200);
+  const file = await prepareImage(opts.file, maxEdge);
   return uploadFile({ ...opts, file, allowedTypes: opts.allowedTypes ?? IMAGE_TYPES });
 }
 

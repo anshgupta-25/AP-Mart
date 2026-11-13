@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Bell, Briefcase, ChevronRight, Headphones, Heart, Info, LogOut, MapPin, Package, Plus, Shield, ShieldCheck, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useDeliveryContext } from "@/hooks/useDeliveryContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,6 +46,7 @@ export function ProfileScreen({ next }: { next: string }) {
   const { user, signOut, isAdmin } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { refresh: refreshDelivery } = useDeliveryContext();
   const [editing, setEditing] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [name, setName] = useState("");
@@ -99,6 +101,9 @@ export function ProfileScreen({ next }: { next: string }) {
       request: () => supabase.from("addresses").delete().eq("id", id),
       success: "Deleted",
     });
+    // The deleted address may have been the delivery address: refresh the header,
+    // PIN-code-based catalog, eligible shops and checkout's address list.
+    refreshDelivery();
   };
 
   const initials = (profile.data?.full_name ?? user.email ?? "U").slice(0, 2).toUpperCase();

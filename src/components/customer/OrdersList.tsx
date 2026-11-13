@@ -25,6 +25,9 @@ const statusColor: Record<string, string> = {
  * Single orders list for both /orders and /customer/orders: guest sign-in gate, item thumbnails,
  * shop name, cancel reason, all statuses, and a 20 s refetch. `detail` picks the detail-route family.
  */
+// Same terminal set the database uses (see delete-shop guard migration).
+const FINISHED_STATUSES = new Set(["delivered", "cancelled", "no_shop_available"]);
+
 export function OrdersList({ detail, next }: { detail: "public" | "customer"; next: string }) {
   const { user } = useAuth();
   const orders = useQuery({
@@ -39,7 +42,12 @@ export function OrdersList({ detail, next }: { detail: "public" | "customer"; ne
       return data ?? [];
     },
     enabled: !!user,
-    refetchInterval: 20000,
+    // Keep the full history (as /customer/orders did on main), but only poll every
+    // 20 s while an order is still in progress; finished history doesn't change.
+    refetchInterval: (query) =>
+      ((query.state.data ?? []) as Array<{ status: string }>).some((o) => !FINISHED_STATUSES.has(o.status))
+        ? 20000
+        : false,
   });
 
   if (!user) {
