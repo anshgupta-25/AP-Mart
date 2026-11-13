@@ -3,14 +3,12 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { RoleShell } from "@/components/RoleShell";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { SHOPKEEPER_NAV } from "./shopkeeper.dashboard";
 import { LocationPicker } from "@/components/maps/LocationPicker";
 import { Store, User as UserIcon, LogOut, Package, ClipboardList, Clock, Wallet, ShieldCheck, Mail } from "lucide-react";
 import { rupees } from "@/lib/format";
@@ -80,20 +78,20 @@ function Page() {
   const initials = (profile?.full_name || user?.email || "S").trim().charAt(0).toUpperCase();
 
   return (
-    <RoleShell role="shopkeeper" nav={SHOPKEEPER_NAV} requireRoles={["shopkeeper", "admin"]}>
-      <div className="p-4 md:p-6 max-w-3xl space-y-6">
-        {/* Hero */}
-        <div className="rounded-3xl gradient-hero border border-border p-5 flex items-center gap-4">
-          <Avatar className="h-16 w-16 ring-2 ring-primary/30">
+    <>
+      <div className="mx-auto max-w-3xl space-y-5 px-4 py-4 md:px-6">
+        <h1 className="large-title">Account</h1>
+        <div className="flex items-center gap-3.5 rounded-xl bg-tint-mint p-4">
+          <Avatar className="h-14 w-14">
             <AvatarImage src={profile?.avatar_url || undefined} />
-            <AvatarFallback className="font-bold text-lg">{initials}</AvatarFallback>
+            <AvatarFallback className="text-body font-semibold">{initials}</AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <div className="font-display text-xl font-extrabold truncate">{profile?.full_name || "Shopkeeper"}</div>
-            <div className="text-xs text-muted-foreground inline-flex items-center gap-1 truncate"><Mail className="h-3 w-3" />{user?.email}</div>
-            <div className="mt-1 flex flex-wrap gap-1">
+            <div className="truncate text-subtitle font-semibold">{profile?.full_name || "Shopkeeper"}</div>
+            <div className="inline-flex items-center gap-1 truncate text-small text-foreground/65"><Mail className="h-3.5 w-3.5" />{user?.email}</div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
               {(roles ?? []).map((r: string) => (
-                <span key={r} className="text-[10px] font-bold uppercase rounded-full bg-primary/15 text-primary px-2 py-0.5 inline-flex items-center gap-1">
+                <span key={r} className="inline-flex items-center gap-1 rounded-full bg-card/80 px-2.5 py-0.5 text-caption font-semibold capitalize text-primary-ink">
                   <ShieldCheck className="h-3 w-3" />{r}
                 </span>
               ))}
@@ -103,7 +101,7 @@ function Page() {
 
         {/* Stats */}
         {shop && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <StatCard icon={Package} label="Products" value={String(stats.data?.products ?? "—")} />
             <StatCard icon={ClipboardList} label="Orders" value={String(stats.data?.orders ?? "—")} />
             <StatCard icon={Wallet} label="Revenue" value={stats.data ? rupees(stats.data.revenue) : "—"} />
@@ -112,9 +110,9 @@ function Page() {
         )}
 
         {/* Profile */}
-        <section className="rounded-3xl border border-border bg-card p-5 shadow-card">
-          <h2 className="font-display text-lg font-bold flex items-center gap-2 mb-4"><UserIcon className="h-5 w-5 text-primary" /> Personal info</h2>
-          <div className="grid md:grid-cols-2 gap-3">
+        <section className="rounded-xl bg-card p-4 border border-border/70">
+          <h2 className="section-title mb-4 flex items-center gap-2"><UserIcon className="h-5 w-5 text-primary" /> Personal info</h2>
+          <div className="grid gap-4 md:grid-cols-2">
             <Field label="Full name">
               <Input value={profile?.full_name ?? ""} onChange={(e) => setProfile({ ...profile, full_name: e.target.value })} placeholder="Your name" />
             </Field>
@@ -126,24 +124,24 @@ function Page() {
               <Input value={profile?.avatar_url ?? ""} onChange={(e) => setProfile({ ...profile, avatar_url: e.target.value })} placeholder="https://…" />
             </Field>
           </div>
-          <div className="mt-4 flex justify-end">
-            <Button onClick={saveProfile} disabled={savingProfile} className="rounded-xl gradient-primary text-primary-foreground">Save profile</Button>
+          <div className="mt-5">
+            <Button onClick={saveProfile} disabled={savingProfile} className="h-11 w-full rounded-xl md:w-auto md:px-6">Save profile</Button>
           </div>
         </section>
 
         {/* Shop */}
-        <section className="rounded-3xl border border-border bg-card p-5 shadow-card">
-          <h2 className="font-display text-lg font-bold flex items-center gap-2 mb-4"><Store className="h-5 w-5 text-primary" /> Shop settings</h2>
-          {!shop ? <p className="text-muted-foreground">No shop assigned.</p> : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between rounded-2xl border border-border bg-background p-3">
+        <section className="rounded-xl bg-card p-4 border border-border/70">
+          <h2 className="section-title mb-4 flex items-center gap-2"><Store className="h-5 w-5 text-primary" /> Shop settings</h2>
+          {!shop ? <p className="text-body text-muted-foreground">No shop assigned.</p> : (
+            <div className="space-y-5">
+              <div className="flex min-h-12 items-center justify-between rounded-xl bg-secondary p-4">
                 <div>
-                  <div className="text-sm font-bold">Shop open</div>
-                  <div className="text-xs text-muted-foreground">Customers can place orders when on.</div>
+                  <div className="text-body font-semibold">Shop open</div>
+                  <div className="text-meta text-muted-foreground">Customers can place orders when on.</div>
                 </div>
                 <Switch checked={shop.is_open} onCheckedChange={(v) => setShop({ ...shop, is_open: v })} />
               </div>
-              <div className="grid md:grid-cols-2 gap-3">
+              <div className="grid gap-4 md:grid-cols-2">
                 <Field label="Name"><Input value={shop.name ?? ""} onChange={(e) => setShop({ ...shop, name: e.target.value })} /></Field>
                 <Field label="Phone"><Input value={shop.phone ?? ""} onChange={(e) => setShop({ ...shop, phone: e.target.value })} /></Field>
                 <Field label="Address" className="md:col-span-2"><Input value={shop.address ?? ""} onChange={(e) => setShop({ ...shop, address: e.target.value })} /></Field>
@@ -160,8 +158,8 @@ function Page() {
                   onChange={(v) => setShop({ ...shop, latitude: v.lat, longitude: v.lng })}
                 />
               </Field>
-              <div className="flex justify-end">
-                <Button onClick={saveShop} className="rounded-xl gradient-primary text-primary-foreground">Save shop</Button>
+              <div>
+                <Button onClick={saveShop} className="h-11 w-full rounded-xl md:w-auto md:px-6">Save shop</Button>
               </div>
             </div>
           )}
@@ -170,30 +168,30 @@ function Page() {
         <Separator />
 
         <div className="flex justify-end">
-          <Button onClick={onSignOut} variant="outline" className="rounded-xl text-destructive hover:bg-destructive/10">
-            <LogOut className="h-4 w-4 mr-2" /> Sign out
+          <Button onClick={onSignOut} variant="secondary" className="h-11 w-full rounded-xl text-destructive md:w-auto md:px-6">
+            <LogOut className="mr-2 h-4 w-4" /> Sign out
           </Button>
         </div>
         <DeleteAccountSection />
       </div>
-    </RoleShell>
+    </>
   );
 }
 
 function Field({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={className}>
-      <label className="text-xs font-bold text-muted-foreground">{label}</label>
-      <div className="mt-1">{children}</div>
+      <label className="text-meta font-medium text-foreground/80">{label}</label>
+      <div className="mt-1.5">{children}</div>
     </div>
   );
 }
 
 function StatCard({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-4">
-      <div className="flex items-center gap-2 text-muted-foreground text-xs font-semibold"><Icon className="h-4 w-4 text-primary" />{label}</div>
-      <div className="mt-1 font-display text-xl font-extrabold truncate">{value}</div>
+    <div className="rounded-xl border border-border/70 bg-card p-3.5">
+      <div className="flex items-center gap-2 text-small text-muted-foreground"><Icon className="h-4 w-4 text-primary" />{label}</div>
+      <div className="mt-1.5 truncate text-xl font-semibold tracking-tight">{value}</div>
     </div>
   );
 }

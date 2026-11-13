@@ -75,7 +75,7 @@ export function SubcategorySelect({
 
   return (
     <div>
-      <Label className="text-xs font-bold">
+      <Label className="text-meta font-medium text-foreground/80">
         Subcategories {required && <span className="text-destructive">*</span>}
       </Label>
 
@@ -84,7 +84,7 @@ export function SubcategorySelect({
           {selected.map((s) => (
             <span
               key={s.id}
-              className="inline-flex max-w-full items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold"
+              className="inline-flex max-w-full items-center gap-1 rounded-full bg-primary-soft px-3 py-1 text-meta font-medium text-primary-ink"
             >
               <span className="truncate">{s.name}</span>
               <button
@@ -104,9 +104,9 @@ export function SubcategorySelect({
         <PopoverTrigger asChild disabled={noCats || isLoading || noSubs}>
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             className={cn(
-              "mt-1 h-10 w-full justify-between rounded-xl px-3 text-left font-normal",
+              "mt-1.5 h-11 w-full justify-between rounded-xl px-3.5 text-left font-normal",
               (noCats || noSubs) && "opacity-60",
             )}
           >
@@ -116,7 +116,7 @@ export function SubcategorySelect({
             <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-60" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-[min(24rem,92vw)] p-0">
+        <PopoverContent align="start" className="w-[min(24rem,92vw)] rounded-xl p-0">
           <div className="flex items-center gap-2 border-b px-3 py-2">
             <Search className="h-4 w-4 shrink-0 opacity-50" />
             <Input
@@ -135,7 +135,7 @@ export function SubcategorySelect({
             ) : (
               groups.map((g) => (
                 <div key={g.id} className="mb-1">
-                  <p className="px-2 pb-1 pt-2 text-[11px] font-bold uppercase tracking-wide text-foreground">
+                  <p className="px-2 pb-1 pt-2 text-small font-semibold text-muted-foreground">
                     {g.name}
                   </p>
                   {g.items.map((s) => {
@@ -145,7 +145,7 @@ export function SubcategorySelect({
                         key={s.id}
                         type="button"
                         onClick={() => toggle(s.id)}
-                        className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-accent/40"
+                        className="flex w-full items-center gap-2 rounded-lg px-2 py-2.5 text-left text-body hover:bg-secondary"
                       >
                         <Checkbox checked={on} className="pointer-events-none" />
                         <span className="flex-1 truncate">{s.name}</span>
@@ -170,7 +170,7 @@ export function SubcategorySelect({
         </PopoverContent>
       </Popover>
 
-      <p className="mt-1 text-[11px] text-muted-foreground">
+      <p className="mt-1 text-caption text-muted-foreground">
         {noCats
           ? "Step 1: pick one or more categories above."
           : noSubs

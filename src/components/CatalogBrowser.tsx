@@ -158,7 +158,7 @@ export function CatalogDialogContent({
         {rows.isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-28 rounded-2xl border border-border bg-secondary/40 animate-pulse" />
+              <div key={i} className="h-28 rounded-xl shimmer" />
             ))}
           </div>
         ) : (rows.data ?? []).length === 0 ? (
@@ -168,7 +168,7 @@ export function CatalogDialogContent({
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {(rows.data ?? []).map((p) => (
-              <div key={p.id} className="rounded-2xl border border-border bg-card p-3 flex flex-col gap-2">
+              <div key={p.id} className="flex flex-col gap-3 rounded-xl border border-border/70 bg-card p-3">
                 <div className="flex gap-3">
                   {p.image ? (
                     <StorageImg loading="lazy" decoding="async" src={p.image} alt={p.name} className="h-16 w-16 rounded-xl object-cover shrink-0" />
@@ -178,21 +178,21 @@ export function CatalogDialogContent({
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <div className="font-bold text-sm line-clamp-2">{p.name}</div>
+                    <div className="line-clamp-2 text-meta font-semibold">{p.name}</div>
                     <div className="text-xs text-muted-foreground truncate">
                       {[p.brand, p.unit].filter(Boolean).join(" · ") || "—"}
                     </div>
                     {(p.category_names ?? []).length > 0 && (
                       <div className="mt-1 flex flex-wrap gap-1">
                         {(p.category_names ?? []).slice(0, 2).map((c) => (
-                          <span key={c} className="text-[10px] px-2 py-0.5 rounded-full bg-secondary font-semibold">{c}</span>
+                          <span key={c} className="text-caption px-2 py-0.5 rounded-full bg-primary-soft text-primary-ink font-medium">{c}</span>
                         ))}
                       </div>
                     )}
                   </div>
                 </div>
                 {p.already_added ? (
-                  <div className="flex items-center justify-center gap-1 text-xs font-semibold text-muted-foreground rounded-xl border border-border py-2">
+                  <div className="flex items-center justify-center gap-1 rounded-lg bg-secondary py-2 text-small font-medium text-muted-foreground">
                     <CheckCircle2 className="h-4 w-4 text-primary" /> Already in your shop
                   </div>
                 ) : (
@@ -285,14 +285,14 @@ function AddToShopForm({
       </DialogHeader>
 
       <div className="space-y-3">
-        <div className="flex items-center gap-3 p-2 rounded-xl bg-secondary">
+        <div className="flex items-center gap-3 rounded-2xl bg-secondary p-3">
           {product.image ? (
             <StorageImg loading="lazy" decoding="async" src={product.image} alt={product.name} className="h-12 w-12 rounded-lg object-cover" />
           ) : (
             <div className="h-12 w-12 rounded-lg bg-card grid place-items-center"><Package className="h-4 w-4 text-muted-foreground" /></div>
           )}
           <div className="flex-1 min-w-0">
-            <div className="font-bold text-sm truncate">{product.name}</div>
+            <div className="truncate text-body font-semibold">{product.name}</div>
             <div className="text-xs text-muted-foreground truncate">
               {[product.brand, product.unit].filter(Boolean).join(" · ")}
               {product.mrp ? ` · MRP ${rupees(Number(product.mrp))}` : ""}
@@ -303,30 +303,30 @@ function AddToShopForm({
 
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="text-xs font-bold">Selling price ₹ <span className="text-destructive">*</span></label>
+            <label className="text-meta font-medium">Selling price ₹ <span className="text-destructive">*</span></label>
             <Input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} />
           </div>
           <div>
-            <label className="text-xs font-bold">MRP ₹</label>
+            <label className="text-meta font-medium">MRP ₹</label>
             <Input type="number" value={mrp} onChange={(e) => setMrp(Number(e.target.value))} />
           </div>
           <div>
-            <label className="text-xs font-bold">Retail ₹</label>
+            <label className="text-meta font-medium">Retail ₹</label>
             <Input type="number" value={retail} onChange={(e) => setRetail(Number(e.target.value))} />
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="text-xs font-bold">Stock <span className="text-destructive">*</span></label>
+            <label className="text-meta font-medium">Stock <span className="text-destructive">*</span></label>
             <Input type="number" value={stock} onChange={(e) => setStock(Number(e.target.value))} />
           </div>
           <div>
-            <label className="text-xs font-bold">SKU</label>
+            <label className="text-meta font-medium">SKU</label>
             <Input value={sku} onChange={(e) => setSku(e.target.value)} />
           </div>
           <div>
-            <label className="text-xs font-bold">Barcode</label>
+            <label className="text-meta font-medium">Barcode</label>
             <Input value={barcode} onChange={(e) => setBarcode(e.target.value)} />
           </div>
         </div>

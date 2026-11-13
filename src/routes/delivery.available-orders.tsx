@@ -2,15 +2,14 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { RoleShell } from "@/components/RoleShell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { rupees } from "@/lib/format";
 import { toast } from "sonner";
 import { Truck, Store, Package } from "lucide-react";
-import { DELIVERY_NAV } from "./delivery.dashboard";
 import { FastDeliveryBadge } from "@/components/FastDeliveryBadge";
 import { runOptimistic, removeRow } from "@/lib/optimistic";
+import { PageHeader } from "@/components/data";
 
 
 export const Route = createFileRoute("/delivery/available-orders")({
@@ -85,98 +84,94 @@ function Page() {
 
 
   return (
-    <RoleShell role="delivery" nav={DELIVERY_NAV} requireRoles={["delivery", "admin"]}>
-      <div className="p-4 md:p-6 space-y-6">
-        <div>
-          <h1 className="font-display text-3xl font-extrabold flex items-center gap-2"><Truck className="h-7 w-7 text-primary" />My assignments</h1>
-          <p className="text-sm text-muted-foreground mt-1">Multi-shop and single-shop orders ready for pickup.</p>
-        </div>
+    <>
+      <div className="space-y-5 px-4 py-4 md:px-6">
+        <PageHeader title="Available orders" subtitle="Orders from nearby shops, ready for pickup." />
 
-        <section>
-          <h2 className="font-bold mb-3 flex items-center gap-2">
-            <Store className="h-4 w-4 text-primary" /> Multi-Shop Deliveries
-            {(parents.data?.length ?? 0) > 0 && (
-              <Badge className="bg-primary text-primary-foreground">{parents.data!.length}</Badge>
-            )}
-          </h2>
-          <div className="space-y-3">
-            {(parents.data ?? []).map((p) => {
-              const isFast = p.delivery_type === "fast_delivery";
-              return (
-                <div
-                  key={p.parent_id}
-                  className={
-                    (isFast ? "border-2 border-red-500 bg-red-50 dark:bg-red-950/30 " : "border border-primary/30 bg-primary/5 ") +
-                    "rounded-2xl p-4 flex items-center justify-between gap-3 flex-wrap shadow-sm"
-                  }
-                >
+        <section className="space-y-2.5">
+          <div className="flex items-center gap-2">
+            <h2 className="section-title">Multi-shop deliveries</h2>
+            {(parents.data?.length ?? 0) > 0 && <Badge>{parents.data!.length}</Badge>}
+          </div>
+          {(parents.data ?? []).map((p) => {
+            const isFast = p.delivery_type === "fast_delivery";
+            return (
+              <div
+                key={p.parent_id}
+                className={"space-y-3 rounded-xl border bg-card p-3.5 " + (isFast ? "border-destructive/30" : "border-border/70")}
+              >
+                <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge className="bg-primary text-primary-foreground gap-1"><Truck className="h-3 w-3" /> Multi-Shop</Badge>
-                      <div className="font-bold">{p.order_number} • {rupees(p.total)}</div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="text-body font-semibold">{p.order_number}</div>
                       {isFast && <FastDeliveryBadge />}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-muted-foreground">
                       <span className="inline-flex items-center gap-1"><Store className="h-3 w-3" /> {p.shop_count} shops</span>
                       <span className="inline-flex items-center gap-1"><Package className="h-3 w-3" /> {p.items_count} items</span>
-                      {[p.city, p.pincode].filter(Boolean).length > 0 && <span>· {[p.city, p.pincode].filter(Boolean).join(" • ")}</span>}
+                      {[p.city, p.pincode].filter(Boolean).length > 0 && <span>{[p.city, p.pincode].filter(Boolean).join(" · ")}</span>}
                     </div>
                   </div>
-                  <Button size="sm" onClick={() => acceptParent(p.parent_id)} className="rounded-xl gradient-primary text-primary-foreground">
-                    Accept all shops
-                  </Button>
+                  <div className="text-body font-semibold">{rupees(p.total)}</div>
                 </div>
-              );
-            })}
-            {(parents.data?.length ?? 0) === 0 && (
-              <div className="text-sm text-muted-foreground">No multi-shop orders waiting.</div>
-            )}
-          </div>
+                <Button onClick={() => acceptParent(p.parent_id)} className="h-11 w-full rounded-xl">
+                  <Truck className="h-4 w-4" /> Accept all shops
+                </Button>
+              </div>
+            );
+          })}
+          {(parents.data?.length ?? 0) === 0 && (
+            <div className="rounded-xl border border-border/70 bg-card p-4 text-center text-small text-muted-foreground">
+              No multi-shop orders waiting.
+            </div>
+          )}
         </section>
 
-        <section>
-          <h2 className="font-bold mb-3">Single-shop assignments</h2>
-          <div className="space-y-3">
-            {(orders.data ?? []).map(o => {
-              const isFast = o.delivery_type === "fast_delivery";
-              return (
-                <div
-                  key={o.id}
-                  className={
-                    isFast
-                      ? "rounded-2xl border-2 border-red-500 bg-red-50 dark:bg-red-950/30 p-4 flex items-center justify-between gap-3 flex-wrap shadow-md"
-                      : "rounded-2xl border border-border bg-card p-4 flex items-center justify-between gap-3 flex-wrap"
-                  }
-                >
+        <section className="space-y-2.5">
+          <h2 className="section-title">Single-shop orders</h2>
+          {(orders.data ?? []).map((o) => {
+            const isFast = o.delivery_type === "fast_delivery";
+            return (
+              <div
+                key={o.id}
+                className={"space-y-3 rounded-xl border bg-card p-3.5 " + (isFast ? "border-destructive/30" : "border-border/70")}
+              >
+                <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="font-bold">{o.order_number} • {rupees(o.total)}</div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="text-body font-semibold">{o.order_number}</div>
                       {isFast && <FastDeliveryBadge />}
                     </div>
-                    <div className="text-xs text-muted-foreground">{[o.shop_name, o.city, o.area_pincode].filter(Boolean).join(" • ")} · {o.item_count} item{o.item_count === 1 ? "" : "s"}</div>
+                    <div className="mt-1 text-small leading-snug text-muted-foreground">
+                      {[o.shop_name, o.city, o.area_pincode].filter(Boolean).join(" · ")} · {o.item_count} item{o.item_count === 1 ? "" : "s"}
+                    </div>
                     {isFast && (
-                      <div className="text-xs text-red-700 dark:text-red-300 font-semibold mt-0.5">
-                        ⏱ Deliver within 15–30 min{o.fast_delivery_fee ? ` · Extra ${rupees(o.fast_delivery_fee)}` : ""}
+                      <div className="mt-1 text-caption font-semibold text-destructive">
+                        Priority delivery{o.fast_delivery_fee ? ` · +${rupees(o.fast_delivery_fee)}` : ""}
                       </div>
                     )}
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={() => accept(o.id)}
-                    className={isFast
-                      ? "rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold"
-                      : "rounded-xl gradient-primary text-primary-foreground"}
-                  >
-                    {isFast ? "Accept now" : "Accept"}
-                  </Button>
+                  <div className="text-body font-semibold">{rupees(o.total)}</div>
                 </div>
-              );
-            })}
-            {(orders.data?.length ?? 0) === 0 && <div className="text-sm text-muted-foreground">No single-shop assignments right now.</div>}
-          </div>
+                <Button
+                  onClick={() => accept(o.id)}
+                  className={
+                    "h-11 w-full rounded-xl " +
+                    (isFast ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : "")
+                  }
+                >
+                  {isFast ? "Accept now" : "Accept"}
+                </Button>
+              </div>
+            );
+          })}
+          {(orders.data?.length ?? 0) === 0 && (
+            <div className="rounded-xl border border-border/70 bg-card p-4 text-center text-small text-muted-foreground">
+              No single-shop orders right now.
+            </div>
+          )}
         </section>
       </div>
-    </RoleShell>
+    </>
   );
 }
-

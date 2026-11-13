@@ -8,8 +8,6 @@ import {
 import { Download, Search, ArrowUpDown, TrendingUp, TrendingDown } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
-import { RoleShell } from "@/components/RoleShell";
-import { ADMIN_NAV } from "./admin.dashboard";
 import { rupees } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -270,204 +268,225 @@ function Page() {
   const loading = ordersQ.isLoading || shopsQ.isLoading;
 
   return (
-    <RoleShell role="admin" nav={ADMIN_NAV} requireRoles={["admin"]}>
-      <div className="p-4 md:p-6 space-y-6">
-        <header className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="font-display text-3xl font-extrabold">Earnings & Analytics</h1>
-            <p className="text-sm text-muted-foreground mt-1">Platform revenue, shop performance, and operational insight for <b>{range.label}</b></p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="rounded-xl">{PRESETS.find(p => p.key === preset)?.label} ▾</Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {PRESETS.map(p => (
-                  <DropdownMenuItem key={p.key} onClick={() => setPreset(p.key)}>{p.label}</DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {preset === "custom" && (
-              <div className="flex items-center gap-1">
-                <Input type="date" value={custom.from} onChange={(e) => setCustom(c => ({ ...c, from: e.target.value }))} className="w-[150px]" />
-                <span className="text-muted-foreground">→</span>
-                <Input type="date" value={custom.to} onChange={(e) => setCustom(c => ({ ...c, to: e.target.value }))} className="w-[150px]" />
-              </div>
-            )}
-            <Button variant="default" className="rounded-xl gap-2" onClick={exportCsv}><Download className="h-4 w-4" />Export CSV</Button>
-          </div>
-        </header>
-
-        {/* KPI cards */}
-        <section className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
-          <Kpi label="Total Platform Revenue" value={rupees(stats.grossRevenue)} accent />
-          <Kpi label="Shop Earnings" value={rupees(stats.shopEarnings)} />
-          <Kpi label="Platform Commission" value={rupees(stats.platformCommission)} />
-          <Kpi label="Net Revenue" value={rupees(stats.netRevenue)} />
-          <Kpi label="Delivery Charges" value={rupees(stats.deliveryCharges)} />
-          <Kpi label="Refunds" value={rupees(stats.refunds)} />
-          <Kpi label="Avg Order Value" value={rupees(Math.round(stats.aov))} />
-          <Kpi label="Total Orders" value={String(stats.totalOrders)} />
-          <Kpi label="Completed" value={String(stats.completed)} tone="success" />
-          <Kpi label="Pending" value={String(stats.pending)} tone="warn" />
-          <Kpi label="Cancelled" value={String(stats.cancelled)} tone="danger" />
-          <Kpi label="Returned" value={String(stats.returned)} />
-          <Kpi label="Active Shops" value={String(stats.activeShops)} />
-          <Kpi label="Customers" value={String(stats.customers)} />
-        </section>
-
-        {/* Charts */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <ChartCard title="Revenue & Orders Trend" className="lg:col-span-2">
-            <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={timeSeries}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                <YAxis yAxisId="l" tick={{ fontSize: 11 }} />
-                <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Legend />
-                <Line yAxisId="l" type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} name="Revenue" dot={false} />
-                <Line yAxisId="r" type="monotone" dataKey="orders" stroke="#f59e0b" strokeWidth={2} name="Orders" dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </ChartCard>
-          <ChartCard title="Order Status Distribution">
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie data={statusDist} dataKey="value" nameKey="name" outerRadius={90} label>
-                  {statusDist.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </ChartCard>
-
-          <ChartCard title="Top 10 Shops by Revenue" className="lg:col-span-2">
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={topByRevenue.map(s => ({ name: s.name, revenue: Math.round(s.grossRevenue) }))}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-15} textAnchor="end" height={60} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartCard>
-          <ChartCard title="Top 10 Shops by Orders">
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={topByOrders.map(s => ({ name: s.name, orders: s.ordersTotal }))}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-15} textAnchor="end" height={60} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Bar dataKey="orders" fill="#f59e0b" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartCard>
-        </section>
-
-        {/* Analytics highlights */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          <Highlight icon={<TrendingUp className="text-emerald-500" />} title="Highest Revenue Shop" value={topByRevenue[0]?.name ?? "—"} sub={rupees(topByRevenue[0]?.grossRevenue ?? 0)} />
-          <Highlight icon={<TrendingDown className="text-rose-500" />} title="Lowest Revenue (active)" value={worstByRevenue[0]?.name ?? "—"} sub={rupees(worstByRevenue[0]?.grossRevenue ?? 0)} />
-          <Highlight icon={<TrendingUp className="text-emerald-500" />} title="Most Orders" value={topByOrders[0]?.name ?? "—"} sub={`${topByOrders[0]?.ordersTotal ?? 0} orders`} />
-          <Highlight icon={<TrendingDown className="text-rose-500" />} title="Most Cancellations" value={mostCancellations[0]?.name ?? "—"} sub={`${mostCancellations[0]?.cancelled ?? 0} cancelled`} />
-        </section>
-
-        {/* Shop performance table */}
-        <section className="rounded-2xl border border-border bg-card">
-          <div className="p-4 flex flex-wrap items-center gap-2 justify-between border-b border-border">
-            <h2 className="font-bold text-lg">Shop Performance</h2>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search shop, owner, pincode..." className="pl-9 w-[260px]" />
-              </div>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-secondary/50 text-xs uppercase font-bold">
-                <tr>
-                  {[
-                    ["name", "Shop"], ["owner", "Owner"], ["pincode", "Pincode"], ["city", "City"], ["status", "Status"],
-                    ["ordersToday", "Today"], ["ordersWeek", "Week"], ["ordersMonth", "Month"], ["ordersTotal", "Total"],
-                    ["completed", "✓"], ["pending", "…"], ["cancelled", "✗"],
-                    ["grossRevenue", "Gross"], ["shopEarnings", "Earnings"], ["platformCommission", "Commission"],
-                    ["aov", "AOV"], ["lastOrderAt", "Last Order"],
-                  ].map(([k, label]) => (
-                    <th key={k} className="px-3 py-2 text-left whitespace-nowrap">
-                      <button className="inline-flex items-center gap-1 hover:text-primary" onClick={() => toggleSort(k as keyof ShopStat)}>
-                        {label}<ArrowUpDown className="h-3 w-3 opacity-50" />
-                      </button>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {loading && <tr><td colSpan={17} className="p-6 text-center text-muted-foreground">Loading…</td></tr>}
-                {!loading && pageRows.length === 0 && <tr><td colSpan={17} className="p-6 text-center text-muted-foreground">No shops match your filter.</td></tr>}
-                {pageRows.map(s => (
-                  <tr key={s.shop_id} className="border-t border-border hover:bg-secondary/40 cursor-pointer" onClick={() => setDrawerShop(s)}>
-                    <td className="px-3 py-2 font-semibold">{s.name}</td>
-                    <td className="px-3 py-2">{s.owner}</td>
-                    <td className="px-3 py-2">{s.pincode}</td>
-                    <td className="px-3 py-2">{s.city}</td>
-                    <td className="px-3 py-2"><span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${s.status === "Open" ? "bg-emerald-500/15 text-emerald-600" : "bg-muted text-muted-foreground"}`}>{s.status}</span></td>
-                    <td className="px-3 py-2">{s.ordersToday}</td>
-                    <td className="px-3 py-2">{s.ordersWeek}</td>
-                    <td className="px-3 py-2">{s.ordersMonth}</td>
-                    <td className="px-3 py-2 font-semibold">{s.ordersTotal}</td>
-                    <td className="px-3 py-2 text-emerald-600">{s.completed}</td>
-                    <td className="px-3 py-2 text-amber-600">{s.pending}</td>
-                    <td className="px-3 py-2 text-rose-600">{s.cancelled}</td>
-                    <td className="px-3 py-2 font-bold">{rupees(s.grossRevenue)}</td>
-                    <td className="px-3 py-2">{rupees(s.shopEarnings)}</td>
-                    <td className="px-3 py-2">{rupees(s.platformCommission)}</td>
-                    <td className="px-3 py-2">{rupees(Math.round(s.aov))}</td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">{s.lastOrderAt ? new Date(s.lastOrderAt).toLocaleString() : "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="p-3 flex items-center justify-between text-xs text-muted-foreground border-t border-border">
-            <span>{filteredShops.length} shops</span>
+    <>
+    <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-4 md:px-6 md:py-6">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="large-title">Earnings</h1>
+          <p className="mt-0.5 text-meta text-muted-foreground">Platform revenue, shop performance, and operational insight for <b>{range.label}</b></p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary">{PRESETS.find(p => p.key === preset)?.label} ▾</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {PRESETS.map(p => (
+                <DropdownMenuItem key={p.key} onClick={() => setPreset(p.key)}>{p.label}</DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {preset === "custom" && (
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
-              <span className="px-2">Page {page} / {totalPages}</span>
-              <Button variant="ghost" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
+              <Input type="date" value={custom.from} onChange={(e) => setCustom(c => ({ ...c, from: e.target.value }))} className="w-[150px]" />
+              <span className="text-muted-foreground">→</span>
+              <Input type="date" value={custom.to} onChange={(e) => setCustom(c => ({ ...c, to: e.target.value }))} className="w-[150px]" />
+            </div>
+          )}
+          <Button className="gap-2" onClick={exportCsv}><Download className="h-4 w-4" />Export CSV</Button>
+        </div>
+      </header>
+
+      {/* KPI cards */}
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4 xl:grid-cols-7">
+        <Kpi label="Total Platform Revenue" value={rupees(stats.grossRevenue)} accent />
+        <Kpi label="Shop Earnings" value={rupees(stats.shopEarnings)} />
+        <Kpi label="Platform Commission" value={rupees(stats.platformCommission)} />
+        <Kpi label="Net Revenue" value={rupees(stats.netRevenue)} />
+        <Kpi label="Delivery Charges" value={rupees(stats.deliveryCharges)} />
+        <Kpi label="Refunds" value={rupees(stats.refunds)} />
+        <Kpi label="Avg Order Value" value={rupees(Math.round(stats.aov))} />
+        <Kpi label="Total Orders" value={String(stats.totalOrders)} />
+        <Kpi label="Completed" value={String(stats.completed)} tone="success" />
+        <Kpi label="Pending" value={String(stats.pending)} tone="warn" />
+        <Kpi label="Cancelled" value={String(stats.cancelled)} tone="danger" />
+        <Kpi label="Returned" value={String(stats.returned)} />
+        <Kpi label="Active Shops" value={String(stats.activeShops)} />
+        <Kpi label="Customers" value={String(stats.customers)} />
+      </section>
+
+      {/* Charts */}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <ChartCard title="Revenue & Orders Trend" className="lg:col-span-2">
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={timeSeries}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+              <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+              <YAxis yAxisId="l" tick={{ fontSize: 11 }} />
+              <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 11 }} />
+              <Tooltip />
+              <Legend />
+              <Line yAxisId="l" type="monotone" dataKey="revenue" stroke="#27a05a" strokeWidth={2.5} name="Revenue" dot={false} />
+              <Line yAxisId="r" type="monotone" dataKey="orders" stroke="#f5b43c" strokeWidth={2.5} name="Orders" dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
+        <ChartCard title="Order Status Distribution">
+          <ResponsiveContainer width="100%" height={280}>
+            <PieChart>
+              <Pie data={statusDist} dataKey="value" nameKey="name" outerRadius={90} label>
+                {statusDist.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard title="Top 10 Shops by Revenue" className="lg:col-span-2">
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={topByRevenue.map(s => ({ name: s.name, revenue: Math.round(s.grossRevenue) }))}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+              <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-15} textAnchor="end" height={60} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <Tooltip />
+              <Bar dataKey="revenue" fill="#27a05a" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+        <ChartCard title="Top 10 Shops by Orders">
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={topByOrders.map(s => ({ name: s.name, orders: s.ordersTotal }))}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+              <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-15} textAnchor="end" height={60} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <Tooltip />
+              <Bar dataKey="orders" fill="#f5b43c" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </section>
+
+      {/* Analytics highlights */}
+      <section className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-4">
+        <Highlight icon={<TrendingUp className="text-primary" />} title="Highest Revenue Shop" value={topByRevenue[0]?.name ?? "—"} sub={rupees(topByRevenue[0]?.grossRevenue ?? 0)} />
+        <Highlight icon={<TrendingDown className="text-destructive" />} title="Lowest Revenue (active)" value={worstByRevenue[0]?.name ?? "—"} sub={rupees(worstByRevenue[0]?.grossRevenue ?? 0)} />
+        <Highlight icon={<TrendingUp className="text-primary" />} title="Most Orders" value={topByOrders[0]?.name ?? "—"} sub={`${topByOrders[0]?.ordersTotal ?? 0} orders`} />
+        <Highlight icon={<TrendingDown className="text-destructive" />} title="Most Cancellations" value={mostCancellations[0]?.name ?? "—"} sub={`${mostCancellations[0]?.cancelled ?? 0} cancelled`} />
+      </section>
+
+      {/* Shop performance table */}
+      <section className="overflow-hidden rounded-xl border border-border/70 bg-card">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 p-4 md:p-5">
+          <h2 className="section-title">Shop performance</h2>
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <div className="relative w-full sm:w-auto">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search shop, owner, pincode..." className="w-full pl-10 sm:w-[260px]" />
             </div>
           </div>
-        </section>
-      </div>
+        </div>
+        <div className="md:hidden">
+          {loading && <div className="m-4 h-24 rounded-xl shimmer" />}
+          {!loading && pageRows.length === 0 && <div className="px-6 py-10 text-center text-body text-muted-foreground">No shops match your filter.</div>}
+          {pageRows.map((s) => (
+            <button
+              key={s.shop_id}
+              type="button"
+              onClick={() => setDrawerShop(s)}
+              className="press flex w-full items-center justify-between gap-3 border-b border-border/70 px-4 py-3 text-left last:border-0"
+            >
+              <div className="min-w-0">
+                <div className="truncate text-subtitle font-semibold">{s.name}</div>
+                <div className="mt-0.5 truncate text-small text-muted-foreground">{s.owner} · {s.city} · {s.ordersTotal} orders</div>
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <span className="text-subtitle font-semibold">{rupees(s.grossRevenue)}</span>
+                <span className={`rounded-full px-2.5 py-0.5 text-caption font-semibold ${s.status === "Open" ? "bg-primary-soft text-primary-ink" : "bg-secondary text-muted-foreground"}`}>{s.status}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+        <div className="hidden overflow-x-auto md:block">
+          <table className="w-full text-sm">
+            <thead className="text-left text-small font-medium text-muted-foreground">
+              <tr className="border-b border-border/70">
+                {[
+                  ["name", "Shop"], ["owner", "Owner"], ["pincode", "Pincode"], ["city", "City"], ["status", "Status"],
+                  ["ordersToday", "Today"], ["ordersWeek", "Week"], ["ordersMonth", "Month"], ["ordersTotal", "Total"],
+                  ["completed", "✓"], ["pending", "…"], ["cancelled", "✗"],
+                  ["grossRevenue", "Gross"], ["shopEarnings", "Earnings"], ["platformCommission", "Commission"],
+                  ["aov", "AOV"], ["lastOrderAt", "Last Order"],
+                ].map(([k, label]) => (
+                  <th key={k} className="whitespace-nowrap px-3 py-3 text-left font-medium">
+                    <button className="inline-flex items-center gap-1 hover:text-primary" onClick={() => toggleSort(k as keyof ShopStat)}>
+                      {label}<ArrowUpDown className="h-3 w-3 opacity-50" />
+                    </button>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {loading && <tr><td colSpan={17} className="p-10 text-center text-muted-foreground">Loading…</td></tr>}
+              {!loading && pageRows.length === 0 && <tr><td colSpan={17} className="p-10 text-center text-muted-foreground">No shops match your filter.</td></tr>}
+              {pageRows.map(s => (
+                <tr key={s.shop_id} className="cursor-pointer border-b border-border/70 transition-colors last:border-0 hover:bg-secondary/50" onClick={() => setDrawerShop(s)}>
+                  <td className="px-3 py-2.5 font-semibold">{s.name}</td>
+                  <td className="px-3 py-2.5">{s.owner}</td>
+                  <td className="px-3 py-2.5">{s.pincode}</td>
+                  <td className="px-3 py-2.5">{s.city}</td>
+                  <td className="px-3 py-2.5"><span className={`rounded-full px-2.5 py-0.5 text-caption font-semibold ${s.status === "Open" ? "bg-primary-soft text-primary-ink" : "bg-secondary text-muted-foreground"}`}>{s.status}</span></td>
+                  <td className="px-3 py-2.5">{s.ordersToday}</td>
+                  <td className="px-3 py-2.5">{s.ordersWeek}</td>
+                  <td className="px-3 py-2.5">{s.ordersMonth}</td>
+                  <td className="px-3 py-2.5 font-semibold">{s.ordersTotal}</td>
+                  <td className="px-3 py-2.5 text-primary">{s.completed}</td>
+                  <td className="px-3 py-2.5 text-[oklch(0.5_0.12_70)]">{s.pending}</td>
+                  <td className="px-3 py-2.5 text-destructive">{s.cancelled}</td>
+                  <td className="px-3 py-2.5 font-bold">{rupees(s.grossRevenue)}</td>
+                  <td className="px-3 py-2.5">{rupees(s.shopEarnings)}</td>
+                  <td className="px-3 py-2.5">{rupees(s.platformCommission)}</td>
+                  <td className="px-3 py-2.5">{rupees(Math.round(s.aov))}</td>
+                  <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">{s.lastOrderAt ? new Date(s.lastOrderAt).toLocaleString() : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex items-center justify-between border-t border-border/70 p-3 text-small text-muted-foreground">
+          <span>{filteredShops.length} shops</span>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
+            <span className="px-2">Page {page} / {totalPages}</span>
+            <Button variant="ghost" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
+          </div>
+        </div>
+      </section>
+    </div>
 
-      <ShopDetailDialog shop={drawerShop} onClose={() => setDrawerShop(null)} orders={orders} shops={shops} owners={owners} commission={commission} />
-    </RoleShell>
+    <ShopDetailDialog shop={drawerShop} onClose={() => setDrawerShop(null)} orders={orders} shops={shops} owners={owners} commission={commission} />
+    </>
   );
 }
 
-const PIE_COLORS = ["#84cc16", "#f59e0b", "#f43f5e", "#3b82f6", "#a855f7", "#10b981", "#eab308", "#ec4899", "#22d3ee", "#64748b"];
+const PIE_COLORS = ["#27a05a", "#f5b43c", "#e5677d", "#4a9ee0", "#8b7be0", "#34b8a6", "#f08e5a", "#d98bc4", "#6cc3e0", "#8a94a6"];
 
 function Kpi({ label, value, accent, tone }: { label: string; value: string; accent?: boolean; tone?: "success" | "warn" | "danger" }) {
-  const toneCls = tone === "success" ? "text-emerald-600" : tone === "warn" ? "text-amber-600" : tone === "danger" ? "text-rose-600" : "";
+  const toneCls = tone === "success" ? "text-primary" : tone === "warn" ? "text-[oklch(0.5_0.12_70)]" : tone === "danger" ? "text-destructive" : "";
   return (
-    <div className={`rounded-2xl border border-border bg-card p-4 ${accent ? "gradient-primary text-primary-foreground border-transparent" : ""}`}>
-      <div className={`text-[11px] font-bold uppercase tracking-wide ${accent ? "opacity-90" : "text-muted-foreground"}`}>{label}</div>
-      <div className={`font-display text-xl font-extrabold mt-1 ${toneCls}`}>{value}</div>
+    <div className={`rounded-xl p-4 ${accent ? "bg-primary text-primary-foreground" : "bg-card"}`}>
+      <div className={`text-small ${accent ? "opacity-90" : "text-muted-foreground"}`}>{label}</div>
+      <div className={`mt-1 text-xl font-semibold tracking-tight ${toneCls}`}>{value}</div>
     </div>
   );
 }
 
 function Highlight({ icon, title, value, sub }: { icon: React.ReactNode; title: string; value: string; sub: string }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 flex items-center gap-3">
+    <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-4">
       <div className="grid h-10 w-10 place-items-center rounded-xl bg-secondary">{icon}</div>
       <div className="min-w-0">
-        <div className="text-[11px] uppercase font-bold text-muted-foreground">{title}</div>
-        <div className="font-bold truncate">{value}</div>
+        <div className="text-small text-muted-foreground">{title}</div>
+        <div className="truncate font-semibold">{value}</div>
         <div className="text-xs text-muted-foreground">{sub}</div>
       </div>
     </div>
@@ -476,8 +495,8 @@ function Highlight({ icon, title, value, sub }: { icon: React.ReactNode; title: 
 
 function ChartCard({ title, className = "", children }: { title: string; className?: string; children: React.ReactNode }) {
   return (
-    <div className={`rounded-2xl border border-border bg-card p-4 ${className}`}>
-      <h3 className="font-bold mb-3">{title}</h3>
+    <div className={`rounded-xl border border-border/70 bg-card p-4 md:p-5 ${className}`}>
+      <h3 className="section-title mb-4">{title}</h3>
       {children}
     </div>
   );
@@ -525,7 +544,7 @@ function ShopDetailDialog({
     <Dialog open={!!shop} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl">{shop.name}</DialogTitle>
+          <DialogTitle className="text-xl font-semibold tracking-tight">{shop.name}</DialogTitle>
         </DialogHeader>
         <div className="space-y-5">
           <Section title="Shop Information">
@@ -585,7 +604,7 @@ function ShopDetailDialog({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="font-bold text-sm uppercase tracking-wide text-muted-foreground mb-2">{title}</h3>
+      <h3 className="eyebrow mb-2">{title}</h3>
       {children}
     </div>
   );
@@ -595,9 +614,9 @@ function Grid({ children }: { children: React.ReactNode }) {
 }
 function KV({ k, v, strong }: { k: string; v: string; strong?: boolean }) {
   return (
-    <div className="rounded-xl bg-secondary/40 p-3">
-      <div className="text-[10px] font-bold uppercase text-muted-foreground">{k}</div>
-      <div className={`mt-1 ${strong ? "text-primary font-extrabold" : "font-semibold"}`}>{v}</div>
+    <div className="rounded-xl bg-secondary/70 p-3.5">
+      <div className="text-small text-muted-foreground">{k}</div>
+      <div className={`mt-1 ${strong ? "font-semibold text-primary" : "font-medium"}`}>{v}</div>
     </div>
   );
 }

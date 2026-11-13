@@ -72,44 +72,43 @@ export function ShopPicker({
   if (loading) {
     return (
       <div className="space-y-2">
-        <Skeleton className="h-20 w-full rounded-2xl" />
-        <Skeleton className="h-20 w-full rounded-2xl" />
+        <Skeleton className="h-16 w-full rounded-xl" />
+        <Skeleton className="h-16 w-full rounded-xl" />
       </div>
     );
   }
 
   if (shops.length === 0) {
-    return <p className="text-sm text-muted-foreground">{emptyMessage}</p>;
+    return <p className="text-meta text-muted-foreground">{emptyMessage}</p>;
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       {shops.map((s) => {
         const active = s.shop_id === selectedShopId;
         return (
           <div
             key={s.shop_id}
-            className={`rounded-2xl border-2 p-3 transition ${
-              active ? "border-primary bg-primary/5" : "border-border bg-card"
+            className={`rounded-xl p-3 transition-colors ${
+              active ? "bg-primary-soft ring-1 ring-primary" : "bg-secondary/60"
             }`}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-bold text-sm truncate">{s.shop_name}</span>
+                  <span className="truncate text-body font-semibold">{s.shop_name}</span>
                   {s.shop_id === cheapestId && shops.length > 1 && (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold uppercase rounded-full bg-success/20 text-success-foreground px-1.5 py-0.5">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2 py-0.5 text-caption font-medium text-primary-ink">
                       <TrendingDown className="h-3 w-3" /> Lowest price
                     </span>
                   )}
                   {s.shop_id === fastestId && shops.length > 1 && s.shop_id !== cheapestId && (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold uppercase rounded-full bg-primary/15 text-primary px-1.5 py-0.5">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-tint-sky px-2 py-0.5 text-caption font-medium text-foreground">
                       <Zap className="h-3 w-3" /> Fastest
                     </span>
                   )}
                 </div>
-                <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                  <span className="inline-flex items-center gap-0.5"><Star className="h-3 w-3 fill-current text-warning" />4.8</span>
+                <div className="mt-1 flex flex-wrap items-center gap-3 text-caption text-muted-foreground">
                   {s.distance_km != null && (
                     <span className="inline-flex items-center gap-0.5"><MapPin className="h-3 w-3" />{s.distance_km} km</span>
                   )}
@@ -118,18 +117,18 @@ export function ShopPicker({
                 </div>
               </div>
               <div className="text-right shrink-0">
-                <div className="font-bold text-sm text-primary">{rupees(s.price)}</div>
+                <div className="text-body font-semibold">{rupees(s.price)}</div>
                 {s.mrp > s.price && (
-                  <div className="text-[11px] text-muted-foreground line-through">{rupees(s.mrp)}</div>
+                  <div className="text-caption text-muted-foreground line-through">{rupees(s.mrp)}</div>
                 )}
               </div>
             </div>
             <div className="mt-2 flex justify-end">
               <Button
                 size="sm"
-                variant={active ? "secondary" : "default"}
+                variant={active ? "outline" : "default"}
                 onClick={() => onSelect(s)}
-                className="rounded-lg h-8"
+                className="h-8 rounded-full px-4"
               >
                 {active ? (
                   <><Check className="h-3 w-3 mr-1" />Selected</>

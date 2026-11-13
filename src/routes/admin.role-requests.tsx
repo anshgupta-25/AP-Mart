@@ -3,8 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Store, Truck, Check, X, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { RoleShell } from "@/components/RoleShell";
-import { ADMIN_NAV } from "./admin.dashboard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,11 +14,7 @@ import { formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/admin/role-requests")({
   head: () => ({ meta: [{ title: "Role requests — AP Mart Admin" }] }),
-  component: () => (
-    <RoleShell role="admin" nav={ADMIN_NAV} requireRoles={["admin"]}>
-      <RoleRequestsPage />
-    </RoleShell>
-  ),
+  component: RoleRequestsPage,
 });
 
 function RoleRequestsPage() {
@@ -40,16 +34,16 @@ function RoleRequestsPage() {
   });
 
   return (
-    <div className="p-4 md:p-6 space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="mx-auto w-full max-w-5xl space-y-5 px-4 py-4 md:px-6 md:py-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="font-display text-2xl md:text-3xl font-extrabold">Role upgrade requests</h1>
-          <p className="text-muted-foreground text-sm mt-1">Review applications from customers who want to become shopkeepers or delivery partners.</p>
+          <h1 className="large-title">Role requests</h1>
+          <p className="mt-0.5 text-meta text-muted-foreground">Review applications from customers who want to become shopkeepers or delivery partners.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
           {["pending", "approved", "rejected", "all"].map((f) => (
             <button key={f} onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold capitalize transition ${filter === f ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>
+              className={`press whitespace-nowrap rounded-full px-4 py-2 text-meta font-medium capitalize transition ${filter === f ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>
               {f}
             </button>
           ))}
@@ -57,36 +51,36 @@ function RoleRequestsPage() {
       </div>
 
       {reqs.isLoading ? (
-        <div className="text-sm text-muted-foreground">Loading…</div>
+        <div className="space-y-3">{[0, 1].map((i) => <div key={i} className="h-36 rounded-xl shimmer" />)}</div>
       ) : (reqs.data ?? []).length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground">No {filter !== "all" ? filter : ""} requests.</div>
+        <div className="rounded-xl border border-border/70 bg-card px-6 py-10 text-center"><div className="text-subtitle font-semibold">No {filter !== "all" ? filter : ""} requests</div><p className="mt-0.5 text-meta text-muted-foreground">New applications will appear here.</p></div>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-3 md:gap-4">
           {(reqs.data ?? []).map((r: any) => (
-            <div key={r.id} className="rounded-2xl border border-border bg-card p-4">
+            <div key={r.id} className="rounded-xl border border-border/70 bg-card p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     {r.requested_role === "shopkeeper" ? <Store className="h-4 w-4 text-primary"/> : <Truck className="h-4 w-4 text-primary"/>}
-                    <span className="font-bold capitalize">{r.requested_role}</span>
+                    <span className="text-subtitle font-semibold capitalize">{r.requested_role}</span>
                     <StatusPill status={r.status} />
                   </div>
-                  <div className="text-sm font-semibold">{r.full_name || "—"}</div>
-                  <div className="text-xs text-muted-foreground">{r.email || "—"} • {r.phone || "no phone"}</div>
-                  <div className="text-[11px] text-muted-foreground mt-0.5">Submitted {formatDistanceToNow(new Date(r.submitted_at), { addSuffix: true })}</div>
+                  <div className="text-body font-medium">{r.full_name || "—"}</div>
+                  <div className="text-meta text-muted-foreground">{r.email || "—"} • {r.phone || "no phone"}</div>
+                  <div className="text-caption text-muted-foreground mt-0.5">Submitted {formatDistanceToNow(new Date(r.submitted_at), { addSuffix: true })}</div>
                 </div>
                 {r.status === "pending" && (
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => setReject(r)}><X className="h-4 w-4 mr-1"/>Reject</Button>
-                    <Button size="sm" className="gradient-primary text-primary-foreground" onClick={() => setApprove(r)}><Check className="h-4 w-4 mr-1"/>Approve</Button>
+                    <Button size="sm" variant="secondary" onClick={() => setReject(r)}><X className="h-4 w-4 mr-1"/>Reject</Button>
+                    <Button size="sm" onClick={() => setApprove(r)}><Check className="h-4 w-4 mr-1"/>Approve</Button>
                   </div>
                 )}
               </div>
 
-              <div className="mt-3 grid sm:grid-cols-2 gap-2 text-sm">
+              <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
                 {Object.entries(r.data ?? {}).filter(([k]) => !["approved_shop_id","partner_id"].includes(k)).map(([k, v]) => (
-                  <div key={k} className="bg-secondary/40 rounded-lg px-3 py-2">
-                    <div className="text-[10px] uppercase font-bold text-muted-foreground">{k.replace(/_/g, " ")}</div>
+                  <div key={k} className="rounded-xl bg-secondary/70 px-3.5 py-2.5">
+                    <div className="text-small font-medium capitalize text-muted-foreground">{k.replace(/_/g, " ")}</div>
                     <div className="text-sm break-words">{String(v) || "—"}</div>
                   </div>
                 ))}
@@ -108,13 +102,13 @@ function RoleRequestsPage() {
 
 function StatusPill({ status }: { status: string }) {
   const map: Record<string, { c: string; Icon: any }> = {
-    pending: { c: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300", Icon: Clock },
-    approved: { c: "bg-green-500/15 text-green-700 dark:text-green-300", Icon: Check },
-    rejected: { c: "bg-destructive/15 text-destructive", Icon: X },
+    pending: { c: "bg-tint-sun text-[oklch(0.45_0.1_75)]", Icon: Clock },
+    approved: { c: "bg-primary-soft text-primary-ink", Icon: Check },
+    rejected: { c: "bg-tint-rose text-[oklch(0.45_0.12_15)]", Icon: X },
   };
   const m = map[status] ?? map.pending;
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold capitalize ${m.c}`}>
+    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-caption font-semibold capitalize ${m.c}`}>
       <m.Icon className="h-3 w-3"/>{status}
     </span>
   );
@@ -174,8 +168,8 @@ function ApproveShopkeeper({ request, onClose, onDone }: any) {
         <DialogHeader><DialogTitle>Approve shopkeeper — {request.full_name}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-2">
-            <button onClick={() => setMode("new")} className={`rounded-xl border p-2 text-sm font-semibold ${mode==="new"?"border-primary bg-primary/10 text-primary":"border-border"}`}>Create new shop</button>
-            <button onClick={() => setMode("existing")} className={`rounded-xl border p-2 text-sm font-semibold ${mode==="existing"?"border-primary bg-primary/10 text-primary":"border-border"}`}>Assign existing shop</button>
+            <button onClick={() => setMode("new")} className={`press rounded-xl p-3 text-body font-medium ${mode==="new"?"bg-primary-soft text-primary-ink":"bg-secondary text-muted-foreground"}`}>Create new shop</button>
+            <button onClick={() => setMode("existing")} className={`press rounded-xl p-3 text-body font-medium ${mode==="existing"?"bg-primary-soft text-primary-ink":"bg-secondary text-muted-foreground"}`}>Assign existing shop</button>
           </div>
 
           {mode === "new" ? (
@@ -210,7 +204,7 @@ function ApproveShopkeeper({ request, onClose, onDone }: any) {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => m.mutate()} disabled={m.isPending} className="gradient-primary text-primary-foreground">{m.isPending ? "Approving…" : "Approve"}</Button>
+          <Button onClick={() => m.mutate()} disabled={m.isPending} className="bg-primary text-primary-foreground">{m.isPending ? "Approving…" : "Approve"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -261,7 +255,7 @@ function ApproveDelivery({ request, onClose, onDone }: any) {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => m.mutate()} disabled={m.isPending} className="gradient-primary text-primary-foreground">{m.isPending ? "Approving…" : "Approve"}</Button>
+          <Button onClick={() => m.mutate()} disabled={m.isPending} className="bg-primary text-primary-foreground">{m.isPending ? "Approving…" : "Approve"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

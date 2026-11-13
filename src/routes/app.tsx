@@ -30,8 +30,8 @@ function AppEntry() {
   return (
     <div className="min-h-screen grid place-items-center bg-background">
       <div className="flex flex-col items-center gap-3 text-muted-foreground">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <div className="text-sm font-semibold">Opening your app…</div>
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <div className="text-meta font-semibold">Opening your app…</div>
       </div>
     </div>
   );

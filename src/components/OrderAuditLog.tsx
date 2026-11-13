@@ -39,36 +39,36 @@ export function OrderAuditLog({ orderId }: { orderId: string }) {
   });
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-4">
-      <h2 className="font-bold flex items-center gap-2 mb-3">
+    <section className="rounded-xl border border-border/70 bg-card p-4">
+      <h2 className="section-title mb-3 flex items-center gap-2">
         <History className="h-4 w-4 text-primary" /> Audit log
       </h2>
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-meta text-muted-foreground">Loading…</p>
       ) : data.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No events recorded yet.</p>
+        <p className="text-meta text-muted-foreground">No events recorded yet.</p>
       ) : (
-        <ol className="relative border-l-2 border-border ml-2 space-y-3">
+        <ol className="relative border-l border-border ml-2 space-y-4">
           {data.map((r) => (
             <li key={r.id} className="pl-4 relative">
-              <span className="absolute -left-[7px] top-1.5 h-3 w-3 rounded-full bg-primary border-2 border-card" />
-              <div className="text-sm font-semibold">{labelFor(r.event_type)}</div>
+              <span className="absolute -left-[6px] top-1.5 h-3 w-3 rounded-full bg-primary ring-2 ring-card" />
+              <div className="text-meta font-medium">{labelFor(r.event_type)}</div>
               {(r.from_value || r.to_value) && (
-                <div className="text-xs text-muted-foreground inline-flex items-center gap-1 flex-wrap">
+                <div className="inline-flex flex-wrap items-center gap-1 text-caption text-muted-foreground">
                   {r.from_value && (
-                    <span className="px-1.5 py-0.5 rounded bg-secondary/60 font-mono">
+                    <span className="px-2 py-0.5 rounded-full bg-secondary font-mono">
                       {truncate(r.from_value)}
                     </span>
                   )}
                   {r.from_value && r.to_value && <ArrowRight className="h-3 w-3" />}
                   {r.to_value && (
-                    <span className="px-1.5 py-0.5 rounded bg-primary/15 text-primary font-mono">
+                    <span className="px-2 py-0.5 rounded-full bg-primary-soft text-primary-ink font-mono">
                       {truncate(r.to_value)}
                     </span>
                   )}
                 </div>
               )}
-              <div className="text-[11px] text-muted-foreground mt-0.5">
+              <div className="text-caption text-muted-foreground mt-0.5">
                 {new Date(r.created_at).toLocaleString()} · by {r.actor_role ?? "system"}
               </div>
             </li>

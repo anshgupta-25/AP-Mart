@@ -136,8 +136,8 @@ export function useOrderDetails(orderId: string, opts?: { shopId?: string | null
 }
 
 export const stockTone = (stock: number | null) => {
-  if (stock == null) return { label: "Unknown", cls: "bg-muted text-muted-foreground", dot: "⚪" };
-  if (stock <= 0) return { label: "Out of stock", cls: "bg-destructive/15 text-destructive", dot: "🔴" };
-  if (stock <= LOW_STOCK_THRESHOLD) return { label: "Low stock", cls: "bg-orange-500/15 text-orange-600", dot: "🟡" };
-  return { label: "Healthy stock", cls: "bg-emerald-500/15 text-emerald-600", dot: "🟢" };
+  if (stock == null) return { label: "Unknown", cls: "bg-secondary text-muted-foreground", dot: "" };
+  if (stock <= 0) return { label: "Out of stock", cls: "bg-tint-rose text-destructive", dot: "" };
+  if (stock <= LOW_STOCK_THRESHOLD) return { label: "Low stock", cls: "bg-tint-sun text-warning-foreground", dot: "" };
+  return { label: "Healthy stock", cls: "bg-primary-soft text-primary-ink", dot: "" };
 };

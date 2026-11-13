@@ -69,7 +69,7 @@ export function ImageInput({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-bold">
+        <label className="text-meta font-medium text-foreground/80">
           {label} {required && <span className="text-destructive">*</span>}
         </label>
         {value && (
@@ -95,7 +95,7 @@ export function ImageInput({
               onChange(e.target.value);
             }}
             placeholder="https://… or upload below"
-            className="pl-9"
+            className="pl-10"
           />
         </div>
         <Button
@@ -117,7 +117,7 @@ export function ImageInput({
         />
       </div>
       {(previewUrl || value) && (
-        <div className="rounded-xl overflow-hidden border border-border w-full max-w-xs">
+        <div className="w-full max-w-xs overflow-hidden rounded-xl bg-secondary">
           <StorageImg
             loading="lazy"
             decoding="async"
@@ -129,7 +129,7 @@ export function ImageInput({
         </div>
       )}
       {required && !value && (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-caption text-muted-foreground">
           Paste a URL or upload a file — one is required.
         </p>
       )}

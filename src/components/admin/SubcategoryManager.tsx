@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Star, Layers } from "lucide-react";
+import { Plus, Pencil, Trash2, Star, Layers, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -143,7 +143,7 @@ export function SubcategoryManager({
             {data.map((s) => (
               <div
                 key={s.id}
-                className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3"
+                className="flex items-center gap-3 rounded-xl border border-border bg-card p-3"
               >
                 {s.image_url ? (
                   <StorageImg
@@ -154,7 +154,7 @@ export function SubcategoryManager({
                   />
                 ) : (
                   <div className="grid h-11 w-11 place-items-center rounded-xl bg-secondary text-lg">
-                    {s.icon ?? "🏷️"}
+                    {s.icon || <Tag className="h-5 w-5 text-muted-foreground" />}
                   </div>
                 )}
                 <div className="min-w-0 flex-1">

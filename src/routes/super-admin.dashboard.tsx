@@ -54,17 +54,17 @@ function SuperAdminDashboard() {
   const count = (role: string) => (users ?? []).filter((u) => (u.roles ?? []).includes(role)).length;
 
   const stats = [
-    { label: "Super Admins", value: count("super_admin"), icon: Crown, tone: "text-amber-600 bg-amber-50" },
-    { label: "Admins", value: count("admin"), icon: ShieldAlert, tone: "text-emerald-600 bg-emerald-50" },
-    { label: "Staff accounts", value: count("shopkeeper") + count("delivery") + count("support"), icon: Users, tone: "text-violet-600 bg-violet-50" },
-    { label: "Shops", value: shopCount ?? 0, icon: Store, tone: "text-blue-600 bg-blue-50" },
+    { label: "Super Admins", value: count("super_admin"), icon: Crown, tone: "bg-tint-violet text-[oklch(0.42_0.1_290)]" },
+    { label: "Admins", value: count("admin"), icon: ShieldAlert, tone: "bg-tint-sky text-[oklch(0.42_0.1_235)]" },
+    { label: "Staff accounts", value: count("shopkeeper") + count("delivery") + count("support"), icon: Users, tone: "bg-tint-peach text-[oklch(0.45_0.1_50)]" },
+    { label: "Shops", value: shopCount ?? 0, icon: Store, tone: "bg-tint-mint text-primary-ink" },
   ];
 
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-2xl font-extrabold">Platform control centre</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="large-title">Platform control centre</h1>
+        <p className="mt-0.5 text-small text-muted-foreground">
           Exclusive Super Admin powers. Regular Admins keep daily operations only.
         </p>
       </div>
@@ -72,20 +72,20 @@ function SuperAdminDashboard() {
       {isLoading ? (
         <div className="grid place-items-center py-10"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-2.5 md:gap-4 lg:grid-cols-4">
           {stats.map((s) => (
-            <div key={s.label} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-              <div className={`inline-grid h-9 w-9 place-items-center rounded-xl ${s.tone}`}>
-                <s.icon className="h-4 w-4" />
+            <div key={s.label} className="rounded-xl border border-border/70 bg-card p-3.5">
+              <div className={`mb-2.5 grid h-9 w-9 place-items-center rounded-lg ${s.tone}`}>
+                <s.icon className="h-[17px] w-[17px]" />
               </div>
-              <div className="mt-3 text-2xl font-extrabold">{s.value}</div>
-              <div className="text-xs font-medium text-muted-foreground">{s.label}</div>
+              <div className="text-small text-muted-foreground">{s.label}</div>
+              <div className="mt-0.5 text-xl font-semibold tracking-tight">{s.value}</div>
             </div>
           ))}
         </div>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-2.5 sm:grid-cols-2 md:gap-3 lg:grid-cols-3">
         {[
           { to: "/super-admin/access", icon: Users, title: "Roles & Access", desc: "Create, promote, demote or suspend any account including Admins." },
           { to: "/super-admin/analytics", icon: BarChart3, title: "Revenue analytics", desc: "Platform-wide revenue, order volume and growth." },
@@ -100,25 +100,27 @@ function SuperAdminDashboard() {
           <Link
             key={t.to}
             to={t.to as any}
-            className="rounded-2xl border border-border bg-card p-5 shadow-sm hover:border-primary/40 transition"
+            className="press rounded-xl border border-border/70 bg-card p-4 transition-colors hover:bg-secondary/40"
           >
-            <t.icon className="h-5 w-5 text-emerald-600" />
-            <h2 className="mt-2 font-display font-extrabold text-sm">{t.title}</h2>
-            <p className="text-xs text-muted-foreground mt-1">{t.desc}</p>
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary-soft text-primary-ink">
+              <t.icon className="h-[17px] w-[17px]" />
+            </span>
+            <h2 className="mt-2.5 text-body font-semibold">{t.title}</h2>
+            <p className="mt-0.5 text-small leading-snug text-muted-foreground">{t.desc}</p>
           </Link>
         ))}
       </div>
 
 
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="font-display font-extrabold text-sm">Latest security events</h2>
+      <div className="rounded-xl border border-border/70 bg-card p-4">
+        <h2 className="section-title">Latest security events</h2>
         {(recentEvents ?? []).length === 0 ? (
-          <p className="mt-2 text-xs text-muted-foreground">No security events recorded yet.</p>
+          <p className="mt-2 text-small text-muted-foreground">No security events recorded yet.</p>
         ) : (
-          <ul className="mt-3 space-y-2">
+          <ul className="mt-3 divide-y divide-border/60">
             {(recentEvents ?? []).map((e: any) => (
-              <li key={e.id} className="flex items-center justify-between gap-3 text-xs">
-                <span className="font-semibold">{e.event_type.replace(/_/g, " ")}</span>
+              <li key={e.id} className="flex items-center justify-between gap-3 py-2.5 text-small">
+                <span className="font-medium">{e.event_type.replace(/_/g, " ")}</span>
                 <span className="text-muted-foreground">{new Date(e.created_at).toLocaleString()}</span>
               </li>
             ))}
@@ -126,12 +128,12 @@ function SuperAdminDashboard() {
         )}
       </div>
 
-      <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-5">
-        <div className="flex items-center gap-2 text-sm font-bold">
+      <div className="rounded-xl border border-dashed border-border bg-secondary/50 p-4">
+        <div className="flex items-center gap-2 text-body font-semibold">
           <Lock className="h-4 w-4 text-muted-foreground" />
           Credentials &amp; integrations
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 text-small leading-relaxed text-muted-foreground">
           Payment gateway keys, Maps, SMS, push and AI provider credentials are stored as encrypted backend secrets and are
           never readable from the app — not even by a Super Admin. That is deliberate: a UI that could display a live secret
           key would be the single biggest breach risk on the platform. They are managed from your project's secret settings.

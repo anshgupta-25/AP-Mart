@@ -2,17 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Shield, ShieldCheck, Store as StoreIcon, Truck, User as UserIcon, LifeBuoy, X, Ban, Check, Tag } from "lucide-react";
 import { toast } from "sonner";
-import { RoleShell } from "@/components/RoleShell";
-import { ADMIN_NAV } from "./admin.dashboard";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/admin/customers")({
-  component: () => (
-    <RoleShell role="admin" nav={ADMIN_NAV} requireRoles={["admin"]}>
-      <CustomersPage />
-    </RoleShell>
-  ),
+  component: CustomersPage,
 });
 
 type AppRole = "super_admin" | "admin" | "customer" | "shopkeeper" | "delivery" | "support";
@@ -68,50 +62,50 @@ function CustomersPage() {
   });
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-4 md:px-6 md:py-6">
       <div>
-        <h1 className="font-display text-3xl font-bold">Users & roles</h1>
-        <p className="text-muted-foreground mt-1">Assign admin, shopkeeper, delivery or customer roles.</p>
+        <h1 className="large-title">Users & roles</h1>
+        <p className="mt-0.5 text-meta text-muted-foreground">Assign admin, shopkeeper, delivery or customer roles.</p>
       </div>
 
       {users.isLoading ? (
-        <div className="text-sm text-muted-foreground">Loading…</div>
+        <div className="space-y-3">{[0, 1, 2].map((i) => <div key={i} className="h-24 rounded-xl shimmer" />)}</div>
       ) : (
         <>
-          <div className="hidden md:block rounded-2xl border border-border bg-card overflow-hidden">
+          <div className="hidden overflow-hidden rounded-xl border border-border/70 bg-card md:block">
             <table className="w-full text-sm">
-              <thead className="bg-secondary/50 text-left">
-                <tr>
-                  <th className="p-3">Name / Email</th>
-                  <th className="p-3">Phone</th>
-                  <th className="p-3">Joined</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3">Roles</th>
-                  <th className="p-3">Actions</th>
+              <thead className="text-left text-small font-medium text-muted-foreground">
+                <tr className="border-b border-border/70">
+                  <th className="p-4 font-medium">Name / Email</th>
+                  <th className="p-4 font-medium">Phone</th>
+                  <th className="p-4 font-medium">Joined</th>
+                  <th className="p-4 font-medium">Status</th>
+                  <th className="p-4 font-medium">Roles</th>
+                  <th className="p-4 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {(users.data ?? []).map((u: any) => (
-                  <tr key={u.id} className="border-t border-border align-top">
-                    <td className="p-3 font-medium">
+                  <tr key={u.id} className="border-b border-border/70 align-top transition-colors last:border-0 hover:bg-secondary/50">
+                    <td className="p-4 font-medium">
                       {u.full_name || "—"}
                       <div className="text-xs text-muted-foreground">{u.email || "—"}</div>
-                      {u.pending_request_count > 0 && <div className="text-[10px] mt-0.5 text-yellow-700 dark:text-yellow-300 font-bold">{u.pending_request_count} pending request</div>}
+                      {u.pending_request_count > 0 && <div className="mt-1 text-caption font-semibold text-[oklch(0.5_0.12_70)]">{u.pending_request_count} pending request</div>}
                     </td>
-                    <td className="p-3 text-muted-foreground">{u.phone || "—"}</td>
-                    <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">{new Date(u.created_at).toLocaleDateString()}</td>
-                    <td className="p-3">
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold ${u.status === "disabled" ? "bg-destructive/15 text-destructive" : "bg-green-500/15 text-green-700 dark:text-green-300"}`}>
+                    <td className="p-4 text-muted-foreground">{u.phone || "—"}</td>
+                    <td className="whitespace-nowrap p-4 text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td className="p-4">
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-caption font-semibold ${u.status === "disabled" ? "bg-tint-rose text-[oklch(0.45_0.12_15)]" : "bg-primary-soft text-primary-ink"}`}>
                         {u.status === "disabled" ? "Disabled" : "Active"}
                       </span>
                     </td>
-                    <td className="p-3">
+                    <td className="p-4">
                       <div className="flex flex-wrap gap-1.5">
                         {(u.roles ?? []).length === 0 && <span className="text-xs text-muted-foreground">No roles</span>}
                         {(u.roles ?? []).map((r: AppRole) => {
                           const Icon = iconFor(r);
                           return (
-                            <span key={r} className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-1 text-xs font-semibold">
+                            <span key={r} className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2.5 py-1 text-xs font-semibold text-primary-ink">
                               <Icon className="h-3 w-3" />{r}
                               <button onClick={() => remove.mutate({ user_id: u.id, role: r })} className="ml-1 hover:bg-primary/20 rounded-full">
                                 <X className="h-3 w-3" />
@@ -122,20 +116,20 @@ function CustomersPage() {
                       </div>
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {ROLES.filter((r) => !(u.roles ?? []).includes(r)).map((r) => (
-                          <Button key={r} size="sm" variant="outline" className="h-6 text-[10px] px-2"
+                          <Button key={r} size="sm" variant="secondary" className="h-7 rounded-full px-3 text-caption"
                             onClick={() => assign.mutate({ user_id: u.id, role: r })}>
                             + {r}
                           </Button>
                         ))}
                       </div>
                     </td>
-                    <td className="p-3">
+                    <td className="p-4">
                       {u.status === "disabled" ? (
-                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setStatus.mutate({ user_id: u.id, status: "active" })}>
+                        <Button size="sm" variant="secondary" onClick={() => setStatus.mutate({ user_id: u.id, status: "active" })}>
                           <Check className="h-3 w-3 mr-1"/>Enable
                         </Button>
                       ) : (
-                        <Button size="sm" variant="outline" className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setStatus.mutate({ user_id: u.id, status: "disabled" })}>
+                        <Button size="sm" variant="secondary" className="text-destructive" onClick={() => setStatus.mutate({ user_id: u.id, status: "disabled" })}>
                           <Ban className="h-3 w-3 mr-1"/>Disable
                         </Button>
                       )}
@@ -146,27 +140,27 @@ function CustomersPage() {
             </table>
           </div>
 
-          <div className="md:hidden space-y-3">
+          <div className="space-y-3 md:hidden">
             {(users.data ?? []).map((u: any) => (
-              <div key={u.id} className="rounded-2xl border border-border bg-card p-4 space-y-3">
+              <div key={u.id} className="space-y-4 rounded-xl border border-border/70 bg-card p-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="font-bold">{u.full_name || "—"}</div>
-                    <div className="text-[11px] text-muted-foreground">{u.email || "—"}</div>
+                    <div className="text-subtitle font-semibold">{u.full_name || "—"}</div>
+                    <div className="text-small text-muted-foreground">{u.email || "—"}</div>
                     <div className="text-xs text-muted-foreground mt-0.5">{u.phone || "No phone"}</div>
                   </div>
-                  <span className={`inline-flex items-center rounded-full px-2 py-1 text-[10px] font-bold ${u.status === "disabled" ? "bg-destructive/15 text-destructive" : "bg-green-500/15 text-green-700 dark:text-green-300"}`}>
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-caption font-semibold ${u.status === "disabled" ? "bg-tint-rose text-[oklch(0.45_0.12_15)]" : "bg-primary-soft text-primary-ink"}`}>
                     {u.status === "disabled" ? "Disabled" : "Active"}
                   </span>
                 </div>
                 <div>
-                  <div className="text-[11px] font-bold uppercase text-muted-foreground mb-1.5">Current roles</div>
+                  <div className="text-xs font-medium text-muted-foreground mb-1.5">Current roles</div>
                   <div className="flex flex-wrap gap-1.5">
                     {(u.roles ?? []).length === 0 && <span className="text-xs text-muted-foreground">No roles</span>}
                     {(u.roles ?? []).map((r: AppRole) => {
                       const Icon = iconFor(r);
                       return (
-                        <span key={r} className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-1 text-xs font-semibold">
+                        <span key={r} className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2.5 py-1 text-xs font-semibold text-primary-ink">
                           <Icon className="h-3 w-3" />{r}
                           <button onClick={() => remove.mutate({ user_id: u.id, role: r })} className="ml-1 hover:bg-primary/20 rounded-full">
                             <X className="h-3 w-3" />
@@ -178,10 +172,10 @@ function CustomersPage() {
                 </div>
                 {ROLES.filter((r) => !(u.roles ?? []).includes(r)).length > 0 && (
                   <div>
-                    <div className="text-[11px] font-bold uppercase text-muted-foreground mb-1.5">Add role</div>
+                    <div className="text-xs font-medium text-muted-foreground mb-1.5">Add role</div>
                     <div className="flex flex-wrap gap-1.5">
                       {ROLES.filter((r) => !(u.roles ?? []).includes(r)).map((r) => (
-                        <Button key={r} size="sm" variant="outline" className="h-7 text-xs"
+                        <Button key={r} size="sm" variant="secondary" className="h-8 rounded-full px-3 text-xs"
                           onClick={() => assign.mutate({ user_id: u.id, role: r })}>
                           + {r}
                         </Button>
@@ -190,11 +184,11 @@ function CustomersPage() {
                   </div>
                 )}
                 {u.status === "disabled" ? (
-                  <Button size="sm" variant="outline" className="w-full h-8 text-xs" onClick={() => setStatus.mutate({ user_id: u.id, status: "active" })}>
+                  <Button variant="secondary" className="w-full" onClick={() => setStatus.mutate({ user_id: u.id, status: "active" })}>
                     <Check className="h-3 w-3 mr-1"/>Enable user
                   </Button>
                 ) : (
-                  <Button size="sm" variant="outline" className="w-full h-8 text-xs text-destructive border-destructive/30" onClick={() => setStatus.mutate({ user_id: u.id, status: "disabled" })}>
+                  <Button variant="secondary" className="w-full text-destructive" onClick={() => setStatus.mutate({ user_id: u.id, status: "disabled" })}>
                     <Ban className="h-3 w-3 mr-1"/>Disable user
                   </Button>
                 )}

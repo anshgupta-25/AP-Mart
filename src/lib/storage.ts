@@ -292,8 +292,36 @@ export async function uploadFile(opts: UploadOptions): Promise<StoredObject> {
   return stored;
 }
 
-export function uploadImage(opts: UploadOptions): Promise<StoredObject> {
-  return uploadFile({ ...opts, allowedTypes: opts.allowedTypes ?? IMAGE_TYPES });
+/** Scale large JPEG/PNG/WebP photos down and re-encode as WebP; falls back to the original file on any failure. */
+async function prepareImage(file: File, maxEdge: number): Promise<File> {
+  if (typeof document === "undefined" || typeof createImageBitmap === "undefined") return file;
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return file;
+  try {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, maxEdge / Math.max(bmp.width, bmp.height));
+    const w = Math.max(1, Math.round(bmp.width * scale));
+    const h = Math.max(1, Math.round(bmp.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bmp, 0, 0, w, h);
+    bmp.close?.();
+    const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/webp", 0.82));
+    if (!blob || (scale === 1 && blob.size >= file.size)) return file;
+    return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".webp", {
+      type: "image/webp",
+      lastModified: file.lastModified,
+    });
+  } catch {
+    return file;
+  }
+}
+
+export async function uploadImage(opts: UploadOptions & { maxEdge?: number }): Promise<StoredObject> {
+  const file = await prepareImage(opts.file, opts.maxEdge ?? 1200);
+  return uploadFile({ ...opts, file, allowedTypes: opts.allowedTypes ?? IMAGE_TYPES });
 }
 
 /**

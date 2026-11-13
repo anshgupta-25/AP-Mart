@@ -9,24 +9,22 @@ import { Button } from "@/components/ui/button";
 export function NoShopsNotice({ onRefresh }: { onRefresh?: () => void }) {
   return (
     <div className="px-4 py-10">
-      <div className="mx-auto max-w-sm rounded-3xl border border-border bg-card p-6 text-center shadow-card">
-        <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-primary/10">
-          <MapPin className="h-8 w-8 text-primary" strokeWidth={1.75} />
+      <div className="mx-auto max-w-sm rounded-xl border border-border/70 bg-card p-5 text-center">
+        <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-tint-mint">
+          <MapPin className="h-5 w-5 text-primary" strokeWidth={1.8} />
         </div>
-        <h2 className="font-display text-lg font-extrabold mt-4">
-          No shops currently deliver to your location.
-        </h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          We're expanding fast — try another address or check again in a moment.
+        <h2 className="section-title mt-3">No shops deliver to this address yet</h2>
+        <p className="mt-1.5 text-meta text-muted-foreground">
+          Try another address, or check back soon as more local shops join.
         </p>
-        <div className="mt-5 flex flex-col gap-2">
+        <div className="mt-4 flex flex-col gap-2">
           <Link
             to="/customer/address-setup"
-            className="rounded-2xl gradient-primary px-4 py-3 text-sm font-bold text-primary-foreground"
+            className="press grid h-11 place-items-center rounded-xl bg-primary text-body font-semibold text-primary-foreground"
           >
-            Change Address
+            Change address
           </Link>
-          <Button variant="outline" className="rounded-2xl" onClick={() => onRefresh?.()}>
+          <Button variant="secondary" className="h-11" onClick={() => onRefresh?.()}>
             <RefreshCw className="mr-2 h-4 w-4" /> Refresh
           </Button>
         </div>

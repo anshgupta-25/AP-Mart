@@ -70,16 +70,16 @@ export function DeleteAccountSection({ className = "" }: { className?: string })
 
   return (
     <section
-      className={`rounded-3xl border border-destructive/30 bg-destructive/5 p-5 shadow-card ${className}`}
+      className={`rounded-xl border border-border/70 bg-card p-4 ${className}`}
     >
-      <h2 className="font-display text-lg font-bold flex items-center gap-2 text-destructive">
-        <AlertTriangle className="h-5 w-5" /> Danger zone
+      <h2 className="section-title flex items-center gap-2 text-destructive">
+        <AlertTriangle className="h-4 w-4" /> Danger zone
       </h2>
-      <p className="mt-1 text-sm text-muted-foreground">
+      <p className="mt-1 text-small text-muted-foreground">
         Permanently delete your AP Mart account and personal data. This cannot be undone.
       </p>
-      <Button variant="destructive" className="mt-4 rounded-xl" onClick={openDialog}>
-        <Trash2 className="h-4 w-4 mr-2" /> Delete Account
+      <Button variant="secondary" className="mt-3 h-10 w-full rounded-xl text-destructive" onClick={openDialog}>
+        <Trash2 className="h-4 w-4 mr-2" /> Delete account
       </Button>
 
       <Dialog open={open} onOpenChange={(v) => !busy && setOpen(v)}>
@@ -93,7 +93,7 @@ export function DeleteAccountSection({ className = "" }: { className?: string })
           </DialogHeader>
 
           {blocked ? (
-            <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-3 text-sm font-semibold text-destructive">
+            <div className="rounded-lg bg-destructive/10 p-3 text-meta font-medium text-destructive">
               {blocked}
             </div>
           ) : (
@@ -107,18 +107,16 @@ export function DeleteAccountSection({ className = "" }: { className?: string })
                 onChange={(e) => setConfirm(e.target.value)}
                 placeholder="DELETE"
                 autoComplete="off"
-                className="rounded-xl"
-              />
+                />
             </div>
           )}
 
           <DialogFooter className="gap-2">
-            <Button variant="outline" className="rounded-xl" onClick={() => setOpen(false)} disabled={busy}>
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
               Cancel
             </Button>
             <Button
               variant="destructive"
-              className="rounded-xl"
               disabled={busy || !!blocked || confirm.trim() !== "DELETE"}
               onClick={onDelete}
             >

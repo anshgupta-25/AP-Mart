@@ -53,40 +53,41 @@ function HealthPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-2xl font-extrabold">Database health</h1>
-        <p className="text-sm text-muted-foreground">Row volumes and write activity across the platform's core tables.</p>
+        <h1 className="large-title">Database health</h1>
+        <p className="mt-0.5 text-small text-muted-foreground">Row volumes and write activity across the platform's core tables.</p>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-        <div className="flex items-center gap-2 text-sm font-bold">
-          <Activity className="h-4 w-4 text-emerald-600" /> Orders in the last 24 hours
-        </div>
-        <div className="mt-2 text-3xl font-extrabold">{data?.recentOrders ?? 0}</div>
+      <div className="rounded-xl border border-border/70 bg-card p-3.5">
+        <span className="mb-2.5 grid h-9 w-9 place-items-center rounded-lg bg-tint-mint text-primary-ink">
+          <Activity className="h-[17px] w-[17px]" />
+        </span>
+        <div className="text-small text-muted-foreground">Orders in the last 24 hours</div>
+        <div className="mt-0.5 text-xl font-semibold tracking-tight">{data?.recentOrders ?? 0}</div>
       </div>
 
       {isLoading ? (
-        <div className="grid place-items-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+        <div className="grid place-items-center py-12"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : (
-        <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-          <div className="flex items-center gap-2 border-b border-border px-5 py-3 text-sm font-bold">
-            <Database className="h-4 w-4 text-emerald-600" /> Table volumes
+        <div className="overflow-hidden rounded-xl border border-border/70 bg-card">
+          <div className="section-title flex items-center gap-2 border-b border-border/70 px-4 py-3">
+            <Database className="h-4 w-4 text-primary" /> Table volumes
           </div>
-          <ul className="divide-y divide-border">
+          <ul className="divide-y divide-border/70">
             {(data?.results ?? []).map((r) => (
-              <li key={r.table} className="flex items-center justify-between px-5 py-2.5 text-xs">
-                <code className="font-mono">{r.table}</code>
-                <span className="font-bold">{r.count === null ? "—" : r.count.toLocaleString("en-IN")}</span>
+              <li key={r.table} className="flex items-center justify-between px-4 py-2.5 text-small">
+                <code className="font-mono text-small">{r.table}</code>
+                <span className="font-semibold">{r.count === null ? "—" : r.count.toLocaleString("en-IN")}</span>
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-5">
-        <div className="flex items-center gap-2 text-sm font-bold">
+      <div className="rounded-xl border border-dashed border-border bg-secondary/50 p-4">
+        <div className="flex items-center gap-2 text-body font-semibold">
           <HardDriveDownload className="h-4 w-4 text-muted-foreground" /> Backup &amp; restore
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 text-small leading-relaxed text-muted-foreground">
           The platform database is backed up automatically by the managed hosting layer with point-in-time recovery.
           Restores are performed from your project's backend settings — deliberately not exposed as an in-app button, since a
           mis-click would overwrite live production data.

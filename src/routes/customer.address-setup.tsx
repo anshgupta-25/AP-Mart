@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { MapPin, Crosshair, PencilLine, Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -156,48 +155,40 @@ function AddressSetupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background px-4 py-8">
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="mx-auto w-full max-w-md"
-      >
+    <div className="min-h-screen bg-background px-4 pb-safe pt-safe py-6">
+      <div className="mx-auto w-full max-w-md">
         {mode === "choose" ? (
-          <div className="text-center pt-8">
-            <div className="relative mx-auto h-28 w-28">
-              <div className="absolute inset-0 rounded-[2rem] bg-primary/15 blur-xl" />
-              <div className="relative grid h-28 w-28 place-items-center rounded-[2rem] border border-border bg-card shadow-card">
-                <MapPin className="h-12 w-12 text-primary" strokeWidth={1.75} />
-              </div>
+          <div className="pt-8 text-center">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-tint-mint text-primary-ink">
+              <MapPin className="h-6 w-6" strokeWidth={1.8} />
             </div>
-            <h1 className="font-display text-2xl font-extrabold mt-6">Add Your Delivery Address</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Please add your delivery location so we can show products available in your area.
+            <h1 className="large-title mt-4">Where should we deliver?</h1>
+            <p className="mt-1.5 text-meta text-muted-foreground">
+              Add your address so we can show products from shops near you.
             </p>
 
-            <div className="mt-8 space-y-3">
+            <div className="mt-6 space-y-2.5">
               <Button
                 onClick={useCurrentLocation}
                 disabled={locating}
-                className="w-full rounded-2xl gradient-primary py-6 text-base font-bold text-primary-foreground shadow-glow"
+                className="h-11 w-full rounded-xl"
               >
-                {locating ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Crosshair className="mr-2 h-5 w-5" />}
-                Use Current Location
+                {locating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Crosshair className="mr-2 h-4 w-4" />}
+                Use current location
               </Button>
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={() => setMode("form")}
-                className="w-full rounded-2xl py-6 text-base font-bold"
+                className="h-11 w-full rounded-xl"
               >
-                <PencilLine className="mr-2 h-5 w-5" /> Add Address Manually
+                <PencilLine className="mr-2 h-4 w-4" /> Enter address manually
               </Button>
             </div>
 
             {hasAddress && (
               <button
                 onClick={() => navigate({ to: "/customer/home" })}
-                className="mt-6 text-xs font-semibold text-muted-foreground underline"
+                className="press mt-5 text-meta font-medium text-primary"
               >
                 Keep my current address
               </button>
@@ -207,12 +198,12 @@ function AddressSetupPage() {
           <div className="space-y-4 pb-8">
             <button
               onClick={() => setMode("choose")}
-              className="flex items-center gap-1 text-sm font-semibold text-muted-foreground"
+              className="press flex items-center gap-1 text-meta font-medium text-primary"
             >
               <ArrowLeft className="h-4 w-4" /> Back
             </button>
-            <h1 className="font-display text-2xl font-extrabold">Address details</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="large-title">Address details</h1>
+            <p className="text-meta text-muted-foreground">
               Pin your exact location, then fill in the details below.
             </p>
 
@@ -242,17 +233,17 @@ function AddressSetupPage() {
                 inputMode="numeric"
               />
               <div>
-                <Label className="text-xs">Label</Label>
-                <div className="mt-1 grid grid-cols-3 gap-1">
+                <Label className="text-small text-muted-foreground">Label</Label>
+                <div className="mt-1.5 grid grid-cols-3 gap-1.5">
                   {(["home", "work", "other"] as const).map((t) => (
                     <button
                       key={t}
                       onClick={() => set("type", t)}
                       className={cn(
-                        "rounded-xl border py-2 text-[11px] font-bold capitalize transition",
+                        "press h-10 rounded-lg text-small font-medium capitalize transition-colors",
                         form.type === t
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground",
+                          ? "bg-foreground text-background"
+                          : "bg-secondary text-muted-foreground",
                       )}
                     >
                       {t}
@@ -263,7 +254,7 @@ function AddressSetupPage() {
             </div>
 
             {coords && (
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-caption text-muted-foreground">
                 Pinned at {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
               </p>
             )}
@@ -271,14 +262,14 @@ function AddressSetupPage() {
             <Button
               onClick={save}
               disabled={saving}
-              className="w-full rounded-2xl gradient-primary py-6 text-base font-bold text-primary-foreground shadow-glow"
+              className="h-11 w-full rounded-xl"
             >
-              {saving && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-              Save address & start shopping
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save address and continue
             </Button>
           </div>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -296,12 +287,12 @@ function Field({
 }) {
   return (
     <div>
-      <Label className="text-xs">{label}</Label>
+      <Label className="text-small text-muted-foreground">{label}</Label>
       <Input
         value={value}
         inputMode={inputMode}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 rounded-xl"
+        className="mt-1.5"
       />
     </div>
   );

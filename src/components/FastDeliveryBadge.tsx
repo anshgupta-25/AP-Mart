@@ -3,11 +3,11 @@ import { Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function FastDeliveryBadge({ className, size = "sm" }: { className?: string; size?: "xs" | "sm" | "md" }) {
-  const px = size === "xs" ? "px-1.5 py-0.5 text-[9px]" : size === "md" ? "px-2.5 py-1 text-xs" : "px-2 py-0.5 text-[10px]";
+  const px = size === "xs" ? "px-1.5 py-0.5 text-micro" : size === "md" ? "px-2.5 py-1 text-xs" : "px-2 py-0.5 text-micro";
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full bg-red-600 text-white font-extrabold uppercase tracking-wide shadow-sm animate-pulse",
+        "inline-flex items-center gap-1 rounded-full bg-destructive/10 text-destructive font-semibold",
         px,
         className,
       )}
@@ -20,16 +20,16 @@ export function FastDeliveryBadge({ className, size = "sm" }: { className?: stri
 
 /** Renders the correct badge for any delivery_type stored on an order. */
 export function DeliveryTypeBadge({ type, className, size = "sm" }: { type?: string | null; className?: string; size?: "xs" | "sm" | "md" }) {
-  const px = size === "xs" ? "px-1.5 py-0.5 text-[9px]" : size === "md" ? "px-2.5 py-1 text-xs" : "px-2 py-0.5 text-[10px]";
+  const px = size === "xs" ? "px-1.5 py-0.5 text-micro" : size === "md" ? "px-2.5 py-1 text-xs" : "px-2 py-0.5 text-micro";
   const map: Record<string, { label: string; bg: string; icon: string }> = {
-    express_delivery: { label: "Express", bg: "bg-purple-600 text-white animate-pulse", icon: "🚀" },
-    fast_delivery: { label: "Fast", bg: "bg-red-600 text-white animate-pulse", icon: "⚡" },
-    standard_delivery: { label: "Standard", bg: "bg-emerald-600 text-white", icon: "🚚" },
-    pickup: { label: "Pickup", bg: "bg-amber-500 text-white", icon: "🏪" },
+    express_delivery: { label: "Express", bg: "bg-primary-soft text-primary-ink", icon: "🚀" },
+    fast_delivery: { label: "Fast", bg: "bg-tint-sun text-accent-foreground", icon: "⚡" },
+    standard_delivery: { label: "Standard", bg: "bg-tint-sky text-primary-ink", icon: "🚚" },
+    pickup: { label: "Pickup", bg: "bg-tint-peach text-accent-foreground", icon: "🏪" },
   };
   const t = map[type ?? "standard_delivery"] ?? map.standard_delivery;
   return (
-    <span className={cn("inline-flex items-center gap-1 rounded-full font-extrabold uppercase tracking-wide shadow-sm", t.bg, px, className)}>
+    <span className={cn("inline-flex items-center gap-1 rounded-full font-semibold", t.bg, px, className)}>
       <span>{t.icon}</span>{t.label}
     </span>
   );
@@ -38,7 +38,6 @@ export function DeliveryTypeBadge({ type, className, size = "sm" }: { type?: str
 export function PriorityDot({ className }: { className?: string }) {
   return (
     <span className={cn("relative inline-flex h-2.5 w-2.5", className)}>
-      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
       <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-600" />
     </span>
   );

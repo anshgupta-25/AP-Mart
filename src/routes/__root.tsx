@@ -65,12 +65,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "AP Mart — Groceries delivered at lightning speed" },
-      { name: "description", content: "AP Mart delivers groceries, snacks and essentials to your door in 10 minutes." },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { title: "AP Mart — Groceries from shops near you" },
+      { name: "description", content: "Order groceries, snacks and daily essentials from trusted local shops near you." },
       { name: "theme-color", content: "#A3E635" },
-      { property: "og:title", content: "AP Mart — Groceries in 10 minutes" },
-      { property: "og:description", content: "Fresh groceries, snacks and household essentials at your door in minutes." },
+      { property: "og:title", content: "AP Mart — Groceries from local shops" },
+      { property: "og:description", content: "Fresh groceries and household essentials from independent shops in your neighbourhood." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -87,7 +87,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "dns-prefetch", href: import.meta.env.VITE_SUPABASE_URL as string },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
       },
     ],
   }),

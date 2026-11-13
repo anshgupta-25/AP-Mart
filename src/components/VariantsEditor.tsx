@@ -89,18 +89,18 @@ export function VariantsEditor({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-sm font-bold">Product Variants</div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-body font-semibold">Variants</div>
+          <div className="text-meta text-muted-foreground">
             Optional. Each variant has its own price, stock and images.
           </div>
         </div>
-        <Button type="button" size="sm" variant="outline" onClick={add}>
-          <Plus className="h-4 w-4 mr-1" /> Add Variant
+        <Button type="button" size="sm" variant="secondary" onClick={add}>
+          <Plus className="mr-1 h-4 w-4" /> Add variant
         </Button>
       </div>
 
       {visible.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+        <div className="rounded-xl bg-secondary p-4 text-center text-meta text-muted-foreground">
           No variants. Base product price &amp; images will be used.
         </div>
       ) : (
@@ -137,17 +137,17 @@ function VariantCard({
   const [open, setOpen] = useState(true);
 
   return (
-    <div className="rounded-xl border border-border bg-secondary/30">
-      <div className="flex items-center gap-2 p-2">
+    <div className="rounded-xl bg-secondary">
+      <div className="flex items-center gap-2 p-3">
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="p-1 rounded hover:bg-secondary"
+          className="press rounded-lg p-1 hover:bg-card"
           aria-label="Toggle variant"
         >
           {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         </button>
-        <div className="flex-1 text-sm font-bold">
+        <div className="flex-1 text-body font-semibold">
           Variant {index + 1}
           {value.size && <span className="ml-2 text-muted-foreground font-normal">· {value.size}</span>}
         </div>
@@ -161,8 +161,8 @@ function VariantCard({
 
 
       {open && (
-        <div className="p-3 pt-0 space-y-3">
-          <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-3 p-3 pt-0">
+          <div className="grid grid-cols-2 gap-3">
             <Field label="Variant name (optional)">
               <Input value={value.name} onChange={(e) => onChange({ name: e.target.value })} placeholder="e.g. Small pack" />
             </Field>
@@ -183,7 +183,7 @@ function VariantCard({
             </Field>
           </div>
 
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Field label="MRP ₹">
               <Input type="number" value={value.mrp} onChange={(e) => onChange({ mrp: Number(e.target.value) })} />
             </Field>
@@ -206,11 +206,11 @@ function VariantCard({
           />
 
           <div className="flex items-center gap-4 pt-1">
-            <label className="flex items-center gap-2 text-xs">
+            <label className="flex items-center gap-2 text-meta">
               <Switch checked={value.is_available} onCheckedChange={(v) => onChange({ is_available: v })} />
               Available
             </label>
-            <label className="flex items-center gap-2 text-xs">
+            <label className="flex items-center gap-2 text-meta">
               <Switch checked={value.is_default} onCheckedChange={(v) => onChange({ is_default: v })} />
               Default variant
             </label>
@@ -224,7 +224,7 @@ function VariantCard({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">{label}</label>
+      <label className="mb-1 block text-small font-medium text-muted-foreground">{label}</label>
       {children}
     </div>
   );

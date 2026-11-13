@@ -2,8 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, Package, CheckCircle2 } from "lucide-react";
-import { RoleShell } from "@/components/RoleShell";
-import { SHOPKEEPER_NAV } from "./shopkeeper.dashboard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -54,32 +52,33 @@ function ShopkeeperNotifications() {
   }, [items, user?.id, qc]);
 
   return (
-    <RoleShell role="shopkeeper" nav={SHOPKEEPER_NAV} requireRoles={["shopkeeper", "admin"]}>
-      <div className="p-4 md:p-6 max-w-2xl mx-auto">
-        <h1 className="font-display text-2xl font-bold mb-4">Notifications</h1>
+    <>
+      <div className="mx-auto max-w-2xl space-y-5 px-4 py-4 md:px-6">
+        <h1 className="large-title">Alerts</h1>
         {isLoading ? (
-          <p className="text-muted-foreground">Loading…</p>
+          <div className="h-32 rounded-xl shimmer" />
         ) : items.length === 0 ? (
-          <div className="rounded-2xl border border-border p-8 text-center">
-            <Bell className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-            <p className="text-muted-foreground">No new alerts.</p>
+          <div className="rounded-xl bg-card px-6 py-12 text-center border border-border/70">
+            <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary-soft text-primary-ink"><Bell className="h-6 w-6" /></div>
+            <div className="mt-4 text-body font-semibold">You're all caught up</div>
+            <p className="mt-1 text-body text-muted-foreground">New alerts will appear here.</p>
           </div>
         ) : (
-          <ul className="space-y-2">
+          <ul className="divide-y divide-border/60 overflow-hidden rounded-xl bg-card border border-border/70">
             {items.map((n: any) => {
               const url = n.data?.url as string | undefined;
               const Inner = (
                 <div className={cn(
-                  "flex gap-3 rounded-2xl border border-border p-3 transition hover:bg-secondary/60",
-                  !n.read && "bg-primary/5 border-primary/30",
+                  "press flex gap-3 p-4 transition-colors",
+                  !n.read && "bg-primary-soft/50",
                 )}>
-                  <div className="grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-primary shrink-0">
+                  <div className="grid h-10 w-10 place-items-center rounded-full bg-primary-soft text-primary-ink shrink-0">
                     {n.category === "order" ? <Package className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="font-semibold text-sm">{n.title}</div>
-                    <div className="text-sm text-muted-foreground">{n.body}</div>
-                    <div className="text-[11px] text-muted-foreground mt-1">{formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}</div>
+                    <div className="text-body font-semibold">{n.title}</div>
+                    <div className="mt-0.5 text-body text-muted-foreground">{n.body}</div>
+                    <div className="mt-1.5 text-small text-muted-foreground">{formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}</div>
                   </div>
                 </div>
               );
@@ -92,6 +91,6 @@ function ShopkeeperNotifications() {
           </ul>
         )}
       </div>
-    </RoleShell>
+    </>
   );
 }

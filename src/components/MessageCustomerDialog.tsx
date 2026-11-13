@@ -9,7 +9,7 @@ import { MessageCircle, Send } from "lucide-react";
 const QUICK = [
   { kind: "eta_2", label: "Arriving in 2 minutes" },
   { kind: "eta_5", label: "Arriving in 5 minutes" },
-  { kind: "eta_10", label: "Arriving in 10 minutes" },
+  { kind: "eta_10", label: "Arriving shortly" },
   { kind: "delay", label: "Traffic delay" },
   { kind: "no_contact", label: "Unable to contact you" },
   { kind: "answer_phone", label: "Please answer your phone" },
@@ -49,11 +49,11 @@ export function MessageCustomerDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className={`rounded-xl ${className}`}>
-          <MessageCircle className="h-4 w-4 mr-1" /> {triggerLabel}
+        <Button size="sm" variant="secondary" className={className}>
+          <MessageCircle className="mr-1.5 h-4 w-4" /> {triggerLabel}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md rounded-2xl">
         <DialogHeader>
           <DialogTitle>Message customer{orderNumber ? ` — ${orderNumber}` : ""}</DialogTitle>
         </DialogHeader>
@@ -64,14 +64,14 @@ export function MessageCustomerDialog({
               variant="secondary"
               disabled={sending}
               onClick={() => send(q.kind)}
-              className="justify-start rounded-xl"
+              className="h-10 justify-start rounded-xl"
             >
               {q.label}
             </Button>
           ))}
         </div>
         <div className="mt-3 space-y-2">
-          <div className="text-xs font-semibold text-muted-foreground">Custom message</div>
+          <div className="text-small font-medium text-foreground/80">Custom message</div>
           <Textarea
             value={custom}
             onChange={(e) => setCustom(e.target.value)}
@@ -82,11 +82,11 @@ export function MessageCustomerDialog({
           <Button
             disabled={sending || !custom.trim()}
             onClick={() => send("custom", custom.trim())}
-            className="w-full rounded-xl gradient-primary text-primary-foreground"
+            className="h-11 w-full rounded-xl"
           >
             <Send className="h-4 w-4 mr-1" /> Send custom message
           </Button>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-caption text-muted-foreground">
             Only the customer for this order will receive this notification.
           </p>
         </div>

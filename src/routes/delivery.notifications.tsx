@@ -1,4 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { RoleShell } from "@/components/RoleShell";
-import { DELIVERY_NAV } from "./delivery.dashboard";
-export const Route = createFileRoute("/delivery/notifications")({ component: () => <RoleShell role="delivery" nav={DELIVERY_NAV} requireRoles={["delivery", "admin"]}><div className="p-6"><h1 className="font-display text-2xl font-bold">Notifications</h1><p className="text-muted-foreground mt-2">No new alerts.</p></div></RoleShell> });
+import { Bell } from "lucide-react";
+import { PageHeader, Panel, EmptyState } from "@/components/data";
+
+export const Route = createFileRoute("/delivery/notifications")({
+  component: () => (
+    <div className="space-y-5 px-4 py-4 md:px-6">
+      <PageHeader title="Notifications" />
+      <Panel>
+        <EmptyState icon={<Bell />} title="You're all caught up" description="No new alerts right now." />
+      </Panel>
+    </div>
+  ),
+});

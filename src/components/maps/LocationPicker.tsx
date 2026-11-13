@@ -160,18 +160,18 @@ export function LocationPicker({
             onFocus={() => suggestions.length && setShowSug(true)}
             onBlur={() => setTimeout(() => setShowSug(false), 150)}
             placeholder="Search address, area, landmark…"
-            className="pl-9 h-11 rounded-xl"
+            className="pl-10 h-11 rounded-xl"
           />
         </div>
         {showSug && suggestions.length > 0 && (
-          <div className="absolute z-20 mt-1 w-full rounded-xl border border-border bg-popover shadow-lg overflow-hidden">
+          <div className="absolute z-20 mt-1.5 w-full overflow-hidden rounded-xl border border-border/70 bg-popover shadow-card-premium">
             {suggestions.map((s) => (
               <button
                 key={s.placeId}
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => selectSuggestion(s.placeId, s.text)}
-                className="flex items-start gap-2 w-full text-left px-3 py-2 hover:bg-accent text-sm"
+                className="flex items-start gap-2 w-full text-left px-3.5 py-2.5 hover:bg-secondary text-small"
               >
                 <MapPin className="h-4 w-4 mt-0.5 text-primary shrink-0" />
                 <span className="line-clamp-2">{s.text}</span>
@@ -181,16 +181,16 @@ export function LocationPicker({
         )}
       </div>
 
-      <div className="mt-2 rounded-2xl overflow-hidden border border-border">
+      <div className="mt-3 overflow-hidden rounded-xl">
         <div ref={mapDiv} className={`${height} w-full ${ready ? "" : "bg-secondary animate-pulse"}`} />
       </div>
 
       <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
-        <div className="text-xs text-muted-foreground inline-flex items-center gap-1">
+        <div className="inline-flex items-center gap-1 text-small text-muted-foreground">
           <MapPin className="h-3 w-3 text-primary" />
           {value ? `${value.lat.toFixed(5)}, ${value.lng.toFixed(5)}` : "Search, tap map, or use my location"}
         </div>
-        <Button type="button" size="sm" variant="outline" className="rounded-xl" onClick={useMyLocation}>
+        <Button type="button" size="sm" variant="secondary" className="h-8 rounded-full px-3.5" onClick={useMyLocation}>
           <Crosshair className="h-3.5 w-3.5 mr-1.5" /> Use my location
         </Button>
       </div>

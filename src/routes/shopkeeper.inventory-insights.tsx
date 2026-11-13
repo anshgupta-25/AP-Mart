@@ -12,7 +12,6 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { RoleShell } from "@/components/RoleShell";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +23,6 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { rupees } from "@/lib/format";
-import { SHOPKEEPER_NAV } from "./shopkeeper.dashboard";
 import { StorageImg } from "@/components/StorageImg";
 
 export const Route = createFileRoute("/shopkeeper/inventory-insights")({
@@ -75,11 +73,11 @@ function daysBetween(d: string | null): number | null {
 
 function statusOf(row: InvRow): { label: string; tone: string } {
   const dl = daysBetween(row.expiry_date);
-  if (dl !== null && dl < 0) return { label: "Expired", tone: "bg-red-100 text-red-700" };
-  if (row.stock <= 0) return { label: "Out of Stock", tone: "bg-red-100 text-red-700" };
-  if (dl !== null && dl <= 7) return { label: "Expiring Soon", tone: "bg-orange-100 text-orange-700" };
-  if (row.stock <= LOW_STOCK_THRESHOLD) return { label: "Low Stock", tone: "bg-yellow-100 text-yellow-800" };
-  return { label: "Fresh", tone: "bg-emerald-100 text-emerald-700" };
+  if (dl !== null && dl < 0) return { label: "Expired", tone: "bg-tint-rose text-destructive" };
+  if (row.stock <= 0) return { label: "Out of Stock", tone: "bg-tint-rose text-destructive" };
+  if (dl !== null && dl <= 7) return { label: "Expiring Soon", tone: "bg-tint-sun text-warning-foreground" };
+  if (row.stock <= LOW_STOCK_THRESHOLD) return { label: "Low Stock", tone: "bg-tint-sun text-warning-foreground" };
+  return { label: "Fresh", tone: "bg-primary-soft text-primary-ink" };
 }
 
 function toCsv(rows: Record<string, unknown>[]): string {
@@ -290,15 +288,15 @@ function Page() {
   }, [completedSales, range]);
 
   const insights = useMemo(() => {
-    const list: { icon: string; text: string; tone: string }[] = [];
-    if (bestSelling[0]) list.push({ icon: "🔥", text: `${bestSelling[0].name} is your top seller with ${bestSelling[0].units} units and ${rupees(bestSelling[0].revenue)} revenue.`, tone: "bg-emerald-50 border-emerald-200 text-emerald-800" });
+    const list: { icon: React.ElementType; text: string; tone: string }[] = [];
+    if (bestSelling[0]) list.push({ icon: TrendingUp, text: `${bestSelling[0].name} is your top seller with ${bestSelling[0].units} units and ${rupees(bestSelling[0].revenue)} revenue.`, tone: "bg-tint-mint text-foreground" });
     const runningOut = items.filter((i) => i.stock > 0 && i.stock <= LOW_STOCK_THRESHOLD).slice(0, 3);
-    for (const r of runningOut) list.push({ icon: "⚠", text: `${r.products?.name} is low on stock — only ${r.stock} left.`, tone: "bg-yellow-50 border-yellow-200 text-yellow-800" });
-    if (summary.exp7 > 0) list.push({ icon: "⚠", text: `${summary.exp7} product(s) expire in the next 7 days.`, tone: "bg-orange-50 border-orange-200 text-orange-800" });
-    if (summary.expired > 0) list.push({ icon: "🔴", text: `${summary.expired} product(s) already expired — remove or discount.`, tone: "bg-red-50 border-red-200 text-red-800" });
+    for (const r of runningOut) list.push({ icon: AlertTriangle, text: `${r.products?.name} is low on stock — only ${r.stock} left.`, tone: "bg-tint-sun text-foreground" });
+    if (summary.exp7 > 0) list.push({ icon: CalendarClock, text: `${summary.exp7} product(s) expire in the next 7 days.`, tone: "bg-tint-sun text-foreground" });
+    if (summary.expired > 0) list.push({ icon: XCircle, text: `${summary.expired} product(s) already expired — remove or discount.`, tone: "bg-tint-rose text-foreground" });
     const stale = lowestSelling.filter((l) => l.units === 0).slice(0, 2);
-    for (const s of stale) list.push({ icon: "💡", text: `${s.name} hasn't sold recently — consider a 10–15% discount.`, tone: "bg-sky-50 border-sky-200 text-sky-800" });
-    if (list.length === 0) list.push({ icon: "✨", text: "Your inventory looks healthy. Keep it up!", tone: "bg-emerald-50 border-emerald-200 text-emerald-800" });
+    for (const s of stale) list.push({ icon: TrendingDown, text: `${s.name} hasn't sold recently — consider a 10–15% discount.`, tone: "bg-secondary text-foreground" });
+    if (list.length === 0) list.push({ icon: Sparkles, text: "Your inventory looks healthy. Keep it up!", tone: "bg-tint-mint text-foreground" });
     return list;
   }, [bestSelling, items, summary, lowestSelling]);
 
@@ -321,16 +319,15 @@ function Page() {
   });
 
   return (
-    <RoleShell role="shopkeeper" nav={SHOPKEEPER_NAV} requireRoles={["shopkeeper", "admin"]}>
-      <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
+    <>
+      <div className="mx-auto max-w-6xl space-y-5 px-4 py-4 md:px-6">
         {/* Header */}
         <div className="flex items-center gap-3 flex-wrap">
           <Button asChild variant="ghost" size="sm">
             <Link to="/shopkeeper/products"><ArrowLeft className="h-4 w-4 mr-1" />Back</Link>
           </Button>
-          <div className="flex items-center gap-2 flex-1">
-            <BarChart3 className="h-6 w-6 text-primary" />
-            <h1 className="font-display text-2xl md:text-3xl font-extrabold">Inventory Insights</h1>
+          <div className="flex-1">
+            <h1 className="large-title">Insights</h1>
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={() => download(`inventory-${Date.now()}.csv`, toCsv(exportRows), "text/csv")}>
@@ -346,30 +343,31 @@ function Page() {
         </div>
 
         {!shopId ? (
-          <p className="text-muted-foreground">No shop assigned to your account.</p>
+          <p className="rounded-xl bg-card px-6 py-10 text-center text-body text-muted-foreground border border-border/70">No shop assigned to your account.</p>
         ) : (
           <>
             {/* SECTION 1: Overview */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-              <KpiCard icon={<Package />} label="Total Products" value={summary.total} tone="bg-primary/10 text-primary" />
-              <KpiCard icon={<Boxes />} label="Total Stock" value={summary.totalStock} tone="bg-sky-100 text-sky-700" />
-              <KpiCard icon={<IndianRupee />} label="Inventory Value" value={rupees(summary.totalValue)} tone="bg-emerald-100 text-emerald-700" />
-              <KpiCard icon={<AlertTriangle />} label="Low Stock" value={summary.low} tone="bg-yellow-100 text-yellow-700" />
-              <KpiCard icon={<XCircle />} label="Out of Stock" value={summary.out} tone="bg-red-100 text-red-700" />
-              <KpiCard icon={<Clock />} label="Expired" value={summary.expired} tone="bg-red-100 text-red-700" />
-              <KpiCard icon={<CalendarClock />} label="Expiring ≤ 7 days" value={summary.exp7} tone="bg-orange-100 text-orange-700" />
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
+              <KpiCard icon={<Package />} label="Total Products" value={summary.total} tone="bg-primary-soft text-primary-ink" />
+              <KpiCard icon={<Boxes />} label="Total Stock" value={summary.totalStock} tone="bg-secondary text-foreground" />
+              <KpiCard icon={<IndianRupee />} label="Inventory Value" value={rupees(summary.totalValue)} tone="bg-tint-sky text-foreground" />
+              <KpiCard icon={<AlertTriangle />} label="Low Stock" value={summary.low} tone="bg-tint-sun text-warning-foreground" />
+              <KpiCard icon={<XCircle />} label="Out of Stock" value={summary.out} tone="bg-tint-rose text-destructive" />
+              <KpiCard icon={<Clock />} label="Expired" value={summary.expired} tone="bg-tint-rose text-destructive" />
+              <KpiCard icon={<CalendarClock />} label="Expiring ≤ 7 days" value={summary.exp7} tone="bg-tint-sun text-warning-foreground" />
             </div>
 
             {/* SECTION 9: AI Insights */}
-            <div className="rounded-2xl border border-border bg-card p-4">
-              <div className="flex items-center gap-2 mb-3">
+            <div className="rounded-xl bg-card p-4 border border-border/70">
+              <div className="mb-3 flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary" />
-                <h2 className="font-display text-lg font-extrabold">AI Business Insights</h2>
+                <h2 className="section-title">Business insights</h2>
               </div>
               <div className="grid gap-2 md:grid-cols-2">
                 {insights.map((i, idx) => (
-                  <div key={idx} className={`rounded-xl border p-3 text-sm flex gap-2 ${i.tone}`}>
-                    <span>{i.icon}</span><span>{i.text}</span>
+                  <div key={idx} className={`flex items-start gap-2.5 rounded-xl p-3.5 text-body leading-snug ${i.tone}`}>
+                    <i.icon className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>{i.text}</span>
                   </div>
                 ))}
               </div>
@@ -390,8 +388,8 @@ function Page() {
               <TabsContent value="products" className="mt-4 space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-6 gap-2">
                   <div className="relative md:col-span-2">
-                    <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products..." className="pl-9" />
+                    <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products" className="pl-10" />
                   </div>
                   <Select value={catFilter} onValueChange={setCatFilter}>
                     <SelectTrigger><SelectValue placeholder="Category" /></SelectTrigger>
@@ -431,18 +429,42 @@ function Page() {
                   </Select>
                 </div>
 
-                <div className="rounded-2xl border border-border bg-card overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-secondary/50 text-xs uppercase text-muted-foreground">
+                <div className="divide-y divide-border/60 rounded-xl border border-border/70 bg-card md:hidden">
+                  {filtered.map((i) => {
+                    const st = statusOf(i);
+                    const dl = daysBetween(i.expiry_date);
+                    return (
+                      <button key={i.id} type="button" onClick={() => setSelected(i)} className="press flex w-full items-center gap-3 p-3 text-left">
+                        {i.products?.image_url ? (
+                          <StorageImg loading="lazy" decoding="async" src={i.products.image_url} className="h-11 w-11 shrink-0 rounded-lg object-cover" alt="" />
+                        ) : (
+                          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-secondary"><Package className="h-4 w-4 text-muted-foreground" /></div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-body font-semibold">{i.products?.name}</div>
+                          <div className="truncate text-small text-muted-foreground">
+                            {i.products?.unit} · {i.stock} in stock{dl !== null ? ` · ${dl}d left` : ""}
+                          </div>
+                        </div>
+                        <Badge className={st.tone} variant="secondary">{st.label}</Badge>
+                      </button>
+                    );
+                  })}
+                  {filtered.length === 0 && <div className="p-8 text-center text-meta text-muted-foreground">No products match your filters.</div>}
+                </div>
+
+                <div className="hidden overflow-x-auto rounded-xl bg-card border border-border/70 md:block">
+                  <table className="w-full text-body">
+                    <thead className="bg-secondary/50 text-small font-medium text-muted-foreground">
                       <tr>
-                        <th className="text-left p-3">Product</th>
-                        <th className="text-left p-3">Category</th>
-                        <th className="text-right p-3">Stock</th>
-                        <th className="text-right p-3">Initial</th>
-                        <th className="text-left p-3">Added</th>
-                        <th className="text-left p-3">Expiry</th>
-                        <th className="text-right p-3">Days Left</th>
-                        <th className="text-left p-3">Status</th>
+                        <th className="p-3.5 text-left font-medium">Product</th>
+                        <th className="p-3.5 text-left font-medium">Category</th>
+                        <th className="p-3.5 text-right font-medium">Stock</th>
+                        <th className="p-3.5 text-right font-medium">Initial</th>
+                        <th className="p-3.5 text-left font-medium">Added</th>
+                        <th className="p-3.5 text-left font-medium">Expiry</th>
+                        <th className="p-3.5 text-right font-medium">Days Left</th>
+                        <th className="p-3.5 text-left font-medium">Status</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -450,7 +472,7 @@ function Page() {
                         const st = statusOf(i);
                         const dl = daysBetween(i.expiry_date);
                         return (
-                          <tr key={i.id} onClick={() => setSelected(i)} className="border-t border-border cursor-pointer hover:bg-secondary/40">
+                          <tr key={i.id} onClick={() => setSelected(i)} className="cursor-pointer border-t border-border/60 hover:bg-secondary/50">
                             <td className="p-3">
                               <div className="flex items-center gap-2">
                                 {i.products?.image_url ? (
@@ -484,10 +506,10 @@ function Page() {
 
               {/* SECTION 3: Best Selling */}
               <TabsContent value="best" className="mt-4">
-                <div className="rounded-2xl border border-border bg-card p-4">
+                <div className="rounded-xl bg-card p-4 border border-border/70">
                   <div className="flex items-center gap-2 mb-3">
-                    <TrendingUp className="h-5 w-5 text-emerald-600" />
-                    <h2 className="font-display text-lg font-extrabold">Top 10 Best Selling</h2>
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    <h2 className="section-title">Top 10 best selling</h2>
                     <span className="text-xs text-muted-foreground ml-auto">({range})</span>
                   </div>
                   {bestSelling.length === 0 ? (
@@ -496,7 +518,7 @@ function Page() {
                     <ul className="space-y-2">
                       {bestSelling.map((b, idx) => (
                         <li key={b.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-secondary/50">
-                          <span className="text-lg w-6 text-center">{idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : idx + 1}</span>
+                          <span className="w-6 text-center text-body font-semibold text-muted-foreground">{idx + 1}</span>
                           {b.image ? <StorageImg loading="lazy" decoding="async" src={b.image} className="h-10 w-10 rounded-lg object-cover" alt="" /> : <div className="h-10 w-10 rounded-lg bg-secondary" />}
                           <div className="flex-1 min-w-0">
                             <div className="font-semibold truncate">{b.name}</div>
@@ -504,7 +526,7 @@ function Page() {
                           </div>
                           <div className="text-right">
                             <div className="font-bold">{b.units} sold</div>
-                            <div className="text-xs text-emerald-700 font-semibold">{rupees(b.revenue)}</div>
+                            <div className="text-meta font-semibold text-primary-ink">{rupees(b.revenue)}</div>
                           </div>
                         </li>
                       ))}
@@ -515,10 +537,10 @@ function Page() {
 
               {/* SECTION 4: Lowest Selling */}
               <TabsContent value="lowest" className="mt-4">
-                <div className="rounded-2xl border border-border bg-card p-4">
+                <div className="rounded-xl bg-card p-4 border border-border/70">
                   <div className="flex items-center gap-2 mb-3">
-                    <TrendingDown className="h-5 w-5 text-red-500" />
-                    <h2 className="font-display text-lg font-extrabold">Lowest Selling</h2>
+                    <TrendingDown className="h-5 w-5 text-destructive" />
+                    <h2 className="section-title">Lowest selling</h2>
                   </div>
                   {lowestSelling.length === 0 ? (
                     <p className="text-sm text-muted-foreground">No data.</p>
@@ -533,8 +555,8 @@ function Page() {
                               {l.units === 0 ? "No sales this period" : `Only ${l.units} sold`}
                             </div>
                           </div>
-                          <div className="text-xs text-sky-700 bg-sky-50 border border-sky-200 rounded-full px-2 py-1">
-                            💡 Try a discount
+                          <div className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-xs text-muted-foreground">
+                            <TrendingDown className="h-3 w-3" /> Try a discount
                           </div>
                         </li>
                       ))}
@@ -545,12 +567,12 @@ function Page() {
 
               {/* SECTION 5: Expiry Information */}
               <TabsContent value="expiry" className="mt-4 grid gap-3 md:grid-cols-2">
-                <ExpiryGroup title="🔴 Expired" rows={expiryGroups.expired} tone="border-red-200" />
-                <ExpiryGroup title="🟠 Expiring Today" rows={expiryGroups.today} tone="border-orange-200" />
-                <ExpiryGroup title="🟡 Within 7 Days" rows={expiryGroups.week} tone="border-yellow-200" />
-                <ExpiryGroup title="🟢 Within 30 Days" rows={expiryGroups.month} tone="border-emerald-200" />
+                <ExpiryGroup title="Expired" rows={expiryGroups.expired} tone="border-destructive/30" />
+                <ExpiryGroup title="Expiring Today" rows={expiryGroups.today} tone="border-warning/40" />
+                <ExpiryGroup title="Within 7 Days" rows={expiryGroups.week} tone="border-warning/40" />
+                <ExpiryGroup title="Within 30 Days" rows={expiryGroups.month} tone="border-success/30" />
                 {items.every((i) => !i.expiry_date) && (
-                  <div className="md:col-span-2 rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                  <div className="rounded-xl bg-card p-8 text-center text-body text-muted-foreground border border-border/70 md:col-span-2">
                     No expiry dates set for your inventory. Add expiry dates when editing products to track perishables here.
                   </div>
                 )}
@@ -567,8 +589,8 @@ function Page() {
                   ))}
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
-                  <div className="rounded-2xl border border-border bg-card p-4">
-                    <h3 className="font-semibold mb-2">Products Sold</h3>
+                  <div className="rounded-xl bg-card p-4 border border-border/70">
+                    <h3 className="section-title mb-3">Products sold</h3>
                     <ResponsiveContainer width="100%" height={240}>
                       <BarChart data={movementChart}>
                         <CartesianGrid strokeDasharray="3 3" />
@@ -580,8 +602,8 @@ function Page() {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="rounded-2xl border border-border bg-card p-4">
-                    <h3 className="font-semibold mb-2">Revenue</h3>
+                  <div className="rounded-xl bg-card p-4 border border-border/70">
+                    <h3 className="section-title mb-3">Revenue</h3>
                     <ResponsiveContainer width="100%" height={240}>
                       <LineChart data={movementChart}>
                         <CartesianGrid strokeDasharray="3 3" />
@@ -589,7 +611,7 @@ function Page() {
                         <YAxis fontSize={11} />
                         <Tooltip />
                         <Legend />
-                        <Line type="monotone" dataKey="revenue" stroke="#10b981" name="Revenue ₹" />
+                        <Line type="monotone" dataKey="revenue" stroke="oklch(0.58 0.15 152)" name="Revenue ₹" />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -604,24 +626,24 @@ function Page() {
           {selected && <TimelineDialog row={selected} sales={completedSales.filter((s) => s.product_id === selected.product_id)} />}
         </Dialog>
       </div>
-    </RoleShell>
+    </>
   );
 }
 
 function KpiCard({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: React.ReactNode; tone: string }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-3">
-      <div className={`h-8 w-8 rounded-lg grid place-items-center ${tone}`}>{icon}</div>
-      <div className="mt-2 text-xs text-muted-foreground">{label}</div>
-      <div className="font-display text-xl font-extrabold">{value}</div>
+    <div className="rounded-xl border border-border/70 bg-card p-3.5">
+      <div className={`grid h-9 w-9 place-items-center rounded-lg ${tone}`}>{icon}</div>
+      <div className="mt-2.5 text-small text-muted-foreground">{label}</div>
+      <div className="text-xl font-semibold tracking-tight">{value}</div>
     </div>
   );
 }
 
 function ExpiryGroup({ title, rows, tone }: { title: string; rows: InvRow[]; tone: string }) {
   return (
-    <div className={`rounded-2xl border-2 ${tone} bg-card p-4`}>
-      <h3 className="font-display font-extrabold mb-2">{title} <span className="text-muted-foreground text-sm font-normal">({rows.length})</span></h3>
+    <div className={`rounded-xl bg-card p-4 border border-border/70`}>
+      <h3 className="section-title mb-3">{title} <span className="text-muted-foreground text-sm font-normal">({rows.length})</span></h3>
       {rows.length === 0 ? (
         <p className="text-xs text-muted-foreground">None.</p>
       ) : (
@@ -672,7 +694,7 @@ function TimelineDialog({ row, sales }: { row: InvRow; sales: SaleRow[] }) {
           {sales.length === 0 ? (
             <p className="text-xs text-muted-foreground">No sales recorded in the selected period.</p>
           ) : (
-            <ul className="divide-y divide-border rounded-xl border border-border">
+            <ul className="divide-y divide-border/60 overflow-hidden rounded-xl bg-secondary">
               {sales.slice(0, 20).map((s, idx) => (
                 <li key={idx} className="p-2 flex items-center justify-between text-xs">
                   <span>{new Date(s.created_at).toLocaleString()}</span>

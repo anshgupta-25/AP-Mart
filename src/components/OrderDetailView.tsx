@@ -1,7 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Check, Clock, Package, Truck, Home, X, Store, Search, Radio, LifeBuoy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -97,8 +96,8 @@ export function OrderDetailView({ id }: { id: string }) {
     };
   }, [id, qc]);
 
-  if (order.isLoading) return <div className="mx-auto max-w-3xl px-4 py-10"><Skeleton className="h-96" /></div>;
-  if (!order.data) return <div className="mx-auto max-w-3xl px-4 py-20 text-center">Order not found.</div>;
+  if (order.isLoading) return <div className="mx-auto max-w-3xl px-4 py-6"><Skeleton className="h-80 rounded-xl" /></div>;
+  if (!order.data) return <div className="mx-auto max-w-3xl px-4 py-20 text-center text-meta text-muted-foreground">Order not found.</div>;
 
   const o = order.data;
   const status = o.status as string;
@@ -126,33 +125,41 @@ export function OrderDetailView({ id }: { id: string }) {
     qc.invalidateQueries({ queryKey: ["app-orders"] });
   };
 
-  return (
-    <div className="mx-auto max-w-3xl px-4 py-6">
-      <Link to="/customer/orders" className="text-sm text-muted-foreground hover:underline">← All orders</Link>
+  const statusText = isCancelled
+    ? "Cancelled"
+    : isFailed
+      ? "No shop available"
+      : status === "delivered"
+        ? "Delivered"
+        : (STEPS[currentIdx]?.label ?? "In progress");
+  const statusTone = isCancelled || isFailed ? "bg-destructive/10 text-destructive" : status === "delivered" ? "bg-primary-soft text-primary-ink" : "bg-tint-sun text-warning-foreground";
+  const card = "rounded-xl border border-border/70 bg-card p-4";
 
-      <div className="mt-4 rounded-3xl gradient-hero border border-border p-6 shadow-card relative overflow-hidden">
-        <div className="text-xs font-semibold text-muted-foreground">Order</div>
-        <div className="font-display text-3xl font-extrabold">{o.order_number}</div>
-        <div className="text-sm mt-1">Placed {new Date(o.placed_at).toLocaleString()}</div>
-        <div className="mt-3 flex items-center gap-2 flex-wrap">
-          <div className="inline-flex items-center gap-2 rounded-full bg-foreground text-background px-3 py-1 text-xs font-bold">
+  return (
+    <div className="mx-auto max-w-3xl space-y-3 px-4 pb-10 pt-4">
+      <Link to="/customer/orders" className="press inline-block text-meta font-medium text-primary">← All orders</Link>
+
+      <div className={card}>
+        <div className="eyebrow">Order</div>
+        <h1 className="large-title mt-1">{o.order_number}</h1>
+        <div className="mt-1 text-small text-muted-foreground">Placed {new Date(o.placed_at).toLocaleString()}</div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-caption font-semibold ${statusTone}`}>
             <Clock className="h-3 w-3" />
-            {isCancelled ? "Cancelled" : isFailed ? "No shop available" : status === "delivered" ? "Delivered" : "Arriving in ~10 minutes"}
-          </div>
+            {statusText}
+          </span>
           {live && !isCancelled && !isFailed && status !== "delivered" && (
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 text-primary px-3 py-1 text-xs font-bold">
-              <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
-                <Radio className="h-3 w-3" />
-              </motion.span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-2.5 py-1 text-caption font-semibold text-primary-ink">
+              <Radio className="h-3 w-3 animate-pulse" />
               Live tracking
-            </div>
+            </span>
           )}
         </div>
       </div>
 
       {!isCancelled && !isFailed && (
-        <section className="mt-6 rounded-3xl border border-border bg-card p-5 md:p-6 shadow-card">
-          <h2 className="font-display text-lg font-bold mb-5">Track order</h2>
+        <section className={card}>
+          <h2 className="section-title mb-4">Order status</h2>
           <ol className="relative">
             {STEPS.map((s, i) => {
               const Icon = s.icon;
@@ -160,36 +167,30 @@ export function OrderDetailView({ id }: { id: string }) {
               const current = i === currentIdx;
               const isLast = i === STEPS.length - 1;
               return (
-                <li key={s.key} className="relative pl-14 pb-6 last:pb-0">
+                <li key={s.key} className="relative pb-5 pl-11 last:pb-0">
                   {!isLast && (
-                    <span className={`absolute left-[19px] top-10 bottom-0 w-0.5 ${done ? "bg-primary" : "bg-border"}`} aria-hidden />
+                    <span className={`absolute left-[15px] top-8 bottom-0 w-0.5 ${done ? "bg-primary" : "bg-border"}`} aria-hidden />
                   )}
-                  <motion.div
-                    initial={false}
-                    animate={{ scale: current ? [1, 1.08, 1] : 1 }}
-                    transition={{ duration: 1.4, repeat: current ? Infinity : 0 }}
-                    className={`absolute left-0 top-0 h-10 w-10 rounded-full grid place-items-center border-2 ${
-                      done || current ? "gradient-primary border-primary text-primary-foreground shadow-glow" : "bg-card border-border text-muted-foreground"
+                  <div
+                    className={`absolute left-0 top-0 grid h-8 w-8 place-items-center rounded-full ${
+                      done
+                        ? "bg-primary text-primary-foreground"
+                        : current
+                          ? "bg-primary-soft text-primary-ink ring-1 ring-primary"
+                          : "bg-secondary text-muted-foreground"
                     }`}
                   >
-                    {done ? <Check className="h-5 w-5" /> : <Icon className="h-4 w-4" />}
-                  </motion.div>
-                  <AnimatePresence>
-                    <motion.div
-                      key={`${s.key}-${current ? "c" : done ? "d" : "p"}`}
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className={`pt-1 ${current ? "" : done ? "" : "opacity-60"}`}
-                    >
-                      <div className={`text-sm font-bold ${current ? "text-primary" : ""}`}>{s.label}</div>
-                      <div className="text-xs text-muted-foreground mt-0.5">{s.desc}</div>
-                      {current && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-1 text-[10px] font-bold uppercase tracking-wide text-primary inline-flex items-center gap-1">
-                          <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" /> In progress
-                        </motion.div>
-                      )}
-                    </motion.div>
-                  </AnimatePresence>
+                    {done ? <Check className="h-4 w-4" /> : <Icon className="h-3.5 w-3.5" />}
+                  </div>
+                  <div className={`pt-0.5 ${!current && !done ? "opacity-60" : ""}`}>
+                    <div className={`text-meta font-semibold ${current ? "text-primary-ink" : ""}`}>{s.label}</div>
+                    <div className="mt-0.5 text-caption text-muted-foreground">{s.desc}</div>
+                    {current && (
+                      <div className="mt-1 inline-flex items-center gap-1.5 text-caption font-medium text-primary">
+                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" /> In progress
+                      </div>
+                    )}
+                  </div>
                 </li>
               );
             })}
@@ -198,35 +199,37 @@ export function OrderDetailView({ id }: { id: string }) {
       )}
 
       {!isCancelled && !isFailed && (o.shop || o.partner || o.delivery_lat) && (
-        <section className="mt-6 rounded-3xl border border-border bg-card p-5 md:p-6 shadow-card">
-          <h2 className="font-display text-lg font-bold mb-3">Route</h2>
-          <RouteMap
-            height="h-64"
-            points={[
-              o.partner?.current_lat && o.partner?.current_lng ? { lat: o.partner.current_lat, lng: o.partner.current_lng, label: `Partner: ${o.partner.name}` } : null,
-              o.shop?.latitude && o.shop?.longitude ? { lat: o.shop.latitude, lng: o.shop.longitude, label: `Shop: ${o.shop.name}` } : null,
-              o.delivery_lat && o.delivery_lng ? { lat: o.delivery_lat, lng: o.delivery_lng, label: "Delivery address" } : null,
-            ].filter(Boolean) as { lat: number; lng: number; label: string }[]}
-          />
+        <section className={card}>
+          <h2 className="section-title mb-3">Route</h2>
+          <div className="overflow-hidden rounded-lg">
+            <RouteMap
+              height="h-52"
+              points={[
+                o.partner?.current_lat && o.partner?.current_lng ? { lat: o.partner.current_lat, lng: o.partner.current_lng, label: `Partner: ${o.partner.name}` } : null,
+                o.shop?.latitude && o.shop?.longitude ? { lat: o.shop.latitude, lng: o.shop.longitude, label: `Shop: ${o.shop.name}` } : null,
+                o.delivery_lat && o.delivery_lng ? { lat: o.delivery_lat, lng: o.delivery_lng, label: "Delivery address" } : null,
+              ].filter(Boolean) as { lat: number; lng: number; label: string }[]}
+            />
+          </div>
         </section>
       )}
 
       {!isCancelled && !isFailed && <DeliveryUpdates orderId={id} />}
 
       {isFailed && (
-        <div className="mt-6 rounded-3xl border-2 border-destructive/30 bg-destructive/5 p-5">
-          <div className="flex items-center gap-2 font-bold text-destructive"><X className="h-4 w-4" /> No shop available</div>
-          <div className="text-sm text-muted-foreground mt-1">We couldn't find a shop near your location with all items in stock. Your stock has been restored — please try again with a different address.</div>
+        <div className="rounded-xl bg-destructive/10 p-4">
+          <div className="flex items-center gap-2 font-semibold text-destructive"><X className="h-4 w-4" /> No shop available</div>
+          <div className="mt-1 text-small text-muted-foreground">We couldn't find a shop near your location with all items in stock. Your stock has been restored — please try again with a different address.</div>
         </div>
       )}
 
       {isCancelled && (
-        <div className="mt-6 rounded-3xl border-2 border-destructive/30 bg-destructive/5 p-5">
-          <div className="flex items-center gap-2 font-bold text-destructive"><X className="h-4 w-4" /> Order cancelled</div>
-          {o.cancel_reason && <div className="text-sm text-muted-foreground mt-1">Reason: {o.cancel_reason}</div>}
-          {o.cancelled_at && <div className="text-xs text-muted-foreground mt-1">Cancelled on {new Date(o.cancelled_at).toLocaleString()}</div>}
+        <div className="rounded-xl bg-destructive/10 p-4">
+          <div className="flex items-center gap-2 font-semibold text-destructive"><X className="h-4 w-4" /> Order cancelled</div>
+          {o.cancel_reason && <div className="mt-1 text-small text-muted-foreground">Reason: {o.cancel_reason}</div>}
+          {o.cancelled_at && <div className="mt-1 text-caption text-muted-foreground">Cancelled on {new Date(o.cancelled_at).toLocaleString()}</div>}
           {(o.payment_status === "refund_initiated" || o.payment_status === "refunded") && (
-            <div className="mt-2 inline-flex items-center rounded-full bg-primary/15 text-primary px-3 py-1 text-xs font-bold">
+            <div className="mt-3 inline-flex items-center rounded-full bg-primary-soft px-2.5 py-1 text-caption font-semibold text-primary-ink">
               Refund {o.payment_status === "refunded" ? "completed" : "in progress"}
             </div>
           )}
@@ -234,24 +237,22 @@ export function OrderDetailView({ id }: { id: string }) {
       )}
 
       {(o as any).children && (o as any).children.length > 1 && (
-        <section className="mt-6 rounded-3xl border border-border bg-card p-5 shadow-card">
-          <h2 className="font-display text-lg font-bold mb-3 flex items-center gap-2">
+        <section className={card}>
+          <h2 className="section-title mb-3 flex items-center gap-2">
             <Store className="h-4 w-4 text-primary" /> Delivering from {(o as any).children.length} shops
           </h2>
-          <div className="space-y-3">
+          <div className="divide-y divide-border/60">
             {(o as any).children.map((c: any) => {
               const childItems = o.items.filter((it: any) => it.order_id === c.id);
               return (
-                <div key={c.id} className="rounded-2xl border border-border p-3">
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="min-w-0">
-                      <div className="text-sm font-bold truncate">{c.shops?.name ?? "Shop"}</div>
-                      <div className="text-[11px] text-muted-foreground">
-                        {c.status.replace(/_/g, " ")} · {childItems.length} item{childItems.length !== 1 ? "s" : ""}
-                      </div>
+                <div key={c.id} className="flex items-start justify-between gap-2 py-3 first:pt-0 last:pb-0">
+                  <div className="min-w-0">
+                    <div className="truncate text-meta font-medium">{c.shops?.name ?? "Shop"}</div>
+                    <div className="mt-0.5 text-caption capitalize text-muted-foreground">
+                      {c.status.replace(/_/g, " ")} · {childItems.length} item{childItems.length !== 1 ? "s" : ""}
                     </div>
-                    <div className="text-sm font-bold">{rupees(c.subtotal)}</div>
                   </div>
+                  <div className="text-meta font-semibold">{rupees(c.subtotal)}</div>
                 </div>
               );
             })}
@@ -259,77 +260,75 @@ export function OrderDetailView({ id }: { id: string }) {
         </section>
       )}
 
-      <section className="mt-6 rounded-3xl border border-border bg-card p-5 shadow-card">
-        <h2 className="font-display text-lg font-bold mb-3">Items ({o.items.length})</h2>
-        <div className="space-y-3">
+      <section className={card}>
+        <h2 className="section-title mb-3">Items ({o.items.length})</h2>
+        <div className="divide-y divide-border/60">
           {o.items.map((it: any) => (
-            <div key={it.id} className="flex items-center gap-3">
+            <div key={it.id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
               {it.image_url ? (
-                <StorageImg loading="lazy" decoding="async" src={it.image_url} className="h-14 w-14 rounded-xl object-cover" alt={it.name} />
+                <StorageImg loading="lazy" decoding="async" src={it.image_url} className="h-12 w-12 rounded-lg bg-secondary/70 object-cover" alt={it.name} />
               ) : (
-                <div className="h-14 w-14 rounded-xl bg-secondary grid place-items-center">🛒</div>
+                <div className="grid h-12 w-12 place-items-center rounded-lg bg-secondary text-muted-foreground">
+                  <Package className="h-5 w-5" strokeWidth={1.6} />
+                </div>
               )}
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium line-clamp-1">{it.name}</div>
-                <div className="text-xs text-muted-foreground">{it.unit} • Qty {it.quantity}</div>
+              <div className="min-w-0 flex-1">
+                <div className="line-clamp-1 text-meta font-medium">{it.name}</div>
+                <div className="mt-0.5 text-caption text-muted-foreground">{it.unit} · Qty {it.quantity}</div>
               </div>
-              <div className="font-bold text-sm">{rupees(it.price * it.quantity)}</div>
+              <div className="text-meta font-semibold">{rupees(it.price * it.quantity)}</div>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="mt-6 grid md:grid-cols-2 gap-4">
-        <div className="rounded-3xl border border-border bg-card p-5 shadow-card">
-          <h3 className="font-display font-bold mb-2">Bill summary</h3>
+      <section className="grid gap-3 md:grid-cols-2">
+        <div className={card}>
+          <h3 className="section-title mb-3">Bill details</h3>
           <Row label="Subtotal" value={rupees(o.subtotal)} />
           {o.discount > 0 && <Row label="Discount" value={`- ${rupees(o.discount)}`} className="text-success" />}
-          <Row label="Delivery" value={o.delivery_fee === 0 ? "FREE" : rupees(o.delivery_fee)} />
+          <Row label="Delivery" value={o.delivery_fee === 0 ? "Free" : rupees(o.delivery_fee)} />
           <Row label="Handling" value={rupees(o.handling_fee)} />
-          <div className="h-px bg-border my-2" />
+          <div className="my-2 h-px bg-border/60" />
           <Row label="Total paid" value={rupees(o.total)} bold />
-          <div className="mt-2 text-xs text-muted-foreground">Payment: {o.payment_method.toUpperCase()} • {o.payment_status}</div>
+          <div className="mt-2 text-caption capitalize text-muted-foreground">Payment: {o.payment_method} · {o.payment_status}</div>
         </div>
-        <div className="rounded-3xl border border-border bg-card p-5 shadow-card">
-          <h3 className="font-display font-bold mb-2">Delivery to</h3>
-          <div className="text-sm">
+        <div className={card}>
+          <h3 className="section-title mb-3">Delivered to</h3>
+          <div className="text-meta">
             <div className="font-medium">{(o.address as any)?.name}</div>
-            <div className="text-muted-foreground">
+            <div className="mt-0.5 text-muted-foreground">
               {(o.address as any)?.line1}, {(o.address as any)?.city}, {(o.address as any)?.state} - {(o.address as any)?.pincode}
             </div>
-            <div className="text-muted-foreground mt-1">📞 {(o.address as any)?.phone}</div>
+            <div className="mt-1 text-muted-foreground">{(o.address as any)?.phone}</div>
           </div>
         </div>
       </section>
 
-      <div className="mt-6 flex flex-wrap gap-3">
+      <div className="space-y-2.5">
         {canCancel ? (
           <Button
             onClick={() => setCancelOpen(true)}
             disabled={cancelling}
-            variant="outline"
-            className="rounded-xl border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+            variant="secondary"
+            className="h-11 w-full rounded-xl text-destructive"
           >
-            <X className="h-4 w-4 mr-1" />
+            <X className="mr-1 h-4 w-4" />
             Cancel order
           </Button>
         ) : !isCancelled && !isFailed ? (
-          <div className="w-full rounded-2xl border border-border bg-muted/40 p-4">
-            <p className="text-sm text-muted-foreground">
+          <div className="rounded-xl bg-secondary/70 p-4">
+            <p className="text-small text-muted-foreground">
               This order can no longer be cancelled because preparation or delivery has already started.
               If you need help, please contact Support.
             </p>
-            <Button
-              variant="outline"
-              className="rounded-xl mt-3"
-              onClick={() => navigate({ to: "/support" })}
-            >
-              <LifeBuoy className="h-4 w-4 mr-1" />
-              Contact Support
+            <Button variant="outline" className="mt-3" onClick={() => navigate({ to: "/support" })}>
+              <LifeBuoy className="mr-1 h-4 w-4" />
+              Contact support
             </Button>
           </div>
         ) : null}
-        <Button variant="outline" className="rounded-xl" onClick={() => navigate({ to: "/products" })}>Shop more</Button>
+        <Button className="h-11 w-full rounded-xl" onClick={() => navigate({ to: "/products" })}>Shop more</Button>
       </div>
 
       <Dialog open={cancelOpen} onOpenChange={(v) => { setCancelOpen(v); if (!v) { setReason(""); setCustomReason(""); } }}>
@@ -343,10 +342,10 @@ export function OrderDetailView({ id }: { id: string }) {
           </DialogHeader>
           <RadioGroup value={reason} onValueChange={setReason} className="space-y-2 py-2">
             {CANCEL_REASONS.map((r) => (
-              <div key={r} className="flex items-center gap-2 rounded-xl border border-border p-3 cursor-pointer hover:bg-muted/50"
+              <div key={r} className="flex cursor-pointer items-center gap-3 rounded-lg bg-secondary/60 p-3 hover:bg-secondary"
                    onClick={() => setReason(r)}>
                 <RadioGroupItem value={r} id={`r-${r}`} />
-                <Label htmlFor={`r-${r}`} className="cursor-pointer flex-1 text-sm">{r}</Label>
+                <Label htmlFor={`r-${r}`} className="flex-1 cursor-pointer text-meta">{r}</Label>
               </div>
             ))}
           </RadioGroup>
@@ -376,8 +375,9 @@ export function OrderDetailView({ id }: { id: string }) {
 
 function Row({ label, value, bold, className }: { label: string; value: string; bold?: boolean; className?: string }) {
   return (
-    <div className={`flex justify-between text-sm py-0.5 ${bold ? "font-bold text-base" : ""} ${className ?? ""}`}>
-      <span>{label}</span><span>{value}</span>
+    <div className={`flex justify-between py-1 text-meta ${bold ? "text-body font-semibold" : "text-muted-foreground"} ${className ?? ""}`}>
+      <span>{label}</span>
+      <span className={bold || className ? "" : "text-foreground"}>{value}</span>
     </div>
   );
 }

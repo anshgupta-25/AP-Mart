@@ -1,47 +1,32 @@
 import { Link } from "@tanstack/react-router";
-import { AnimatePresence, motion } from "framer-motion";
-import { ShoppingBag, ArrowRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { rupees } from "@/lib/format";
 
 export function FloatingCartBar() {
   const { items, subtotal, totalQty } = useCart();
+  if (totalQty <= 0) return null;
   return (
-    <AnimatePresence>
-      {totalQty > 0 && (
-        <motion.div
-          initial={{ y: 80, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 80, opacity: 0 }}
-          transition={{ type: "spring", stiffness: 320, damping: 28 }}
-          className="fixed left-3 right-3 z-30 bottom-[84px]"
-        >
-          <Link
-            to="/customer/cart"
-            className="block rounded-2xl bg-foreground text-background shadow-float px-4 py-3"
-          >
-            <div className="flex items-center gap-3">
-              <div className="relative grid h-10 w-10 place-items-center rounded-xl bg-primary text-primary-foreground">
-                <ShoppingBag className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 h-5 min-w-5 px-1 grid place-items-center rounded-full bg-accent text-accent-foreground text-[10px] font-extrabold">
-                  {totalQty}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[11px] opacity-70 leading-none">
-                  {items.length} {items.length === 1 ? "item" : "items"} in cart
-                </div>
-                <div className="font-extrabold text-[15px] leading-tight mt-0.5">
-                  {rupees(subtotal)} <span className="opacity-60 font-medium text-[11px]">· Free delivery</span>
-                </div>
-              </div>
-              <div className="inline-flex items-center gap-1 text-[12px] font-bold text-primary">
-                View cart <ArrowRight className="h-4 w-4" />
-              </div>
+    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(72px+env(safe-area-inset-bottom))] z-30 px-4 md:bottom-6">
+      <Link
+        to="/customer/cart"
+        className="press pointer-events-auto mx-auto flex max-w-md items-center justify-between rounded-2xl bg-primary px-4 py-3.5 text-primary-foreground shadow-float"
+      >
+        <div className="flex items-center gap-3">
+          <span className="grid h-8 min-w-8 place-items-center rounded-full bg-white/20 px-2 text-meta font-semibold">
+            {totalQty}
+          </span>
+          <div className="leading-tight">
+            <div className="text-subtitle font-semibold">View cart</div>
+            <div className="text-small opacity-85">
+              {items.length} {items.length === 1 ? "item" : "items"}
             </div>
-          </Link>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 text-subtitle font-semibold">
+          {rupees(subtotal)} <ChevronRight className="h-4 w-4 opacity-80" />
+        </div>
+      </Link>
+    </div>
   );
 }

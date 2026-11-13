@@ -21,7 +21,7 @@ function WishlistGate() {
   if (loading) {
     return (
       <div className="min-h-[60vh] grid place-items-center">
-        <Loader2 className="h-7 w-7 animate-spin text-primary" />
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
@@ -32,7 +32,7 @@ function WishlistGate() {
         next="/customer/wishlist"
         title="Save Your Favourites"
         description="Sign in to keep your favourite products handy and reorder them in one tap."
-        icon={<Heart className="h-12 w-12 text-primary" strokeWidth={1.75} />}
+        icon={<Heart className="h-9 w-9 text-primary" strokeWidth={1.75} />}
       />
     );
   }

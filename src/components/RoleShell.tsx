@@ -34,7 +34,7 @@ export function RoleShell({
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-[1400px] flex">
         {useSidebar && (
-          <aside className="hidden md:flex flex-col w-60 shrink-0 border-r border-border bg-card/40 min-h-screen sticky top-0">
+          <aside className="hidden md:flex flex-col w-60 shrink-0 border-r border-border bg-card min-h-screen sticky top-0">
             <nav className="p-3 space-y-1">
               {nav.map((n) => {
                 const active = pathname === n.to || pathname.startsWith(n.to + "/");
@@ -44,8 +44,8 @@ export function RoleShell({
                     key={n.to}
                     to={n.to}
                     className={cn(
-                      "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition",
-                      active ? "bg-foreground text-background" : "text-foreground hover:bg-secondary",
+                      "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-body font-medium transition-colors",
+                      active ? "bg-primary-soft text-primary-ink font-semibold" : "text-foreground/75 hover:bg-secondary",
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -61,17 +61,17 @@ export function RoleShell({
       </div>
 
       {!useSidebar && (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 glass border-t border-border">
+        <nav className="md:hidden bar-blur hairline-t fixed bottom-0 left-0 right-0 z-30 pb-[env(safe-area-inset-bottom)]">
           <div className="grid grid-cols-5">
             {nav.slice(0, 5).map((n) => {
               const active = pathname === n.to || pathname.startsWith(n.to + "/");
               const Icon = n.icon;
               return (
                 <Link key={n.to} to={n.to} className={cn(
-                  "flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-bold",
-                  active ? "text-foreground" : "text-muted-foreground",
+                  "press flex flex-col items-center justify-center gap-1 pb-1.5 pt-2.5 text-micro font-semibold",
+                  active ? "text-primary" : "text-muted-foreground",
                 )}>
-                  <Icon className={cn("h-5 w-5", active && "text-primary")} />
+                  <Icon className={cn("h-6 w-6", active ? "stroke-[2.3]" : "stroke-[1.7]")} />
                   {n.label}
                 </Link>
               );

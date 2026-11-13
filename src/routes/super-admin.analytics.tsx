@@ -65,34 +65,36 @@ function AnalyticsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-2xl font-extrabold">Revenue &amp; global analytics</h1>
-        <p className="text-sm text-muted-foreground">Everything that happened across every shop in the last 30 days.</p>
+        <h1 className="large-title">Revenue &amp; global analytics</h1>
+        <p className="mt-0.5 text-small text-muted-foreground">Everything that happened across every shop in the last 30 days.</p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {stats.map((s) => (
-          <div key={s.label} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-            <s.icon className="h-4 w-4 text-emerald-600" />
-            <div className="mt-3 text-xl font-extrabold">{s.value}</div>
-            <div className="text-xs font-medium text-muted-foreground">{s.label}</div>
+      <div className="grid grid-cols-2 gap-2.5 md:gap-4 lg:grid-cols-4">
+        {stats.map((s, i) => (
+          <div key={s.label} className="rounded-xl border border-border/70 bg-card p-3.5">
+            <span className={`mb-2.5 grid h-9 w-9 place-items-center rounded-lg ${["bg-tint-mint text-primary-ink","bg-tint-sky text-[oklch(0.42_0.1_235)]","bg-tint-sun text-[oklch(0.45_0.1_75)]","bg-tint-violet text-[oklch(0.42_0.1_290)]"][i % 4]}`}>
+              <s.icon className="h-[17px] w-[17px]" />
+            </span>
+            <div className="text-small text-muted-foreground">{s.label}</div>
+            <div className="mt-0.5 text-xl font-semibold tracking-tight">{s.value}</div>
           </div>
         ))}
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="font-display text-sm font-extrabold">Daily revenue (last 14 days)</h2>
+      <div className="rounded-xl border border-border/70 bg-card p-4">
+        <h2 className="section-title">Daily revenue (last 14 days)</h2>
         {days.length === 0 ? (
-          <p className="mt-2 text-xs text-muted-foreground">No paid orders yet.</p>
+          <p className="mt-2 text-small text-muted-foreground">No paid orders yet.</p>
         ) : (
           <div className="mt-4 flex items-end gap-1.5 h-40">
             {days.map(([d, v]) => (
               <div key={d} className="flex-1 flex flex-col items-center gap-1">
                 <div
-                  className="w-full rounded-t-md bg-primary/70"
+                  className="w-full rounded-t-md bg-primary/80"
                   style={{ height: `${Math.max(4, (v / peak) * 130)}px` }}
                   title={`${d}: ${inr(v)}`}
                 />
-                <span className="text-[9px] text-muted-foreground">{d.slice(5)}</span>
+                <span className="text-micro text-muted-foreground">{d.slice(5)}</span>
               </div>
             ))}
           </div>
@@ -100,13 +102,13 @@ function AnalyticsPage() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-          <div className="text-xs font-medium text-muted-foreground">Delivered (30d)</div>
-          <div className="text-2xl font-extrabold">{delivered}</div>
+        <div className="rounded-xl border border-border/70 bg-card p-3.5">
+          <div className="text-small text-muted-foreground">Delivered (30d)</div>
+          <div className="mt-0.5 text-xl font-semibold tracking-tight">{delivered}</div>
         </div>
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-          <div className="text-xs font-medium text-muted-foreground">Cancelled (30d)</div>
-          <div className="text-2xl font-extrabold">{cancelled}</div>
+        <div className="rounded-xl border border-border/70 bg-card p-3.5">
+          <div className="text-small text-muted-foreground">Cancelled (30d)</div>
+          <div className="mt-0.5 text-xl font-semibold tracking-tight">{cancelled}</div>
         </div>
       </div>
     </div>

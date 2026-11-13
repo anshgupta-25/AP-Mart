@@ -113,56 +113,37 @@ function LoginPage() {
 
 
   return (
-    <div className="min-h-screen bg-muted/30 flex items-start md:items-center justify-center p-0 md:p-6">
-      <div className="w-full max-w-md bg-card md:rounded-3xl md:border md:border-border md:shadow-xl overflow-hidden">
-        {/* Header with staff portal link */}
-        <div className="flex items-center justify-end px-4 pt-3">
+    <div className="flex min-h-screen items-start justify-center bg-background px-4 pb-10 pt-safe md:items-center">
+      <div className="w-full max-w-md">
+        <div className="flex justify-end pt-4">
           <Link
             to="/staff-login"
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:border-primary/40 transition"
+            className="press inline-flex h-9 items-center gap-1.5 rounded-full bg-secondary px-4 text-meta font-medium text-muted-foreground"
           >
             <ShieldCheck className="h-3.5 w-3.5" />
-            Staff Login
+            Staff login
           </Link>
         </div>
 
-        {/* Hero */}
-        <div className="relative h-36 md:h-44 overflow-hidden mt-2" style={{ background: "linear-gradient(135deg, #bbf7d0 0%, #86efac 60%, #4ade80 100%)" }}>
-          <svg viewBox="0 0 400 200" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
-            <g fill="rgba(255,255,255,0.18)">
-              <ellipse cx="60" cy="40" rx="22" ry="6" />
-              <ellipse cx="320" cy="32" rx="28" ry="7" />
-              <ellipse cx="350" cy="60" rx="18" ry="5" />
-            </g>
-            <g transform="translate(160,30)">
-              <rect x="0" y="0" width="78" height="140" rx="14" fill="#ffffff" stroke="#0e3b2a" strokeWidth="2" />
-              <rect x="6" y="14" width="66" height="118" rx="6" fill="#f8fafc" />
-              <path d="M20 110 Q 38 60 60 30" stroke="#16a34a" strokeWidth="2.5" strokeDasharray="4 4" fill="none" />
-              <circle cx="60" cy="30" r="6" fill="#16a34a" />
-            </g>
-          </svg>
+        <div className="mt-4 text-center">
+          <div className="flex justify-center"><LogoMark size="lg" className="h-12 w-12 rounded-xl" /></div>
+          <h1 className="large-title mt-3">Welcome back</h1>
+          <p className="mt-1 text-meta text-muted-foreground">Sign in to order from shops near you</p>
         </div>
 
-        <div className="p-6 md:p-8 -mt-3 bg-card rounded-t-3xl relative">
-          <div className="text-center">
-            <div className="flex justify-center mb-3"><LogoMark size="lg" className="rounded-2xl" /></div>
-            <h1 className="font-display text-2xl font-extrabold text-foreground">Welcome to AP Mart</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Groceries delivered at lightning speed</p>
-          </div>
-
-          {/* Tabs */}
-          <div className="mt-5 grid grid-cols-2 gap-2 rounded-xl bg-muted p-1">
+        <div className="mt-6 rounded-xl border border-border/70 bg-card p-4 md:p-6">
+          <div className="grid grid-cols-2 gap-1 rounded-xl bg-secondary p-1">
             <button
               type="button"
               onClick={() => setTab("password")}
-              className={cn("h-9 rounded-lg text-xs font-bold transition", tab === "password" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground")}
+              className={cn("h-9 rounded-lg text-meta font-semibold transition", tab === "password" ? "bg-card text-foreground shadow-soft" : "text-muted-foreground")}
             >
-              Email & Password
+              Email
             </button>
             <button
               type="button"
               onClick={() => setTab("otp")}
-              className={cn("h-9 rounded-lg text-xs font-bold transition", tab === "otp" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground")}
+              className={cn("h-9 rounded-lg text-meta font-semibold transition", tab === "otp" ? "bg-card text-foreground shadow-soft" : "text-muted-foreground")}
             >
               Phone OTP
             </button>
@@ -171,59 +152,58 @@ function LoginPage() {
           {tab === "password" ? (
             <form onSubmit={handlePassword} className="mt-5 space-y-3">
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input type="email" required placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-12 rounded-xl pl-10" />
+                <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input type="email" required placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 pl-11" />
               </div>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type={show ? "text" : "password"}
                   required
-                  placeholder="Enter your password"
+                  placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-12 rounded-xl pl-10 pr-10"
+                  className="h-11 pl-11 pr-11"
                 />
-                <button type="button" aria-label={show ? "Hide password" : "Show password"} onClick={() => setShow((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <button type="button" aria-label={show ? "Hide password" : "Show password"} onClick={() => setShow((v) => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                   {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
 
-              <div className="flex items-center justify-between pt-1">
-                <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground cursor-pointer">
+              <div className="flex items-center justify-between py-1">
+                <label className="flex cursor-pointer items-center gap-2 text-meta text-muted-foreground">
                   <Checkbox checked={remember} onCheckedChange={(v) => setRemember(!!v)} />
                   Remember me
                 </label>
-                <button type="button" onClick={handleForgot} className="text-xs font-bold text-primary hover:underline">
-                  Forgot Password?
+                <button type="button" onClick={handleForgot} className="text-meta font-semibold text-primary">
+                  Forgot password?
                 </button>
               </div>
 
-              <Button type="submit" disabled={submitting} className="w-full h-12 rounded-xl bg-[#16a34a] hover:bg-[#15803d] text-white font-bold text-base shadow-md">
-                {submitting ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Signing in…</>) : "Login"}
+              <Button type="submit" disabled={submitting} className="h-11 w-full rounded-xl">
+                {submitting ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Signing in…</>) : "Log in"}
               </Button>
             </form>
           ) : (
             <div className="mt-5">
               <PhoneOtpForm remember={remember} onSuccess={async () => { await routeAfterLogin(); }} />
-              <p className="mt-3 text-center text-[11px] text-muted-foreground">
+              <p className="mt-3 text-center text-small text-muted-foreground">
                 We'll text a 6-digit code to your mobile number.
               </p>
             </div>
           )}
 
-
           <div className="relative my-5">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-            <div className="relative flex justify-center"><span className="bg-card px-3 text-xs text-muted-foreground">or</span></div>
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border/70" /></div>
+            <div className="relative flex justify-center"><span className="bg-card px-3 text-small text-muted-foreground">or</span></div>
           </div>
 
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={handleGoogle}
             disabled={submitting || googleLoading}
-            className="w-full h-11 rounded-xl font-bold gap-2"
+            className="h-11 w-full gap-2 rounded-xl"
           >
             {googleLoading ? (
               <>
@@ -236,13 +216,13 @@ function LoginPage() {
               </>
             )}
           </Button>
-
-          <p className="mt-5 text-center text-xs text-muted-foreground">
-            Don't have an account?{" "}
-            <Link to="/signup" className="font-bold text-primary hover:underline">Sign up</Link>
-          </p>
-          {import.meta.env.DEV && <DevLoginPanel />}
         </div>
+
+        <p className="mt-5 text-center text-meta text-muted-foreground">
+          New to AP Mart?{" "}
+          <Link to="/signup" className="font-semibold text-primary">Create account</Link>
+        </p>
+        {import.meta.env.DEV && <DevLoginPanel />}
       </div>
     </div>
   );

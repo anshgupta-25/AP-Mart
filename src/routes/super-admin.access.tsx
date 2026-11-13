@@ -34,12 +34,12 @@ type UserRow = {
 };
 
 const ROLES = [
-  { key: "super_admin", label: "Super Admin", icon: Crown, tone: "bg-amber-100 text-amber-700" },
-  { key: "admin", label: "Admin", icon: ShieldAlert, tone: "bg-emerald-100 text-emerald-700" },
-  { key: "support", label: "Support", icon: Headphones, tone: "bg-violet-100 text-violet-700" },
-  { key: "shopkeeper", label: "Shopkeeper", icon: Store, tone: "bg-blue-100 text-blue-700" },
-  { key: "delivery", label: "Delivery", icon: Bike, tone: "bg-orange-100 text-orange-700" },
-  { key: "customer", label: "Customer", icon: User, tone: "bg-slate-100 text-slate-700" },
+  { key: "super_admin", label: "Super Admin", icon: Crown, tone: "bg-secondary text-foreground" },
+  { key: "admin", label: "Admin", icon: ShieldAlert, tone: "bg-secondary text-foreground" },
+  { key: "support", label: "Support", icon: Headphones, tone: "bg-secondary text-foreground" },
+  { key: "shopkeeper", label: "Shopkeeper", icon: Store, tone: "bg-secondary text-foreground" },
+  { key: "delivery", label: "Delivery", icon: Bike, tone: "bg-secondary text-foreground" },
+  { key: "customer", label: "Customer", icon: User, tone: "bg-secondary text-foreground" },
 ] as const;
 
 function AccessPage() {
@@ -95,10 +95,10 @@ function AccessPage() {
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div>
-        <h1 className="font-display text-2xl font-extrabold">Roles &amp; Access</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="large-title">Roles &amp; Access</h1>
+        <p className="mt-0.5 text-small text-muted-foreground">
           Tap a role chip to grant or revoke it. Admin and Super Admin tiers can only be changed here.
         </p>
       </div>
@@ -109,40 +109,40 @@ function AccessPage() {
           placeholder="Search by name, email or phone"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          className="h-11 rounded-xl pl-10"
+          className="pl-10"
         />
       </div>
 
       {error ? (
-        <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-small text-destructive">
           {cleanError((error as any)?.message)}
         </div>
       ) : isLoading ? (
-        <div className="grid place-items-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+        <div className="grid place-items-center py-12"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : rows.length === 0 ? (
-        <p className="py-10 text-center text-sm text-muted-foreground">No accounts match that search.</p>
+        <p className="py-10 text-center text-small text-muted-foreground">No accounts match that search.</p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {rows.map((u) => {
             const suspended = u.status === "suspended" || u.status === "disabled";
             const isSelf = u.id === user?.id;
             return (
-              <div key={u.id} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+              <div key={u.id} className="rounded-xl border border-border/70 bg-card p-3.5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold truncate">{u.full_name || "Unnamed user"}</span>
-                      {isSelf && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">You</span>}
-                      {suspended && <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-bold text-destructive">Suspended</span>}
+                      <span className="truncate text-body font-semibold">{u.full_name || "Unnamed user"}</span>
+                      {isSelf && <span className="rounded-full bg-primary-soft px-2 py-0.5 text-micro font-semibold text-primary-ink">You</span>}
+                      {suspended && <span className="rounded-full bg-tint-rose px-2 py-0.5 text-micro font-semibold text-[oklch(0.45_0.12_15)]">Suspended</span>}
                     </div>
-                    <div className="text-xs text-muted-foreground truncate">{u.email || u.phone || "—"}</div>
+                    <div className="truncate text-small text-muted-foreground">{u.email || u.phone || "—"}</div>
                   </div>
                   <Button
                     size="sm"
                     variant={suspended ? "outline" : "ghost"}
                     disabled={isSelf || setStatus.isPending}
                     onClick={() => setStatus.mutate({ userId: u.id, status: suspended ? "active" : "suspended" })}
-                    className="shrink-0 text-xs font-bold"
+                    className="shrink-0"
                   >
                     {suspended ? (<><RotateCcw className="h-3.5 w-3.5 mr-1" /> Restore</>) : (<><Ban className="h-3.5 w-3.5 mr-1" /> Suspend</>)}
                   </Button>
@@ -160,8 +160,8 @@ function AccessPage() {
                         disabled={busy}
                         onClick={() => { setPending(key); toggleRole.mutate({ userId: u.id, role: r.key, has }); }}
                         className={cn(
-                          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold transition border",
-                          has ? `${r.tone} border-transparent` : "bg-transparent text-muted-foreground border-border hover:border-primary/40",
+                          "press inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-small font-medium transition-colors",
+                          has ? `${r.tone} border-transparent` : "border-border bg-transparent text-muted-foreground hover:bg-secondary",
                           busy && "opacity-60",
                         )}
                       >

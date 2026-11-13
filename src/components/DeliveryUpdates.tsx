@@ -35,17 +35,17 @@ export function DeliveryUpdates({ orderId }: { orderId: string }) {
   if (!data || data.length === 0) return null;
 
   return (
-    <section className="mt-6 rounded-3xl border border-border bg-card p-5 md:p-6 shadow-card">
-      <h2 className="font-display text-lg font-bold mb-4 flex items-center gap-2">
-        <Truck className="h-5 w-5 text-primary" /> Delivery updates
+    <section className="rounded-xl border border-border/70 bg-card p-4">
+      <h2 className="section-title mb-3 flex items-center gap-2">
+        <Truck className="h-4 w-4 text-primary" /> Delivery updates
       </h2>
-      <ul className="space-y-3">
+      <ul className="divide-y divide-border/60">
         {data.map((m: any) => (
-          <li key={m.id} className="flex gap-3">
-            <div className="text-xs font-semibold text-muted-foreground w-16 shrink-0 pt-0.5">
+          <li key={m.id} className="flex gap-3 py-2.5 first:pt-0 last:pb-0">
+            <div className="w-14 shrink-0 pt-0.5 text-caption font-medium text-muted-foreground">
               {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </div>
-            <div className="text-sm">{m.message}</div>
+            <div className="text-meta">{m.message}</div>
           </li>
         ))}
       </ul>

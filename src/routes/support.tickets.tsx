@@ -21,10 +21,10 @@ const STATUSES = ["all","open","assigned","in_progress","resolved","closed"] as 
 const ROLES = ["all","customer","shopkeeper","delivery"] as const;
 
 const STATUS_TONE: Record<string, string> = {
-  open: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300",
-  assigned: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
-  in_progress: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
-  resolved: "bg-green-500/15 text-green-700 dark:text-green-300",
+  open: "bg-tint-sun text-foreground",
+  assigned: "bg-tint-sky text-foreground",
+  in_progress: "bg-tint-sky text-foreground",
+  resolved: "bg-primary-soft text-primary-ink",
   closed: "bg-muted text-muted-foreground",
 };
 
@@ -63,13 +63,13 @@ function Page() {
   );
 
   return (
-    <div className="p-4 md:p-6 space-y-4">
-      <h1 className="font-display text-2xl font-extrabold">Tickets</h1>
+    <div className="space-y-4 px-4 pb-6 pt-4 md:px-6">
+      <h1 className="large-title">Tickets</h1>
 
-      <div className="grid gap-2 md:grid-cols-4">
+      <div className="grid gap-2.5 md:grid-cols-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-9" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title or number" />
+          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="pl-10" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title or number" />
         </div>
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
@@ -89,30 +89,30 @@ function Page() {
       </div>
 
       {tickets.isLoading ? (
-        <div className="text-sm text-muted-foreground">Loading…</div>
+        <div className="h-32 rounded-xl shimmer" />
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
-          No tickets match.
+        <div className="rounded-xl border border-border/70 bg-card p-8 text-center text-small text-muted-foreground">
+          No tickets match your filters.
         </div>
       ) : (
         <div className="grid gap-3">
           {filtered.map((t) => (
             <article
               key={t.id}
-              className="rounded-2xl border border-border bg-card p-4 space-y-3"
+              className="space-y-2.5 rounded-xl border border-border/70 bg-card p-4"
             >
               <header className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-base truncate">{t.title}</span>
-                    <span className={`text-[10px] uppercase rounded-full px-2 py-0.5 font-bold ${STATUS_TONE[t.status] ?? "bg-secondary"}`}>
+                    <span className="truncate text-body font-medium">{t.title}</span>
+                    <span className={`text-caption capitalize rounded-full px-2 py-0.5 font-semibold ${STATUS_TONE[t.status] ?? "bg-secondary"}`}>
                       {t.status.replace(/_/g, " ")}
                     </span>
-                    <span className="text-[10px] uppercase rounded-full bg-secondary px-2 py-0.5 font-bold">
+                    <span className="text-caption capitalize rounded-full bg-secondary px-2 py-0.5 font-semibold">
                       {t.role_at_creation}
                     </span>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
+                  <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-small text-muted-foreground">
                     <span>{t.ticket_number}</span>·
                     <span>{t.category.replace(/_/g, " ")}</span>·
                     <span>{new Date(t.created_at).toLocaleString()}</span>
@@ -122,7 +122,7 @@ function Page() {
                   <Link
                     to="/support/tickets/$id"
                     params={{ id: t.id }}
-                    className="inline-flex items-center gap-1 text-xs font-bold rounded-full bg-secondary px-3 py-1.5 hover:bg-secondary/70"
+                    className="press inline-flex h-8 items-center gap-1 rounded-full bg-secondary px-3.5 text-small font-semibold"
                   >
                     <ExternalLink className="h-3.5 w-3.5" /> Open
                   </Link>
@@ -132,13 +132,13 @@ function Page() {
                 </div>
               </header>
 
-              <p className="text-sm text-foreground/90 whitespace-pre-wrap">
+              <p className="whitespace-pre-wrap text-small leading-relaxed text-foreground/80">
                 {t.description}
               </p>
 
-              <div className="grid sm:grid-cols-2 gap-2 text-xs">
-                <div className="rounded-xl bg-secondary/40 p-3 space-y-1">
-                  <div className="font-bold uppercase text-[10px] text-muted-foreground flex items-center gap-1">
+              <div className="grid gap-2 text-small sm:grid-cols-2">
+                <div className="space-y-1 rounded-lg bg-secondary/70 p-3">
+                  <div className="flex items-center gap-1 text-caption font-semibold text-muted-foreground">
                     <User className="h-3 w-3" /> Raised by
                   </div>
                   <div className="font-semibold">{t.full_name || "—"}</div>
@@ -158,8 +158,8 @@ function Page() {
                 </div>
 
                 {t.role_at_creation === "shopkeeper" && (t.shop_name || t.shop_address) && (
-                  <div className="rounded-xl bg-secondary/40 p-3 space-y-1">
-                    <div className="font-bold uppercase text-[10px] text-muted-foreground flex items-center gap-1">
+                  <div className="space-y-1 rounded-lg bg-secondary/70 p-3">
+                    <div className="flex items-center gap-1 text-caption font-semibold text-muted-foreground">
                       <Store className="h-3 w-3" /> Shop
                     </div>
                     <div className="font-semibold">{t.shop_name || "—"}</div>
@@ -207,19 +207,18 @@ function ResolveButton({ ticketId, onDone }: { ticketId: string; onDone: () => v
   if (!open) {
     return (
       <Button size="sm" onClick={() => setOpen(true)}
-        className="h-8 bg-green-600 hover:bg-green-700 text-white text-xs font-bold gap-1">
+        className="h-8 gap-1 rounded-full px-3.5 text-small">
         <CheckCircle2 className="h-3.5 w-3.5" /> Resolve
       </Button>
     );
   }
   return (
-    <div className="w-full mt-2 space-y-2 rounded-xl border border-green-500/30 bg-green-500/5 p-3">
+    <div className="mt-2 w-full space-y-2 rounded-xl bg-primary-soft p-3">
       <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)}
         placeholder="Resolution notes (optional) — sent to user" />
       <div className="flex justify-end gap-2">
         <Button size="sm" variant="ghost" onClick={() => { setOpen(false); setNotes(""); }}>Cancel</Button>
-        <Button size="sm" onClick={resolve} disabled={busy}
-          className="bg-green-600 hover:bg-green-700 text-white gap-1">
+        <Button size="sm" onClick={resolve} disabled={busy} className="gap-1">
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
           Mark resolved
         </Button>

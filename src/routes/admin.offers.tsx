@@ -18,7 +18,7 @@ function AdminOffersPage() {
   });
 
   return (
-    <div className="p-4 max-w-4xl mx-auto">
+    <div className="mx-auto w-full max-w-4xl px-4 py-4 md:px-6 md:py-6">
       <OffersManager shops={shops.data ?? []} />
     </div>
   );

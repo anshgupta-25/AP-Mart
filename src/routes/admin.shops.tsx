@@ -2,8 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { RoleShell } from "@/components/RoleShell";
-import { ADMIN_NAV } from "./admin.dashboard";
 import { LeafletMap } from "@/components/maps/LeafletMap";
 import { LocationPicker, type LatLng } from "@/components/maps/LocationPicker";
 import { Button } from "@/components/ui/button";
@@ -159,203 +157,204 @@ function Page() {
   };
 
   return (
-    <RoleShell role="admin" nav={ADMIN_NAV} requireRoles={["admin"]}>
-      <div className="p-4 md:p-6 space-y-5">
-        <header className="flex flex-col sm:flex-row sm:items-start gap-3">
-          <div className="flex-1 min-w-0">
-            <h1 className="font-display text-2xl sm:text-3xl font-extrabold flex items-center gap-2">
-              <Store className="h-6 w-6 sm:h-7 sm:w-7 text-primary shrink-0" /> Shops
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">Manage all shops, owners, and delivery configuration.</p>
-          </div>
-          <div className="flex gap-2 shrink-0">
-            <Button variant="outline" onClick={() => setMapOpen(true)} disabled={valid.length === 0}>
-              <MapIcon className="h-4 w-4 mr-1" />Full map
-            </Button>
-            <Dialog open={addOpen} onOpenChange={setAddOpen}>
-              <DialogTrigger asChild>
-                <Button><UserPlus className="h-4 w-4 mr-1" />Add shopkeeper</Button>
-              </DialogTrigger>
-              <AddShopkeeperDialog onDone={() => { setAddOpen(false); refresh(); }} />
-            </Dialog>
-          </div>
-        </header>
-
-        {/* Summary cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          <SummaryCard label="Total shops" value={summary.total} />
-          <SummaryCard label="Active" value={summary.active} tone="green" />
-          <SummaryCard label="Suspended" value={summary.suspended} tone="red" />
-          <SummaryCard label="Open now" value={summary.open} tone="green" />
-          <SummaryCard label="Closed" value={summary.closed} tone="muted" />
-          <SummaryCard label="Unassigned" value={summary.unassigned} tone="amber" />
+    <>
+    <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-4 md:px-6 md:py-6">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end">
+        <div className="min-w-0 flex-1">
+          <h1 className="large-title">Shops</h1>
+          <p className="mt-0.5 text-meta text-muted-foreground">Manage all shops, owners and delivery configuration.</p>
         </div>
-
-        {/* Mini map */}
-        {valid.length > 0 && (
-          <div className="relative z-0 isolate">
-            <LeafletMap center={mapCenter} zoom={10} className="h-40 sm:h-48 w-full rounded-2xl overflow-hidden border border-border">
-              {(RL) => {
-                const { Marker, Popup, Circle } = RL;
-                return (
-                  <>
-                    {valid.map((s) => (
-                      <div key={s.id}>
-                        <Marker position={[s.latitude!, s.longitude!]}>
-                          <Popup>
-                            <div className="font-bold">{s.name}</div>
-                            <div className="text-xs">{s.address}, {s.city}</div>
-                            <div className="text-xs">Radius {s.service_radius_km} km · {s.is_open ? "Open" : "Closed"}</div>
-                          </Popup>
-                        </Marker>
-                        <Circle
-                          center={[s.latitude!, s.longitude!]}
-                          radius={(Number(s.service_radius_km) || 8) * 1000}
-                          pathOptions={{ color: "hsl(var(--primary))", weight: 1, fillOpacity: 0.05 }}
-                        />
-                      </div>
-                    ))}
-                  </>
-                );
-              }}
-            </LeafletMap>
-          </div>
-        )}
-
-        {/* Search + filters */}
-        <div className="rounded-2xl border border-border bg-card p-3 space-y-3">
-          <div className="relative">
-            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search shop, owner, email, phone, city, state, pincode…"
-              className="pl-9"
-            />
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
-            <FilterSelect label="Open/Closed" value={fOpen} onChange={(v) => setFOpen(v as any)} options={[["all","All"],["open","Open"],["closed","Closed"]]} />
-            <FilterSelect label="Status" value={fStatus} onChange={(v) => setFStatus(v as any)} options={[["all","All"],["active","Active"],["suspended","Suspended"]]} />
-            <FilterSelect label="Owner" value={fAssign} onChange={(v) => setFAssign(v as any)} options={[["all","All"],["assigned","Assigned"],["unassigned","Unassigned"]]} />
-            <FilterSelect label="State" value={fState} onChange={(v) => { setFState(v); setFCity("all"); }} options={[["all","All"], ...states.map(s => [s, s] as [string, string])]} />
-            <FilterSelect label="City" value={fCity} onChange={setFCity} options={[["all","All"], ...cities.map(c => [c, c] as [string, string])]} />
-            <FilterSelect label="Pincode" value={fPin} onChange={setFPin} options={[["all","All"], ...pincodes.map(p => [p, p] as [string, string])]} />
-            <FilterSelect label="Sort by" value={sort} onChange={(v) => setSort(v as SortKey)} options={[["name","Name"],["orders","Orders"],["revenue","Revenue"],["created","Newest"],["acceptance","Acceptance"]]} />
-          </div>
+        <div className="flex shrink-0 gap-2">
+          <Button variant="secondary" onClick={() => setMapOpen(true)} disabled={valid.length === 0}>
+            <MapIcon className="h-4 w-4 mr-1" />Full map
+          </Button>
+          <Dialog open={addOpen} onOpenChange={setAddOpen}>
+            <DialogTrigger asChild>
+              <Button><UserPlus className="h-4 w-4 mr-1" />Add shopkeeper</Button>
+            </DialogTrigger>
+            <AddShopkeeperDialog onDone={() => { setAddOpen(false); refresh(); }} />
+          </Dialog>
         </div>
+      </header>
 
-        {/* Results */}
-        {q.isLoading ? (
-          <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-sm text-muted-foreground">No shops match your filters.</div>
-        ) : (
-          <>
-            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
-              {pageRows.map((s) => (
-                <ShopCard
-                  key={s.id}
-                  shop={s}
-                  onEdit={() => setEditShop(s)}
-                  onDelete={() => setDeleteShop(s)}
-                  onSuspend={() => setStatus(s.id, "suspended")}
-                  onActivate={() => setStatus(s.id, "active")}
-                  onOwnerChanged={refresh}
-                />
-              ))}
-            </div>
-
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between pt-2">
-                <div className="text-xs text-muted-foreground">
-                  Page {page} of {totalPages} · {filtered.length} shops
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
-                  <Button size="sm" variant="outline" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-6">
+        <SummaryCard label="Total shops" value={summary.total} />
+        <SummaryCard label="Active" value={summary.active} tone="green" />
+        <SummaryCard label="Suspended" value={summary.suspended} tone="red" />
+        <SummaryCard label="Open now" value={summary.open} tone="green" />
+        <SummaryCard label="Closed" value={summary.closed} tone="muted" />
+        <SummaryCard label="Unassigned" value={summary.unassigned} tone="amber" />
       </div>
 
-      {/* Full map dialog */}
-      <Dialog open={mapOpen} onOpenChange={setMapOpen}>
-        <DialogContent className="max-w-5xl w-[95vw]">
-          <DialogHeader><DialogTitle>All shops on the map</DialogTitle></DialogHeader>
-          <div className="relative z-0 isolate">
-            <LeafletMap center={mapCenter} zoom={10} className="h-[70vh] w-full rounded-2xl overflow-hidden border border-border">
-              {(RL) => {
-                const { Marker, Popup, Circle } = RL;
-                return (
-                  <>
-                    {valid.map((s) => (
-                      <div key={s.id}>
-                        <Marker position={[s.latitude!, s.longitude!]}>
-                          <Popup>
-                            <div className="font-bold">{s.name}</div>
-                            <div className="text-xs">{s.address}, {s.city}</div>
-                            <div className="text-xs">Owner: {s.owner_email || "Unassigned"}</div>
-                            <div className="text-xs">Radius {s.service_radius_km} km · {s.is_open ? "Open" : "Closed"}</div>
-                          </Popup>
-                        </Marker>
-                        <Circle
-                          center={[s.latitude!, s.longitude!]}
-                          radius={(Number(s.service_radius_km) || 8) * 1000}
-                          pathOptions={{ color: "hsl(var(--primary))", weight: 1, fillOpacity: 0.06 }}
-                        />
-                      </div>
-                    ))}
-                  </>
-                );
-              }}
-            </LeafletMap>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit dialog */}
-      {editShop && (
-        <EditShopDialog
-          shop={editShop}
-          onClose={() => setEditShop(null)}
-          onDone={() => { setEditShop(null); refresh(); }}
-        />
+      {/* Mini map */}
+      {valid.length > 0 && (
+        <div className="relative z-0 isolate">
+          <LeafletMap center={mapCenter} zoom={10} className="h-44 w-full overflow-hidden rounded-xl sm:h-52">
+            {(RL) => {
+              const { Marker, Popup, Circle } = RL;
+              return (
+                <>
+                  {valid.map((s) => (
+                    <div key={s.id}>
+                      <Marker position={[s.latitude!, s.longitude!]}>
+                        <Popup>
+                          <div className="font-bold">{s.name}</div>
+                          <div className="text-xs">{s.address}, {s.city}</div>
+                          <div className="text-xs">Radius {s.service_radius_km} km · {s.is_open ? "Open" : "Closed"}</div>
+                        </Popup>
+                      </Marker>
+                      <Circle
+                        center={[s.latitude!, s.longitude!]}
+                        radius={(Number(s.service_radius_km) || 8) * 1000}
+                        pathOptions={{ color: "hsl(var(--primary))", weight: 1, fillOpacity: 0.05 }}
+                      />
+                    </div>
+                  ))}
+                </>
+              );
+            }}
+          </LeafletMap>
+        </div>
       )}
 
-      {/* Delete confirm */}
-      <Dialog open={!!deleteShop} onOpenChange={(o) => !o && setDeleteShop(null)}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Delete shop?</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            This will permanently delete <span className="font-semibold text-foreground">{deleteShop?.name}</span> and its product listings.
-            The shop must have no active orders. This cannot be undone.
-          </p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteShop(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={doDelete}>Delete permanently</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </RoleShell>
+      {/* Search + filters */}
+      <div className="space-y-3 rounded-xl border border-border/70 bg-card p-4">
+        <div className="relative">
+          <Search className="h-4 w-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search shop, owner, email, phone, city, state, pincode…"
+            className="pl-10"
+          />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
+          <FilterSelect label="Open/Closed" value={fOpen} onChange={(v) => setFOpen(v as any)} options={[["all","All"],["open","Open"],["closed","Closed"]]} />
+          <FilterSelect label="Status" value={fStatus} onChange={(v) => setFStatus(v as any)} options={[["all","All"],["active","Active"],["suspended","Suspended"]]} />
+          <FilterSelect label="Owner" value={fAssign} onChange={(v) => setFAssign(v as any)} options={[["all","All"],["assigned","Assigned"],["unassigned","Unassigned"]]} />
+          <FilterSelect label="State" value={fState} onChange={(v) => { setFState(v); setFCity("all"); }} options={[["all","All"], ...states.map(s => [s, s] as [string, string])]} />
+          <FilterSelect label="City" value={fCity} onChange={setFCity} options={[["all","All"], ...cities.map(c => [c, c] as [string, string])]} />
+          <FilterSelect label="Pincode" value={fPin} onChange={setFPin} options={[["all","All"], ...pincodes.map(p => [p, p] as [string, string])]} />
+          <FilterSelect label="Sort by" value={sort} onChange={(v) => setSort(v as SortKey)} options={[["name","Name"],["orders","Orders"],["revenue","Revenue"],["created","Newest"],["acceptance","Acceptance"]]} />
+        </div>
+      </div>
+
+      {/* Results */}
+      {q.isLoading ? (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{[0, 1, 2].map((i) => <div key={i} className="h-56 rounded-xl shimmer" />)}</div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-xl border border-border/70 bg-card px-6 py-10 text-center"><div className="text-subtitle font-semibold">No shops found</div><p className="mt-0.5 text-meta text-muted-foreground">Try changing your filters.</p></div>
+      ) : (
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 md:gap-4 xl:grid-cols-3">
+            {pageRows.map((s) => (
+              <ShopCard
+                key={s.id}
+                shop={s}
+                onEdit={() => setEditShop(s)}
+                onDelete={() => setDeleteShop(s)}
+                onSuspend={() => setStatus(s.id, "suspended")}
+                onActivate={() => setStatus(s.id, "active")}
+                onOwnerChanged={refresh}
+              />
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-2">
+              <div className="text-xs text-muted-foreground">
+                Page {page} of {totalPages} · {filtered.length} shops
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="secondary" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Prev</Button>
+                <Button size="sm" variant="secondary" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>Next</Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+
+    {/* Full map dialog */}
+    <Dialog open={mapOpen} onOpenChange={setMapOpen}>
+      <DialogContent className="max-w-5xl w-[95vw]">
+        <DialogHeader><DialogTitle>All shops on the map</DialogTitle></DialogHeader>
+        <div className="relative z-0 isolate">
+          <LeafletMap center={mapCenter} zoom={10} className="h-[70vh] w-full overflow-hidden rounded-xl">
+            {(RL) => {
+              const { Marker, Popup, Circle } = RL;
+              return (
+                <>
+                  {valid.map((s) => (
+                    <div key={s.id}>
+                      <Marker position={[s.latitude!, s.longitude!]}>
+                        <Popup>
+                          <div className="font-bold">{s.name}</div>
+                          <div className="text-xs">{s.address}, {s.city}</div>
+                          <div className="text-xs">Owner: {s.owner_email || "Unassigned"}</div>
+                          <div className="text-xs">Radius {s.service_radius_km} km · {s.is_open ? "Open" : "Closed"}</div>
+                        </Popup>
+                      </Marker>
+                      <Circle
+                        center={[s.latitude!, s.longitude!]}
+                        radius={(Number(s.service_radius_km) || 8) * 1000}
+                        pathOptions={{ color: "hsl(var(--primary))", weight: 1, fillOpacity: 0.06 }}
+                      />
+                    </div>
+                  ))}
+                </>
+              );
+            }}
+          </LeafletMap>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Edit dialog */}
+    {editShop && (
+      <EditShopDialog
+        shop={editShop}
+        onClose={() => setEditShop(null)}
+        onDone={() => { setEditShop(null); refresh(); }}
+      />
+    )}
+
+    {/* Delete confirm */}
+    <Dialog open={!!deleteShop} onOpenChange={(o) => !o && setDeleteShop(null)}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Delete shop?</DialogTitle></DialogHeader>
+        <p className="text-sm text-muted-foreground">
+          This will permanently delete <span className="font-semibold text-foreground">{deleteShop?.name}</span> and its product listings.
+          The shop must have no active orders. This cannot be undone.
+        </p>
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => setDeleteShop(null)}>Cancel</Button>
+          <Button variant="destructive" onClick={doDelete}>Delete permanently</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 
 // ---------- helpers ----------
 
 function SummaryCard({ label, value, tone = "default" }: { label: string; value: number; tone?: "default" | "green" | "red" | "amber" | "muted" }) {
-  const toneCls = {
-    default: "bg-card",
-    green: "bg-green-50 dark:bg-green-950/30",
-    red: "bg-red-50 dark:bg-red-950/30",
-    amber: "bg-amber-50 dark:bg-amber-950/30",
-    muted: "bg-muted",
+  const dot = {
+    default: "bg-foreground/30",
+    green: "bg-primary",
+    red: "bg-destructive",
+    amber: "bg-accent",
+    muted: "bg-muted-foreground/40",
   }[tone];
   return (
-    <div className={`rounded-2xl border border-border p-3 ${toneCls}`}>
-      <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">{label}</div>
-      <div className="text-2xl font-extrabold font-display mt-1">{value}</div>
+    <div className="rounded-xl border border-border/70 bg-card p-4">
+      <div className="flex items-center gap-2 text-meta text-muted-foreground">
+        <span className={`h-2 w-2 rounded-full ${dot}`} />
+        {label}
+      </div>
+      <div className="mt-1 text-xl font-semibold tracking-tight">{value}</div>
     </div>
   );
 }
@@ -363,9 +362,9 @@ function SummaryCard({ label, value, tone = "default" }: { label: string; value:
 function FilterSelect({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: [string, string][] }) {
   return (
     <div>
-      <div className="text-[10px] uppercase text-muted-foreground font-bold mb-1">{label}</div>
+      <div className="mb-1.5 text-small font-medium text-muted-foreground">{label}</div>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+        <SelectTrigger className="h-10 rounded-xl border-0 bg-secondary"><SelectValue /></SelectTrigger>
         <SelectContent>
           {options.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
         </SelectContent>
@@ -377,7 +376,7 @@ function FilterSelect({ label, value, onChange, options }: { label: string; valu
 function StatusBadge({ shop }: { shop: ShopRow }) {
   if (shop.status === "suspended") return <Badge variant="destructive">Suspended</Badge>;
   if (!shop.is_open) return <Badge variant="secondary">Closed</Badge>;
-  return <Badge className="bg-green-600 hover:bg-green-600 text-white">Open</Badge>;
+  return <Badge>Open</Badge>;
 }
 
 function ShopCard({
@@ -388,18 +387,18 @@ function ShopCard({
   onOwnerChanged: () => void;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 space-y-2">
+    <div className="space-y-3 rounded-xl border border-border/70 bg-card p-4 md:p-5">
       <div className="flex items-start gap-3">
         {shop.logo_url ? (
-          <StorageImg loading="lazy" decoding="async" src={shop.logo_url} alt="" className="h-12 w-12 rounded-xl object-cover border border-border shrink-0" />
+          <StorageImg loading="lazy" decoding="async" src={shop.logo_url} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover" />
         ) : (
-          <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-tint-mint text-primary-ink">
             <Store className="h-5 w-5" />
           </div>
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="font-bold truncate">{shop.name}</div>
+            <div className="truncate text-subtitle font-semibold">{shop.name}</div>
             <StatusBadge shop={shop} />
           </div>
           <div className="text-xs text-muted-foreground truncate">{shop.address}</div>
@@ -449,11 +448,11 @@ function ShopCard({
         {shop.owner_id ? (
           <>
             <span className="font-semibold">{shop.owner_name || shop.owner_email}</span>
-            {shop.owner_status === "disabled" && <Badge variant="destructive" className="ml-2 text-[10px]">Disabled</Badge>}
+            {shop.owner_status === "disabled" && <Badge variant="destructive" className="ml-2 text-micro">Disabled</Badge>}
             {shop.owner_phone && <span className="text-muted-foreground"> · {shop.owner_phone}</span>}
           </>
         ) : (
-          <span className="text-amber-600 font-semibold">Unassigned</span>
+          <span className="font-semibold text-[oklch(0.5_0.12_70)]">Unassigned</span>
         )}
       </div>
 
@@ -464,9 +463,9 @@ function ShopCard({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-muted/50 p-2">
-      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="font-bold text-sm truncate">{value}</div>
+    <div className="rounded-xl bg-secondary/70 p-2.5">
+      <div className="text-caption text-muted-foreground">{label}</div>
+      <div className="truncate text-body font-semibold">{value}</div>
     </div>
   );
 }
@@ -516,25 +515,25 @@ function AddShopkeeperDialog({ onDone }: { onDone: () => void }) {
       <DialogHeader><DialogTitle>Add shopkeeper</DialogTitle></DialogHeader>
       <div className="space-y-3">
         <div>
-          <label className="text-xs font-bold">Owner email *</label>
+          <label className="text-meta font-medium">Owner email *</label>
           <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="owner@example.com" />
-          <p className="text-[11px] text-muted-foreground mt-1">User must already have an account. They'll be granted the shopkeeper role.</p>
+          <p className="text-caption text-muted-foreground mt-1">User must already have an account. They'll be granted the shopkeeper role.</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <div><label className="text-xs font-bold">Shop name *</label><Input value={shopName} onChange={(e) => setShopName(e.target.value)} /></div>
-          <div><label className="text-xs font-bold">Shop phone</label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+          <div><label className="text-meta font-medium">Shop name *</label><Input value={shopName} onChange={(e) => setShopName(e.target.value)} /></div>
+          <div><label className="text-meta font-medium">Shop phone</label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
         </div>
-        <div><label className="text-xs font-bold">Address *</label><Input value={address} onChange={(e) => setAddress(e.target.value)} /></div>
+        <div><label className="text-meta font-medium">Address *</label><Input value={address} onChange={(e) => setAddress(e.target.value)} /></div>
         <div className="grid grid-cols-3 gap-3">
-          <div><label className="text-xs font-bold">City *</label><Input value={city} onChange={(e) => setCity(e.target.value)} /></div>
-          <div><label className="text-xs font-bold">State</label><Input value={stateVal} onChange={(e) => setStateVal(e.target.value)} /></div>
-          <div><label className="text-xs font-bold">Pincode *</label><Input inputMode="numeric" maxLength={6} value={pincode} onChange={(e) => setPincode(e.target.value.replace(/\D/g,""))} /></div>
+          <div><label className="text-meta font-medium">City *</label><Input value={city} onChange={(e) => setCity(e.target.value)} /></div>
+          <div><label className="text-meta font-medium">State</label><Input value={stateVal} onChange={(e) => setStateVal(e.target.value)} /></div>
+          <div><label className="text-meta font-medium">Pincode *</label><Input inputMode="numeric" maxLength={6} value={pincode} onChange={(e) => setPincode(e.target.value.replace(/\D/g,""))} /></div>
         </div>
-        <div><label className="text-xs font-bold">Service radius (km)</label><Input type="number" value={radius} onChange={(e) => setRadius(e.target.value)} /></div>
+        <div><label className="text-meta font-medium">Service radius (km)</label><Input type="number" value={radius} onChange={(e) => setRadius(e.target.value)} /></div>
         <div>
-          <label className="text-xs font-bold">Location *</label>
+          <label className="text-meta font-medium">Location *</label>
           <LocationPicker value={loc} onChange={setLoc} height="h-56" />
-          {loc && <p className="text-[11px] text-muted-foreground mt-1">{loc.lat.toFixed(5)}, {loc.lng.toFixed(5)}</p>}
+          {loc && <p className="text-caption text-muted-foreground mt-1">{loc.lat.toFixed(5)}, {loc.lng.toFixed(5)}</p>}
         </div>
       </div>
       <DialogFooter>
@@ -582,19 +581,19 @@ function EditShopDialog({ shop, onClose, onDone }: { shop: ShopRow; onClose: () 
         <DialogHeader><DialogTitle>Edit shop</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-xs font-bold">Shop name</label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-            <div><label className="text-xs font-bold">Shop phone</label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+            <div><label className="text-meta font-medium">Shop name</label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
+            <div><label className="text-meta font-medium">Shop phone</label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
           </div>
-          <div><label className="text-xs font-bold">Address</label><Input value={address} onChange={(e) => setAddress(e.target.value)} /></div>
+          <div><label className="text-meta font-medium">Address</label><Input value={address} onChange={(e) => setAddress(e.target.value)} /></div>
           <div className="grid grid-cols-3 gap-3">
-            <div><label className="text-xs font-bold">City</label><Input value={city} onChange={(e) => setCity(e.target.value)} /></div>
-            <div><label className="text-xs font-bold">State</label><Input value={stateVal} onChange={(e) => setStateVal(e.target.value)} /></div>
-            <div><label className="text-xs font-bold">Pincode</label><Input inputMode="numeric" maxLength={6} value={pincode} onChange={(e) => setPincode(e.target.value.replace(/\D/g,""))} /></div>
+            <div><label className="text-meta font-medium">City</label><Input value={city} onChange={(e) => setCity(e.target.value)} /></div>
+            <div><label className="text-meta font-medium">State</label><Input value={stateVal} onChange={(e) => setStateVal(e.target.value)} /></div>
+            <div><label className="text-meta font-medium">Pincode</label><Input inputMode="numeric" maxLength={6} value={pincode} onChange={(e) => setPincode(e.target.value.replace(/\D/g,""))} /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-xs font-bold">Radius (km)</label><Input type="number" value={radius} onChange={(e) => setRadius(e.target.value)} /></div>
+            <div><label className="text-meta font-medium">Radius (km)</label><Input type="number" value={radius} onChange={(e) => setRadius(e.target.value)} /></div>
             <div>
-              <label className="text-xs font-bold">Open now</label>
+              <label className="text-meta font-medium">Open now</label>
               <div className="h-9 flex items-center">
                 <label className="inline-flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={isOpen} onChange={(e) => setIsOpen(e.target.checked)} />
@@ -603,15 +602,15 @@ function EditShopDialog({ shop, onClose, onDone }: { shop: ShopRow; onClose: () 
               </div>
             </div>
           </div>
-          <div><label className="text-xs font-bold">Logo URL</label><Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://…" /></div>
+          <div><label className="text-meta font-medium">Logo URL</label><Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://…" /></div>
           <div>
-            <label className="text-xs font-bold">Location</label>
+            <label className="text-meta font-medium">Location</label>
             <LocationPicker value={loc} onChange={setLoc} height="h-56" />
-            {loc && <p className="text-[11px] text-muted-foreground mt-1">{loc.lat.toFixed(5)}, {loc.lng.toFixed(5)}</p>}
+            {loc && <p className="text-caption text-muted-foreground mt-1">{loc.lat.toFixed(5)}, {loc.lng.toFixed(5)}</p>}
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button onClick={save} disabled={busy}>{busy ? "Saving…" : "Save changes"}</Button>
         </DialogFooter>
       </DialogContent>
@@ -686,8 +685,8 @@ function OwnerAssignInline({ shopId, hasOwner, onDone }: { shopId: string; hasOw
                     className="w-full text-left px-2 py-1.5 rounded hover:bg-muted disabled:opacity-50"
                   >
                     <div className="text-xs font-semibold truncate">{u.full_name || u.email}</div>
-                    <div className="text-[11px] text-muted-foreground truncate">{u.email}{u.phone ? ` · ${u.phone}` : ""}</div>
-                    {u.status === "disabled" && <div className="text-[10px] text-destructive">Disabled — cannot assign</div>}
+                    <div className="text-caption text-muted-foreground truncate">{u.email}{u.phone ? ` · ${u.phone}` : ""}</div>
+                    {u.status === "disabled" && <div className="text-micro text-destructive">Disabled — cannot assign</div>}
                   </button>
                 </li>
               ))}

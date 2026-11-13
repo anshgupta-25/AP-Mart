@@ -1,22 +1,14 @@
-import { createFileRoute, Link, Navigate, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { LayoutDashboard, PackageSearch, History, Wallet, User, Bell } from "lucide-react";
+import { Bell } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { cn } from "@/lib/utils";
-import { RoleHeader } from "@/components/RoleHeader";
+import { AppShell } from "@/components/shell/AppShell";
+import { DELIVERY_NAV } from "@/lib/nav/delivery";
 
 export const Route = createFileRoute("/delivery")({
   head: () => ({ meta: [{ title: "Delivery — AP Mart" }] }),
   component: DeliveryShell,
 });
-
-const NAV = [
-  { to: "/delivery/dashboard", label: "Active", icon: LayoutDashboard },
-  { to: "/delivery/available-orders", label: "Available", icon: PackageSearch },
-  { to: "/delivery/history", label: "History", icon: History },
-  { to: "/delivery/earnings", label: "Earnings", icon: Wallet },
-  { to: "/delivery/profile", label: "Account", icon: User },
-] as const;
 
 function DeliveryShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -36,44 +28,14 @@ function DeliveryShell() {
   if (pathname === "/delivery") return <Navigate to="/delivery/dashboard" replace />;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <RoleHeader
-        homeTo="/delivery/dashboard"
-        accountTo="/delivery/profile"
-        searchTo="/delivery/available-orders"
-        showSearch={false}
-        trailing={
-          <Link to="/delivery/notifications" aria-label="Notifications" className="grid h-10 w-10 place-items-center rounded-full hover:bg-secondary transition">
-            <Bell className="h-5 w-5" />
-          </Link>
-        }
-      />
-
-      <main className="flex-1 min-w-0 pb-24"><Outlet /></main>
-
-      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-background border-t border-border">
-        <div className="grid grid-cols-5">
-          {NAV.map((n) => {
-            const active = pathname === n.to || pathname.startsWith(n.to + "/");
-            const Icon = n.icon;
-            return (
-              <Link
-                key={n.to}
-                to={n.to}
-                className={cn(
-                  "flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-bold transition",
-                  active ? "text-primary" : "text-muted-foreground",
-                )}
-              >
-                <span className={cn("grid h-9 w-9 place-items-center rounded-2xl transition", active ? "gradient-primary text-primary-foreground shadow-glow" : "")}>
-                  <Icon className="h-5 w-5" />
-                </span>
-                {n.label}
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
-    </div>
+    <AppShell
+      nav={DELIVERY_NAV}
+      maxWidth="max-w-3xl"
+      trailing={
+        <Link to="/delivery/notifications" aria-label="Notifications" className="press grid h-9 w-9 place-items-center rounded-full bg-card">
+          <Bell className="h-[18px] w-[18px]" />
+        </Link>
+      }
+    />
   );
 }

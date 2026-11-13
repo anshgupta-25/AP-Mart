@@ -2,25 +2,16 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { RoleShell } from "@/components/RoleShell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { RouteMap } from "@/components/maps/RouteMap";
 import { rupees } from "@/lib/format";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin, Package, Phone, Store, LayoutDashboard, PackageOpen, History, Wallet, User } from "lucide-react";
+import { ArrowLeft, MapPin, Package, Phone, Store } from "lucide-react";
 import { MultiShopPickupPanel } from "@/components/MultiShopPickupPanel";
 import { DeliveryTypeBadge } from "@/components/FastDeliveryBadge";
 
-const NAV = [
-  { to: "/delivery/dashboard", label: "Home", icon: LayoutDashboard },
-  { to: "/delivery/available-orders", label: "Available", icon: PackageOpen },
-  { to: "/delivery/history", label: "History", icon: History },
-  { to: "/delivery/earnings", label: "Earnings", icon: Wallet },
-  { to: "/delivery/profile", label: "Profile", icon: User },
-];
 
 export const Route = createFileRoute("/delivery/task/$id")({
   head: () => ({ meta: [{ title: "Delivery Task — AP Mart" }] }),
@@ -74,15 +65,35 @@ function Page() {
     router.navigate({ to: "/delivery/dashboard" });
   };
 
+  const stepIdx = data?.status === "delivered" ? 2 : data?.status === "out_for_delivery" ? 1 : 0;
+  const addr = ((data?.address ?? {}) as Record<string, any>);
+  const addrLine = [addr.line1, addr.line2, addr.city, addr.pincode].filter(Boolean).join(", ");
+
+  const DeliverTo = data ? (
+    <Card className="rounded-xl border-border/70 p-4 shadow-none">
+      <p className="eyebrow flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> Deliver to</p>
+      <p className="mt-1.5 text-body font-semibold">{addr.full_name || "Customer"}</p>
+      <p className="mt-0.5 text-small leading-snug text-muted-foreground">{addrLine}</p>
+      {addr.phone && (
+        <a href={`tel:${addr.phone}`} className="press mt-2.5 inline-flex h-8 items-center gap-1.5 rounded-full bg-primary-soft px-4 text-small font-semibold text-primary-ink">
+          <Phone className="h-3.5 w-3.5" /> {addr.phone}
+        </a>
+      )}
+      {data.delivery_instruction && (
+        <p className="mt-3 rounded-xl bg-secondary px-3 py-2 text-small text-muted-foreground">Note: {data.delivery_instruction}</p>
+      )}
+    </Card>
+  ) : null;
+
   return (
-    <RoleShell role="delivery" nav={NAV}>
-      <div className="space-y-4 pb-24">
-        <Link to="/delivery/dashboard" className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+    <>
+      <div className="space-y-4 px-4 pb-40 pt-3 md:px-6">
+        <Link to="/delivery/dashboard" className="press inline-flex items-center gap-1 text-small font-medium text-primary">
           <ArrowLeft className="h-4 w-4" /> Back
         </Link>
 
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-        {!isLoading && !data && <p className="text-sm text-muted-foreground">Task not found.</p>}
+        {isLoading && <div className="h-40 rounded-xl shimmer" />}
+        {!isLoading && !data && <p className="py-10 text-center text-body text-muted-foreground">Task not found.</p>}
 
         {data && data.is_parent && (
           <>
@@ -97,34 +108,13 @@ function Page() {
               }}
               onAllPickedUp={() => refetch()}
             />
-            <Card className="p-4">
-              <p className="text-xs uppercase text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Deliver to</p>
-              {(() => {
-                const addr = (data.address ?? {}) as Record<string, any>;
-                return (
-                  <>
-                    <p className="font-semibold mt-1">{addr.full_name || "Customer"}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {[addr.line1, addr.line2, addr.city, addr.pincode].filter(Boolean).join(", ")}
-                    </p>
-                    {addr.phone && (
-                      <a href={`tel:${addr.phone}`} className="mt-2 inline-flex items-center gap-1 text-sm text-primary">
-                        <Phone className="h-3 w-3" /> {addr.phone}
-                      </a>
-                    )}
-                  </>
-                );
-              })()}
-              {data.delivery_instruction && (
-                <p className="mt-2 text-xs italic text-muted-foreground">Note: {data.delivery_instruction}</p>
-              )}
-            </Card>
-            <div className="fixed bottom-20 left-0 right-0 px-4">
+            {DeliverTo}
+            <div className="bar-blur hairline-t pb-safe fixed bottom-[calc(60px+env(safe-area-inset-bottom))] left-0 right-0 z-20 p-4">
               <div className="mx-auto max-w-md">
                 {data.status === "out_for_delivery" ? (
-                  <Button className="w-full" onClick={deliver}>Mark as delivered</Button>
+                  <Button className="h-12 w-full rounded-xl" onClick={deliver}>Mark as delivered</Button>
                 ) : (
-                  <Button className="w-full" disabled variant="secondary">Complete all pickups to proceed</Button>
+                  <Button className="h-12 w-full rounded-xl" disabled variant="secondary">Complete all pickups to proceed</Button>
                 )}
               </div>
             </div>
@@ -133,77 +123,65 @@ function Page() {
 
         {data && !data.is_parent && (
           <>
-
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Order</p>
-                  <p className="font-semibold flex items-center gap-2">{data.order_number} <DeliveryTypeBadge type={data.delivery_type} size="xs" /></p>
-                </div>
-                <Badge variant="secondary">{String(data.status).replace(/_/g, " ")}</Badge>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="large-title">{data.order_number}</h1>
+                <DeliveryTypeBadge type={data.delivery_type} size="xs" />
               </div>
-              <p className="mt-2 text-sm">Total {rupees(Number(data.total))} · {data.payment_method?.toUpperCase()}</p>
-            </Card>
+              <p className="mt-1 text-small text-muted-foreground">
+                {rupees(Number(data.total))} · {data.payment_method?.toUpperCase()}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {["Accepted", "Picked up", "Delivered"].map((label, i) => (
+                <div key={label} className="flex-1">
+                  <div className={"h-1.5 rounded-full " + (i <= stepIdx ? "bg-primary" : "bg-secondary")} />
+                  <div className={"mt-1.5 text-caption font-medium " + (i <= stepIdx ? "text-foreground" : "text-muted-foreground")}>{label}</div>
+                </div>
+              ))}
+            </div>
 
             {data.shops && Number.isFinite(data.shops.latitude) && Number.isFinite(data.delivery_lat) && (
-              <RouteMap
-                points={[
-                  { lat: data.shops.latitude as number, lng: data.shops.longitude as number, label: "Shop", color: "#16a34a" },
-                  { lat: data.delivery_lat as number, lng: data.delivery_lng as number, label: "Drop", color: "#dc2626" },
-                ]}
-              />
+              <div className="overflow-hidden rounded-xl border border-border/70">
+                <RouteMap
+                  points={[
+                    { lat: data.shops.latitude as number, lng: data.shops.longitude as number, label: "Shop", color: "#16a34a" },
+                    { lat: data.delivery_lat as number, lng: data.delivery_lng as number, label: "Drop", color: "#dc2626" },
+                  ]}
+                />
+              </div>
             )}
 
             {data.shops && (
-              <Card className="p-4">
-                <p className="text-xs uppercase text-muted-foreground flex items-center gap-1"><Store className="h-3 w-3" /> Pickup from shop</p>
-                <p className="font-semibold mt-1">{data.shops.name}</p>
-                <p className="text-sm text-muted-foreground">{data.shops.address}</p>
+              <Card className="rounded-xl border-border/70 p-4 shadow-none">
+                <p className="eyebrow flex items-center gap-1.5"><Store className="h-3.5 w-3.5" /> Pickup from shop</p>
+                <p className="mt-1.5 text-body font-semibold">{data.shops.name}</p>
+                <p className="mt-0.5 text-small leading-snug text-muted-foreground">{data.shops.address}</p>
                 {data.shops.phone && (
-                  <a href={`tel:${data.shops.phone}`} className="mt-2 inline-flex items-center gap-1 text-sm text-primary">
-                    <Phone className="h-3 w-3" /> {data.shops.phone}
+                  <a href={`tel:${data.shops.phone}`} className="press mt-2.5 inline-flex h-8 items-center gap-1.5 rounded-full bg-primary-soft px-4 text-small font-semibold text-primary-ink">
+                    <Phone className="h-3.5 w-3.5" /> {data.shops.phone}
                   </a>
                 )}
               </Card>
             )}
 
-            <Card className="p-4">
-              <p className="text-xs uppercase text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Deliver to</p>
-              {(() => {
-                const addr = (data.address ?? {}) as Record<string, any>;
-                return (
-                  <>
-                    <p className="font-semibold mt-1">{addr.full_name || "Customer"}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {[addr.line1, addr.line2, addr.city, addr.pincode].filter(Boolean).join(", ")}
-                    </p>
-                    {addr.phone && (
-                      <a href={`tel:${addr.phone}`} className="mt-2 inline-flex items-center gap-1 text-sm text-primary">
-                        <Phone className="h-3 w-3" /> {addr.phone}
-                      </a>
-                    )}
-                  </>
-                );
-              })()}
-              {data.delivery_instruction && (
-                <p className="mt-2 text-xs italic text-muted-foreground">Note: {data.delivery_instruction}</p>
-              )}
-            </Card>
+            {DeliverTo}
 
-            <Card className="p-4">
-              <p className="text-xs uppercase text-muted-foreground flex items-center gap-1"><Package className="h-3 w-3" /> Items ({data.order_items?.length || 0})</p>
-              <ul className="mt-2 divide-y">
+            <Card className="overflow-hidden rounded-xl border-border/70 shadow-none">
+              <p className="eyebrow flex items-center gap-1.5 px-4 pb-1 pt-4"><Package className="h-3.5 w-3.5" /> Items ({data.order_items?.length || 0})</p>
+              <ul className="divide-y divide-border/60 px-4 pb-1">
                 {(data.order_items || []).map((it: any) => (
-                  <li key={it.id} className="flex justify-between py-2 text-sm">
-                    <span>{it.name} <span className="text-muted-foreground">× {it.quantity}</span></span>
-                    <span>{rupees(Number(it.price) * it.quantity)}</span>
+                  <li key={it.id} className="flex min-h-11 items-center justify-between gap-3 py-2 text-small">
+                    <span className="min-w-0">{it.name} <span className="text-muted-foreground">× {it.quantity}</span></span>
+                    <span className="font-medium">{rupees(Number(it.price) * it.quantity)}</span>
                   </li>
                 ))}
               </ul>
             </Card>
 
-            <Card className="p-4 space-y-2">
-              <p className="text-xs uppercase text-muted-foreground">Live status</p>
+            <Card className="space-y-3 rounded-xl border-border/70 p-4 shadow-none">
+              <h2 className="section-title">Live status</h2>
               <div className="flex flex-wrap gap-2">
                 {[
                   { k: "going_to_shop", label: "Going to shop" },
@@ -211,36 +189,36 @@ function Page() {
                   { k: "out_for_delivery", label: "Out for delivery" },
                   { k: "reached_area", label: "Reached area" },
                   { k: "delivered", label: "Delivered" },
-                ].map((s) => (
+                ].map((st) => (
                   <Button
-                    key={s.k}
+                    key={st.k}
                     size="sm"
-                    variant={s.k === "delivered" ? "default" : "secondary"}
+                    variant={st.k === "delivered" ? "default" : "secondary"}
+                    className="h-8 rounded-full px-3.5"
                     disabled={sending}
                     onClick={async () => {
                       setSending(true);
                       const { error } = await supabase.rpc("partner_update_status" as any, {
-                        _status: s.k,
+                        _status: st.k,
                         _order_id: id,
                         _eta_minutes: Number(etaMin) > 0 ? Math.min(240, Number(etaMin)) : null,
                       });
                       setSending(false);
                       if (error) return toast.error(error.message);
-                      toast.success(`Status: ${s.label}`);
-                      if (s.k === "delivered") router.navigate({ to: "/delivery/dashboard" });
+                      toast.success(`Status: ${st.label}`);
+                      if (st.k === "delivered") router.navigate({ to: "/delivery/dashboard" });
                       else refetch();
                     }}
                   >
-                    {s.label}
+                    {st.label}
                   </Button>
                 ))}
               </div>
-              <p className="text-[11px] text-muted-foreground">Updates shopkeeper, admin, and the customer for this order in real time.</p>
+              <p className="text-small text-muted-foreground">Updates the shop, admin and customer for this order in real time.</p>
             </Card>
 
-            <Card className="p-4 space-y-3">
-
-              <p className="text-xs uppercase text-muted-foreground">Notify customer</p>
+            <Card className="space-y-3 rounded-xl border-border/70 p-4 shadow-none">
+              <h2 className="section-title">Notify customer</h2>
               <div className="flex items-center gap-2">
                 <Input
                   type="number"
@@ -248,64 +226,48 @@ function Page() {
                   max={240}
                   value={etaMin}
                   onChange={(e) => setEtaMin(e.target.value)}
-                  className="w-24"
+                  className="w-20"
                 />
-                <span className="text-sm text-muted-foreground">min</span>
-                <Button
-                  size="sm"
-                  disabled={sending}
-                  onClick={() => sendUpdate("eta", Math.max(1, Number(etaMin) || 0))}
-                >
+                <span className="text-small text-muted-foreground">min</span>
+                <Button size="sm" disabled={sending} onClick={() => sendUpdate("eta", Math.max(1, Number(etaMin) || 0))}>
                   Send ETA
                 </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={sending}
-                  onClick={() => sendUpdate("delay", Math.max(1, Number(etaMin) || 0))}
-                >
-                  Traffic delay
+                <Button size="sm" variant="secondary" disabled={sending} onClick={() => sendUpdate("delay", Math.max(1, Number(etaMin) || 0))}>
+                  Delay
                 </Button>
               </div>
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={sending}
-                onClick={() => sendUpdate("nearby")}
-              >
+              <Button variant="secondary" className="w-full" disabled={sending} onClick={() => sendUpdate("nearby")}>
                 I've reached your area
               </Button>
               <div className="flex items-center gap-2">
                 <Input
-                  placeholder="Custom message to customer"
+                  placeholder="Custom message"
                   value={customMsg}
                   onChange={(e) => setCustomMsg(e.target.value)}
                   maxLength={240}
                 />
-                <Button
-                  size="sm"
-                  disabled={sending || !customMsg.trim()}
-                  onClick={() => sendUpdate("custom", undefined, customMsg.trim())}
-                >
+                <Button size="sm" disabled={sending || !customMsg.trim()} onClick={() => sendUpdate("custom", undefined, customMsg.trim())}>
                   Send
                 </Button>
               </div>
-              <p className="text-[11px] text-muted-foreground">Only the customer for this order receives this notification.</p>
+              <p className="text-small text-muted-foreground">Only the customer for this order is notified.</p>
             </Card>
 
-            <div className="fixed bottom-20 left-0 right-0 px-4">
-              <div className="mx-auto max-w-md flex gap-2">
-                {data.status === "packed" && (
-                  <Button className="flex-1" onClick={pickUp}>Mark as picked up</Button>
-                )}
-                {data.status === "out_for_delivery" && (
-                  <Button className="flex-1" onClick={deliver}>Mark as delivered</Button>
-                )}
+            {(data.status === "packed" || data.status === "out_for_delivery") && (
+              <div className="bar-blur hairline-t pb-safe fixed bottom-[calc(60px+env(safe-area-inset-bottom))] left-0 right-0 z-20 p-4">
+                <div className="mx-auto flex max-w-md gap-2">
+                  {data.status === "packed" && (
+                    <Button className="h-12 flex-1 rounded-xl" onClick={pickUp}>Mark as picked up</Button>
+                  )}
+                  {data.status === "out_for_delivery" && (
+                    <Button className="h-12 flex-1 rounded-xl" onClick={deliver}>Mark as delivered</Button>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </>
         )}
       </div>
-    </RoleShell>
+    </>
   );
 }

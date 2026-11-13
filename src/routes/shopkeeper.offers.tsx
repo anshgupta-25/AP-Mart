@@ -27,11 +27,11 @@ function ShopkeeperOffersPage() {
   });
 
   return (
-    <div className="p-4 max-w-3xl mx-auto">
+    <div className="mx-auto max-w-6xl space-y-5 px-4 py-4 md:px-6">
       {shop.isLoading ? (
-        <Skeleton className="h-40 rounded-2xl" />
+        <Skeleton className="h-40 rounded-xl" />
       ) : !shop.data ? (
-        <div className="text-center py-12 rounded-2xl border border-dashed border-border text-sm text-muted-foreground">
+        <div className="rounded-xl bg-card px-6 py-12 text-center text-body text-muted-foreground border border-border/70">
           You don't have a shop assigned yet. Contact an admin to set one up.
         </div>
       ) : (

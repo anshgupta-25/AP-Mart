@@ -2,8 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { RoleShell } from "@/components/RoleShell";
-import { ADMIN_NAV } from "./admin.dashboard";
 import { Phone, MapPin, Store, User, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,18 +9,14 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/complaints")({
   head: () => ({ meta: [{ title: "Complaints — AP Mart Admin" }] }),
-  component: () => (
-    <RoleShell role="admin" nav={ADMIN_NAV} requireRoles={["admin"]}>
-      <Page />
-    </RoleShell>
-  ),
+  component: Page,
 });
 
 const STATUS_TONE: Record<string, string> = {
-  open: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300",
-  assigned: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
-  in_progress: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
-  resolved: "bg-green-500/15 text-green-700 dark:text-green-300",
+  open: "bg-tint-sun text-[oklch(0.45_0.1_75)]",
+  assigned: "bg-tint-sky text-[oklch(0.42_0.1_235)]",
+  in_progress: "bg-tint-sky text-[oklch(0.42_0.1_235)]",
+  resolved: "bg-primary-soft text-primary-ink",
   closed: "bg-muted text-muted-foreground",
 };
 
@@ -52,39 +46,40 @@ function Page() {
   });
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <div className="mx-auto w-full max-w-5xl space-y-5 px-4 py-4 md:px-6 md:py-6">
       <div>
-        <h1 className="font-display text-3xl font-extrabold">Complaints</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <h1 className="large-title">Complaints</h1>
+        <p className="mt-0.5 text-meta text-muted-foreground">
           Help & Support tickets raised by customers and shopkeepers.
         </p>
       </div>
 
       {isLoading ? (
-        <div className="text-sm text-muted-foreground">Loading…</div>
+        <div className="space-y-3">{[0, 1].map((i) => <div key={i} className="h-40 rounded-xl shimmer" />)}</div>
       ) : (data ?? []).length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
-          No complaints yet.
+        <div className="rounded-xl border border-border/70 bg-card px-6 py-10 text-center">
+          <div className="text-subtitle font-semibold">No complaints</div>
+          <p className="mt-0.5 text-meta text-muted-foreground">Tickets raised by customers and shopkeepers will appear here.</p>
         </div>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-3 md:gap-4">
           {data!.map((t) => (
             <article
               key={t.id}
-              className="rounded-2xl border border-border bg-card p-4 space-y-3"
+              className="space-y-4 rounded-xl border border-border/70 bg-card p-4"
             >
               <header className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-base truncate">{t.title}</span>
-                    <span className={`text-[10px] uppercase rounded-full px-2 py-0.5 font-bold ${STATUS_TONE[t.status] ?? "bg-secondary"}`}>
+                    <span className="truncate text-subtitle font-semibold">{t.title}</span>
+                    <span className={`rounded-full px-2.5 py-0.5 text-caption font-semibold capitalize ${STATUS_TONE[t.status] ?? "bg-secondary"}`}>
                       {t.status.replace(/_/g, " ")}
                     </span>
-                    <span className="text-[10px] uppercase rounded-full bg-secondary px-2 py-0.5 font-bold">
+                    <span className="rounded-full bg-secondary px-2.5 py-0.5 text-caption font-medium capitalize text-muted-foreground">
                       {t.role_at_creation}
                     </span>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
+                  <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-small text-muted-foreground">
                     <span>{t.ticket_number}</span>·
                     <span>{t.category.replace(/_/g, " ")}</span>·
                     <span>{new Date(t.created_at).toLocaleString()}</span>
@@ -97,16 +92,16 @@ function Page() {
                 </div>
               </header>
 
-              <p className="text-sm text-foreground/90 whitespace-pre-wrap">
+              <p className="whitespace-pre-wrap text-body leading-relaxed text-foreground/90">
                 {t.description}
               </p>
 
-              <div className="grid sm:grid-cols-2 gap-2 text-xs">
-                <div className="rounded-xl bg-secondary/40 p-3 space-y-1">
-                  <div className="font-bold uppercase text-[10px] text-muted-foreground flex items-center gap-1">
+              <div className="grid gap-3 text-meta sm:grid-cols-2">
+                <div className="space-y-1 rounded-xl bg-secondary/70 p-3.5">
+                  <div className="eyebrow flex items-center gap-1">
                     <User className="h-3 w-3" /> Raised by
                   </div>
-                  <div className="font-semibold">{t.full_name || "—"}</div>
+                  <div className="font-medium">{t.full_name || "—"}</div>
                   {t.phone && (
                     <a href={`tel:${t.phone}`} className="flex items-center gap-1 text-primary">
                       <Phone className="h-3 w-3" /> {t.phone}
@@ -123,11 +118,11 @@ function Page() {
                 </div>
 
                 {t.role_at_creation === "shopkeeper" && (t.shop_name || t.shop_address) && (
-                  <div className="rounded-xl bg-secondary/40 p-3 space-y-1">
-                    <div className="font-bold uppercase text-[10px] text-muted-foreground flex items-center gap-1">
+                  <div className="space-y-1 rounded-xl bg-secondary/70 p-3.5">
+                    <div className="eyebrow flex items-center gap-1">
                       <Store className="h-3 w-3" /> Shop
                     </div>
-                    <div className="font-semibold">{t.shop_name || "—"}</div>
+                    <div className="font-medium">{t.shop_name || "—"}</div>
                     {t.shop_phone && (
                       <a href={`tel:${t.shop_phone}`} className="flex items-center gap-1 text-primary">
                         <Phone className="h-3 w-3" /> {t.shop_phone}
@@ -171,20 +166,18 @@ function ResolveButton({ ticketId, onDone }: { ticketId: string; onDone: () => v
 
   if (!open) {
     return (
-      <Button size="sm" onClick={() => setOpen(true)}
-        className="h-8 bg-green-600 hover:bg-green-700 text-white text-xs font-bold gap-1">
+      <Button size="sm" onClick={() => setOpen(true)} className="gap-1">
         <CheckCircle2 className="h-3.5 w-3.5" /> Resolve
       </Button>
     );
   }
   return (
-    <div className="w-full mt-2 space-y-2 rounded-xl border border-green-500/30 bg-green-500/5 p-3">
+    <div className="mt-2 w-full space-y-2 rounded-xl bg-primary-soft p-3">
       <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)}
         placeholder="Resolution notes (optional) — sent to user" />
       <div className="flex justify-end gap-2">
         <Button size="sm" variant="ghost" onClick={() => { setOpen(false); setNotes(""); }}>Cancel</Button>
-        <Button size="sm" onClick={resolve} disabled={busy}
-          className="bg-green-600 hover:bg-green-700 text-white gap-1">
+        <Button size="sm" onClick={resolve} disabled={busy} className="gap-1">
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
           Mark resolved
         </Button>
