@@ -177,30 +177,17 @@ function ProductsPage() {
         </div>
 
         <div className="px-4 pb-24 pt-3 md:px-0 md:pb-10 md:pt-5">
-          <div className="mb-3 flex items-center justify-between gap-3">
+          {/* Results bar: title and count on the left, Filters (which includes sorting) on the right */}
+          <div className="mb-4 flex items-center justify-between gap-4">
             <div className="min-w-0">
               <h1 className="truncate text-subtitle font-bold leading-tight">{title}</h1>
               {products.data && (
-                <p className="mt-0.5 text-small text-muted-foreground">
-                  {products.data.length} items
+                <p className="mt-1 whitespace-nowrap text-small text-muted-foreground">
+                  {products.data.length} {products.data.length === 1 ? "item" : "items"}
                 </p>
               )}
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <CatalogFilterButton value={params} onApply={setParams} />
-              <select
-                value={sort}
-                onChange={(e) => setParams({ ...params, sort: e.target.value as CatalogSort })}
-                aria-label="Sort products"
-                className="h-8 shrink-0 rounded-full border border-border/70 bg-card px-3 text-small font-medium outline-none"
-              >
-                <option value="relevance">Relevance</option>
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
-                <option value="rating">Top rated</option>
-                <option value="discount">Best discount</option>
-              </select>
-            </div>
+            <CatalogFilterButton value={params} onApply={setParams} />
           </div>
 
           {!products.data ? (
