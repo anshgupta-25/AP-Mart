@@ -42,13 +42,18 @@ export function GoogleSignInButton({ next }: { next?: string }) {
 }
 
 function NativeGoogleButton({ next }: { next?: string }) {
+  const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const start = async () => {
     setBusy(true);
     if (next) sessionStorage.setItem("flashbasket.auth.next", next);
     const { error } = await signInWithGoogleNative();
     setBusy(false);
-    if (error) toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    navigate({ to: "/auth/callback", replace: true });
   };
   return (
     <button

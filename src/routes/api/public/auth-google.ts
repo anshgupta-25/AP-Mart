@@ -49,24 +49,31 @@ async function handle(request: Request): Promise<Response> {
     // registered by someone else with a password they chose. Google has just
     // proven ownership of the address, so replace that password before the
     // account is confirmed by the magic link below.
-    for (let page = 1; page <= 10; page++) {
-      const { data: list, error: listErr } = await supabaseAdmin.auth.admin.listUsers({
-        page,
-        perPage: 1000,
+    let existingUser: { id: string; email_confirmed_at?: string | null } | null = null;
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .eq("email", identity.email)
+      .maybeSingle();
+
+    if (profile?.id) {
+      const { data: u } = await supabaseAdmin.auth.admin.getUserById(profile.id);
+      if (u?.user) existingUser = u.user;
+    }
+
+    if (!existingUser) {
+      // Fallback check in case a profile record has not been created yet
+      const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 100 });
+      existingUser =
+        list?.users?.find((u) => (u.email ?? "").toLowerCase() === identity.email) ?? null;
+    }
+
+    if (existingUser && !existingUser.email_confirmed_at) {
+      const { error: resetErr } = await supabaseAdmin.auth.admin.updateUserById(existingUser.id, {
+        password: crypto.randomUUID() + crypto.randomUUID(),
+        email_confirm: true,
       });
-      if (listErr) throw listErr;
-      const existing = list.users.find((u) => (u.email ?? "").toLowerCase() === identity.email);
-      if (existing) {
-        if (!existing.email_confirmed_at) {
-          const { error: resetErr } = await supabaseAdmin.auth.admin.updateUserById(existing.id, {
-            password: crypto.randomUUID() + crypto.randomUUID(),
-            email_confirm: true,
-          });
-          if (resetErr) throw resetErr;
-        }
-        break;
-      }
-      if (list.users.length < 1000) break;
+      if (resetErr) throw resetErr;
     }
 
     // generateLink(magiclink) creates the user if missing and returns a token we can redeem.
