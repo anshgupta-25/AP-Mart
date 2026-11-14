@@ -48,8 +48,9 @@ const QUICK_PICKS = [
   { key: "stock", label: "In stock", icon: PackageCheck, search: { stock: true } },
 ];
 
-/** Height of the sticky search bar (h-10 field + py-2.5). */
+/** Pinned top block under the storefront header: search bar (h-10 + py-2.5) + quick-picks row. */
 const SEARCH_BAR_H = 60;
+const QUICK_ROW_H = 56;
 
 type Category = { id: string; slug: string; name: string; icon: string | null };
 
@@ -58,7 +59,19 @@ function CategoriesBrowse() {
   const navigate = useNavigate();
   const headerH = useHeaderOffset();
   const [query, setQuery] = useState(qParam ?? "");
-  const panelTop = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  const railRef = useRef<HTMLElement>(null);
+  const [tabH, setTabH] = useState(0);
+
+  // Height of the fixed bottom tab bar (0 on desktop, where it is hidden), so the two columns
+  // can fill exactly the space between the pinned top and the tab bar.
+  useEffect(() => {
+    const el = document.querySelector("nav.fixed.bottom-0") as HTMLElement | null;
+    const measure = () => setTabH(el ? Math.round(el.getBoundingClientRect().height) : 0);
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
 
   const categories = useQuery({
     queryKey: ["cats-browse"],
@@ -148,28 +161,34 @@ function CategoriesBrowse() {
     navigate({ to: "/customer/categories", search: { c: slug }, replace: true });
   };
 
-  // Switching category brings the panel back to its top.
+  // Switching category scrolls the panel back to its top and keeps the chosen category
+  // visible in the rail (also when arriving with ?c=...).
   useEffect(() => {
-    const el = panelTop.current;
-    if (!el) return;
-    const top = el.getBoundingClientRect().top + window.scrollY - headerH - SEARCH_BAR_H;
-    if (window.scrollY > top) window.scrollTo({ top, behavior: "smooth" });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the category changes
-  }, [selected?.id]);
+    panelRef.current?.scrollTo({ top: 0 });
+    railRef.current
+      ?.querySelector('[aria-current="true"]')
+      ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [selected?.id, all.length]);
 
   const onSubmitSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) navigate({ to: "/products", search: { q: query.trim() } });
   };
 
-  const stickyTop = headerH + SEARCH_BAR_H;
+  // Browse mode is a fixed-height, two-column layout: no page scroll, no dead space.
+  const browseH = `calc(100dvh - ${headerH + SEARCH_BAR_H + QUICK_ROW_H}px - ${tabH}px)`;
   const loading = categories.isLoading || subs.isLoading;
   const count = selected ? (counts.data?.[selected.id] ?? 0) : 0;
 
   return (
-    <div>
+    // The storefront shell pads the bottom for the tab bar (pb-36 / md:pb-10). In browse mode the
+    // columns already stop at the tab bar, so cancel that padding instead of leaving blank space.
+    <div className={cn(!searching && "-mb-36 md:-mb-10")}>
       {/* Search (pinned below the storefront header) */}
-      <div style={{ top: headerH }} className="hairline-b sticky z-30 bg-tint-mint px-4 py-2.5">
+      <div
+        style={{ top: headerH }}
+        className={cn("sticky z-30 bg-tint-mint px-4 py-2.5", searching ? "hairline-b" : "")}
+      >
         <form
           onSubmit={onSubmitSearch}
           className="flex h-10 items-center gap-2.5 rounded-xl bg-card px-3.5 shadow-soft"
@@ -204,7 +223,7 @@ function CategoriesBrowse() {
       ) : (
         <>
           {/* Quick picks: one slim row of real shortcuts */}
-          <div className="scrollbar-hide flex scroll-px-4 gap-2 overflow-x-auto px-4 pb-3 pt-3.5">
+          <div className="scrollbar-hide flex h-14 scroll-px-4 items-center gap-2 overflow-x-auto px-4">
             {QUICK_PICKS.map((p) => {
               const Icon = p.icon;
               return (
@@ -250,14 +269,12 @@ function CategoriesBrowse() {
               No categories yet.
             </p>
           ) : (
-            <div className="flex items-start border-t border-border/50">
-              {/* Left rail: every category, listed once. Its height leaves room for the
-                  shell's bottom padding (tab bar + floating cart bar: pb-36 / md:pb-10), so it
-                  stays fully visible and pinned at any scroll position. */}
+            <div style={{ height: browseH }} className="flex border-t border-border/50">
+              {/* Left rail: every category, listed once. Scrolls on its own. */}
               <nav
+                ref={railRef}
                 aria-label="Categories"
-                style={{ top: stickyTop, height: `calc(100dvh - ${stickyTop}px - var(--tabbar))` }}
-                className="scrollbar-hide sticky w-[84px] shrink-0 overflow-y-auto border-r border-border/50 bg-card pb-4 [--tabbar:144px] md:w-[120px] md:[--tabbar:40px]"
+                className="scrollbar-hide h-full w-[84px] shrink-0 overflow-y-auto overscroll-contain border-r border-border/50 bg-card pb-20 md:w-[120px]"
               >
                 {all.map((c) => {
                   const on = c.id === selected.id;
@@ -268,7 +285,7 @@ function CategoriesBrowse() {
                       onClick={() => selectCategory(c.slug)}
                       aria-current={on ? "true" : undefined}
                       className={cn(
-                        "relative flex w-full flex-col items-center gap-1.5 px-1.5 py-3 text-center transition-colors",
+                        "relative flex w-full flex-col items-center gap-1.5 px-1.5 py-2.5 text-center transition-colors",
                         on ? "bg-primary-soft/60" : "hover:bg-secondary/60",
                       )}
                     >
@@ -298,77 +315,67 @@ function CategoriesBrowse() {
                 })}
               </nav>
 
-              {/* Right panel: the selected category */}
-              <section ref={panelTop} className="min-w-0 flex-1 px-4 pb-6 pt-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h1 className="text-[19px] font-semibold leading-tight tracking-[-0.02em]">
-                      {selected.name}
-                    </h1>
-                    <p className="mt-0.5 text-caption text-muted-foreground">
-                      {counts.isFetched
-                        ? count > 0
-                          ? `${count} product${count === 1 ? "" : "s"} near you`
-                          : "No products near you yet"
-                        : "Checking shops near you…"}
-                    </p>
-                  </div>
-                  <Link
-                    to="/category/$slug"
-                    params={{ slug: selected.slug }}
-                    className="press inline-flex shrink-0 items-center gap-0.5 rounded-full bg-primary-soft px-3 py-1.5 text-caption font-semibold text-primary-ink"
-                  >
-                    View all <ChevronRight className="h-3.5 w-3.5" />
-                  </Link>
-                </div>
+              {/* Right panel: the selected category. Scrolls on its own. */}
+              <section
+                ref={panelRef}
+                className="h-full min-w-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-24 pt-4"
+              >
+                <h1 className="text-[19px] font-semibold leading-tight tracking-[-0.02em]">
+                  {selected.name}
+                </h1>
+                <p className="mt-1 text-caption text-muted-foreground">
+                  {counts.isFetched
+                    ? count > 0
+                      ? `${count} product${count === 1 ? "" : "s"} near you`
+                      : "No products near you yet"
+                    : "Checking shops near you…"}
+                </p>
+                <Link
+                  to="/category/$slug"
+                  params={{ slug: selected.slug }}
+                  className="press mt-3.5 flex h-10 items-center justify-between rounded-xl bg-primary-soft px-3.5 text-meta font-semibold text-primary-ink"
+                >
+                  View all products
+                  <ChevronRight className="h-4 w-4 shrink-0" />
+                </Link>
 
                 {selectedSubs.length > 0 ? (
-                  <div className="mt-5 grid grid-cols-3 gap-x-3 gap-y-5 md:grid-cols-5 lg:grid-cols-6">
-                    {selectedSubs.map((s) => (
-                      <Link
-                        key={s.id}
-                        to="/category/$slug"
-                        params={{ slug: selected.slug }}
-                        search={{ sub: s.id } as never}
-                        className="press flex flex-col items-center gap-2"
-                      >
-                        <div className="grid aspect-square w-full place-items-center overflow-hidden rounded-2xl bg-tint-mint ring-1 ring-black/5">
-                          {s.image_url ? (
-                            <ProductImage
-                              src={s.image_url}
-                              alt={s.name}
-                              fit="cover"
-                              className="h-full w-full bg-transparent"
-                            />
-                          ) : (
-                            <span className="text-[30px]">{s.icon ?? selected.icon ?? "🛍️"}</span>
-                          )}
-                        </div>
-                        <span className="line-clamp-2 text-center text-caption font-medium leading-[14px]">
-                          {s.name}
-                        </span>
-                      </Link>
-                    ))}
-                  </div>
+                  <>
+                    <h2 className="mb-3 mt-6 text-caption font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                      Shop by type
+                    </h2>
+                    <div className="grid grid-cols-3 gap-x-3 gap-y-5 md:grid-cols-5 lg:grid-cols-6">
+                      {selectedSubs.map((s) => (
+                        <Link
+                          key={s.id}
+                          to="/category/$slug"
+                          params={{ slug: selected.slug }}
+                          search={{ sub: s.id } as never}
+                          className="press flex flex-col items-center gap-2"
+                        >
+                          <div className="grid aspect-square w-full place-items-center overflow-hidden rounded-2xl bg-tint-mint ring-1 ring-black/5">
+                            {s.image_url ? (
+                              <ProductImage
+                                src={s.image_url}
+                                alt={s.name}
+                                fit="cover"
+                                className="h-full w-full bg-transparent"
+                              />
+                            ) : (
+                              <span className="text-[30px]">{s.icon ?? selected.icon ?? "🛍️"}</span>
+                            )}
+                          </div>
+                          <span className="line-clamp-2 text-center text-caption font-medium leading-[14px]">
+                            {s.name}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </>
                 ) : (
-                  <Link
-                    to="/category/$slug"
-                    params={{ slug: selected.slug }}
-                    className="press mt-5 flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-4"
-                  >
-                    <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-tint-mint text-[24px]">
-                      {selected.icon ?? "🛍️"}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-body font-semibold">
-                        Browse all {selected.name}
-                      </span>
-                      <span className="block text-caption text-muted-foreground">
-                        See every product in this category
-                      </span>
-                    </span>
-                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  </Link>
+                  <p className="mt-6 text-center text-caption text-muted-foreground">
+                    No subcategories yet. Tap the button above to see everything in {selected.name}.
+                  </p>
                 )}
               </section>
             </div>
