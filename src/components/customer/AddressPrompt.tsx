@@ -14,12 +14,13 @@ import { dismissAddressPrompt, isAddressPromptDismissed } from "@/lib/addressPro
  * Checkout still requires an address.
  */
 function useNeedsAddress() {
-  const { user, roles } = useAuth();
+  const { user, roles, rolesLoading } = useAuth();
   const { hasAddress, ready } = useDeliveryContext();
   // Shopkeeper and delivery accounts are redirected out of the storefront; never prompt them.
+  // Wait for roles to load: until then `roles` is [] and staff would look like customers.
   const r: string[] = roles ?? [];
   const staff = r.includes("shopkeeper") || r.includes("delivery");
-  return { user, needsAddress: !!user && !staff && ready && !hasAddress };
+  return { user, needsAddress: !!user && !rolesLoading && !staff && ready && !hasAddress };
 }
 
 export function AddressPromptSheet() {
