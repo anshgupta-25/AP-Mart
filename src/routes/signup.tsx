@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/SearchableSelect";
-import { useAuth } from "@/hooks/useAuth";
 import { useLocations, deriveLocationOptions } from "@/hooks/useLocations";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+import { VerifyEmailScreen } from "@/components/auth/VerifyEmailStep";
+import { requestSignupCode, type SignupDetails } from "@/lib/authEmail";
 import { toast } from "sonner";
-import { describeAuthError } from "@/lib/authErrors";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { errorMessage } from "@/lib/utils";
 
@@ -22,7 +22,6 @@ export const Route = createFileRoute("/signup")({
 });
 
 function SignupPage() {
-  const { signUp } = useAuth();
   const navigate = useNavigate();
   const { next } = Route.useSearch();
 
@@ -35,6 +34,7 @@ function SignupPage() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [pending, setPending] = useState<SignupDetails | null>(null);
 
   const locationsQ = useLocations();
   const { states, citiesByState, pincodesByCity } = useMemo(
@@ -55,19 +55,34 @@ function SignupPage() {
     if (!city) return toast.error("Please select your city");
     if (!pincode) return toast.error("Please select your PIN code");
 
-    setSubmitting(true);
-    const { error } = await signUp(email, password, fullName, `+${digits}`, {
+    if (password.length < 8) return toast.error("Password must be at least 8 characters");
+
+    const details: SignupDetails = {
+      email: email.trim().toLowerCase(),
+      password,
+      fullName: fullName.trim(),
+      phone: `+${digits}`,
       state,
       city,
       pincode,
-    });
+    };
+    setSubmitting(true);
+    const { exists, error } = await requestSignupCode(details); // throttled = code already sent
     setSubmitting(false);
-    if (error) {
-      toast.error(describeAuthError(error));
+    if (exists) {
+      toast.error("An account with this email already exists. Log in or reset your password.");
       return;
     }
-    toast.success("Account created. Check your email to verify, then sign in.");
-    navigate({ to: "/login", search: { next } as never });
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    setPending(details);
+  }
+
+  // Step 2: enter the emailed code (or tap the link in the email).
+  if (pending) {
+    return <VerifyEmailScreen details={pending} next={next} onBack={() => setPending(null)} />;
   }
 
   return (
@@ -166,12 +181,15 @@ function SignupPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-meta font-medium">Password</Label>
+              <div className="flex items-baseline justify-between">
+                <Label className="text-meta font-medium">Password</Label>
+                <span className="text-small text-muted-foreground">at least 8 characters</span>
+              </div>
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
                   required
-                  minLength={6}
+                  minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="h-11 pr-11"

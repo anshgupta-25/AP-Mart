@@ -1,5 +1,4 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { requestPasswordReset } from "@/lib/passwordReset";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -159,12 +158,11 @@ function StaffLoginPage() {
     navigate({ to: target });
   }
 
-  async function handleForgot() {
-    const target = email || window.prompt("Enter your email to receive a reset link") || "";
-    if (!target) return;
-    const { error } = await requestPasswordReset(target);
-    if (error) toast.error(error);
-    else toast.success("If an account exists for that email, a reset link has been sent.");
+  function handleForgot() {
+    navigate({
+      to: "/forgot-password",
+      search: { ...(email ? { email } : {}), staff: true } as never,
+    });
   }
 
   return (
