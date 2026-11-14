@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { bootstrapSuperAdminImpl } from "@/lib/superadmin.functions";
+import { bootstrapSuperAdminImpl } from "@/lib/superadmin.server";
 
 /**
  * One-time Super Admin provisioning endpoint.

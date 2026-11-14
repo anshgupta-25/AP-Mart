@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { requestPasswordReset } from "@/lib/passwordReset";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { describeAuthError } from "@/lib/authErrors";
 import { cn } from "@/lib/utils";
-import { publicSiteOrigin } from "@/lib/api-base";
 
 export const Route = createFileRoute("/staff-login")({
   head: () => ({ meta: [{ title: "Management Portal — AP Mart" }] }),
@@ -162,11 +162,9 @@ function StaffLoginPage() {
   async function handleForgot() {
     const target = email || window.prompt("Enter your email to receive a reset link") || "";
     if (!target) return;
-    const { error } = await supabase.auth.resetPasswordForEmail(target, {
-      redirectTo: publicSiteOrigin() + "/reset-password",
-    });
-    if (error) toast.error(error.message);
-    else toast.success("Password reset link sent — check your inbox");
+    const { error } = await requestPasswordReset(target);
+    if (error) toast.error(error);
+    else toast.success("If an account exists for that email, a reset link has been sent.");
   }
 
   return (

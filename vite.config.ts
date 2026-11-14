@@ -68,8 +68,10 @@ export default defineConfig(({ mode }) => {
           client: { files: ["**/*.server.*", "**/server/**"], specifiers: ["server-only"] },
         },
       }),
-      // Self-hosted Node server: `npm run build` then `npm start`.
-      nitro({ preset: "node-server" }),
+      // Self-hosted Node server or Vercel serverless functions based on environment.
+      nitro({
+        preset: process.env.NITRO_PRESET || (process.env.VERCEL ? "vercel" : "node-server"),
+      }),
       viteReact(),
     ],
   };

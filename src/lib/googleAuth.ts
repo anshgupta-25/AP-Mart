@@ -1,99 +1,76 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Capacitor } from "@capacitor/core";
-import { createClient, type User } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
+import { registerPlugin } from "@capacitor/core";
+import { toApiUrl } from "@/lib/api-base";
 import type { TablesUpdate } from "@/integrations/supabase/types";
 
-// Deep link the Android app registers (AndroidManifest.xml). Must also be in
-// Supabase > Authentication > URL Configuration > Redirect URLs.
-export const NATIVE_AUTH_CALLBACK = "com.apmart.app://auth/callback";
+interface NativeGoogleAuthPlugin {
+  signIn(options: {
+    clientId: string;
+  }): Promise<{ idToken: string; email?: string; name?: string }>;
+}
 
-let pkceClient: ReturnType<typeof createClient> | undefined;
+const NativeGoogleAuth = registerPlugin<NativeGoogleAuthPlugin>("GoogleAuth");
 
 /**
- * PKCE-mode auth client used only to start Google sign-in in the app. It shares
- * the main client's storage + storage key, so the code verifier it saves is
- * found by `supabase.auth.exchangeCodeForSession(code)` on /auth/callback.
- * PKCE means the deep link only carries a one-time code that is useless without
- * the verifier kept on this device (no tokens in a custom-scheme URL, and a
- * code minted elsewhere cannot be exchanged here).
+ * Google sign-in for the Android app (Capacitor). Uses Android's Google Play Services
+ * to display the native account chooser bottom-sheet directly inside the app
+ * (showing "AP Mart" with zero browser redirect and zero third-party domain).
+ * Returns the Google ID token and verifies it through the same server endpoint
+ * as the Web GIS button.
  */
-function nativePkceClient() {
-  pkceClient ??= createClient(
-    import.meta.env.VITE_SUPABASE_URL as string,
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string,
-    {
-      auth: {
-        flowType: "pkce",
-        storage: localStorage,
-        persistSession: true,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-      },
-    },
-  );
-  return pkceClient;
+export async function signInWithGoogleNative(): Promise<{
+  error: Error | null;
+  cancelled?: boolean;
+}> {
+  try {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+    if (!clientId) {
+      return { error: new Error("Google Client ID is not configured.") };
+    }
+    const result = await NativeGoogleAuth.signIn({ clientId });
+    if (!result?.idToken) {
+      return { error: new Error("No ID token returned from Google.") };
+    }
+    return await signInWithGoogleCredential(result.idToken);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/cancel/i.test(msg)) {
+      return { error: null, cancelled: true }; // User closed the account picker
+    }
+    return { error: new Error(msg || "Google sign-in failed.") };
+  }
 }
 
 /**
- * Initiates Google OAuth using Supabase client.
- * Redirects to /auth/callback to handle session establishment and profile persistence.
+ * Exchanges a Google Identity Services ID token for an application session.
+ * The server verifies the token (signature, issuer, audience, expiry) and
+ * returns a one-time token hash, which Supabase redeems into a normal session.
+ * Supabase's Google OAuth provider is not involved.
  */
-export async function signInWithGoogle(redirectPath = "/auth/callback"): Promise<{
+export async function signInWithGoogleCredential(credential: string): Promise<{
   error: Error | null;
-  redirected?: boolean;
 }> {
   try {
-    // Google blocks sign-in inside embedded WebViews ("disallowed_useragent"),
-    // so the app opens it in the system browser and returns via deep link.
-    if (Capacitor.isNativePlatform()) {
-      const { data, error } = await nativePkceClient().auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: NATIVE_AUTH_CALLBACK,
-          skipBrowserRedirect: true,
-          queryParams: { prompt: "select_account" },
-        },
-      });
-      if (error || !data?.url)
-        return { error: error ?? new Error("No sign-in URL"), redirected: false };
-      const { Browser } = await import("@capacitor/browser");
-      // Wait until the browser closes (signed in via deep link, or the user
-      // backed out) so the caller can stop its loading spinner.
-      let onClosed!: () => void;
-      const closed = new Promise<void>((resolve) => (onClosed = resolve));
-      const handle = await Browser.addListener("browserFinished", () => onClosed());
-      await Browser.open({ url: data.url });
-      await closed;
-      await handle.remove();
-      return { error: null, redirected: false };
-    }
-
-    const normalizedPath = redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`;
-    const redirectTo = `${window.location.origin}${normalizedPath}`;
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo,
-        queryParams: {
-          prompt: "select_account",
-        },
-      },
+    const res = await fetch(toApiUrl("/api/public/auth-google"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ credential }),
     });
-
-    if (error) {
-      return { error, redirected: false };
+    const body = (await res.json().catch(() => ({}))) as { token_hash?: string; error?: string };
+    if (!res.ok || !body.token_hash) {
+      return { error: new Error(body.error || "Google sign-in failed") };
     }
-
-    return { error: null, redirected: true };
+    // "email" redeems both cases: generateLink(magiclink) issues a "signup" token for a
+    // brand-new user and a "magiclink" token for an existing one. Verifying as
+    // "magiclink" rejects the new-user token, so a first Google sign-in would fail.
+    const { error } = await supabase.auth.verifyOtp({
+      token_hash: body.token_hash,
+      type: "email",
+    });
+    return { error };
   } catch (err) {
-    return {
-      error:
-        err instanceof Error
-          ? err
-          : new Error(String(err) || "Failed to initialize Google sign-in"),
-      redirected: false,
-    };
+    return { error: err instanceof Error ? err : new Error("Google sign-in failed") };
   }
 }
 

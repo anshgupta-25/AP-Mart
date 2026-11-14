@@ -30,27 +30,60 @@ function ResetPasswordPage() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
 
-  useEffect(() => {
-    // Supabase delivers the recovery token in the URL hash and exchanges it for a
-    // short-lived session. Only that recovery session may set a new password.
-    const hash = window.location.hash ?? "";
-    const isRecovery = hash.includes("type=recovery");
+  const [linkError, setLinkError] = useState<string | null>(null);
 
+  useEffect(() => {
+    // Supabase puts either a recovery token (type=recovery) or an error
+    // (error_code=otp_expired, access_denied…) in the URL hash/query.
+    const params = new URLSearchParams(window.location.search);
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const get = (k: string) => hash.get(k) ?? params.get(k);
+    const errCode = get("error_code") ?? get("error");
+    if (errCode) {
+      const expired = /expired|otp_expired/i.test(`${errCode} ${get("error_description") ?? ""}`);
+      console.error("[ResetPassword] recovery link error:", errCode, get("error_description"));
+      setLinkError(
+        expired
+          ? "This reset link has expired. Request a new one from the sign-in screen."
+          : "This reset link is invalid or has already been used. Request a new one.",
+      );
+      setReady(true);
+      return;
+    }
+
+    let settled = false;
+    const accept = () => {
+      settled = true;
+      setValid(true);
+      setReady(true);
+    };
+
+    // The Supabase client consumes the link (hash token or ?code=) on its own and
+    // emits PASSWORD_RECOVERY. That can happen before this page mounts, so also
+    // accept the recovery session it already created.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY" || (isRecovery && session)) {
-        setValid(true);
-        setReady(true);
-      }
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") accept();
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session && (isRecovery || true)) setValid(!!session);
-      setReady(true);
-    });
+    const check = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) accept();
+    };
+    void check();
 
-    return () => subscription.unsubscribe();
+    // No session after the client has had time to process the link → invalid link.
+    const timer = window.setTimeout(async () => {
+      if (settled) return;
+      await check();
+      if (!settled) setReady(true);
+    }, 2500);
+
+    return () => {
+      window.clearTimeout(timer);
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -60,7 +93,10 @@ function ResetPasswordPage() {
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
-    if (error) return toast.error(error.message || "Could not update your password");
+    if (error) {
+      console.error("[ResetPassword] updateUser failed:", error.message);
+      return toast.error(error.message || "Could not update your password");
+    }
     setDone(true);
     toast.success("Password updated");
     // Force a clean sign-in with the new credentials.
@@ -88,8 +124,8 @@ function ResetPasswordPage() {
             <div className="mt-6 text-center space-y-4">
               <ShieldAlert className="mx-auto h-9 w-9 text-warning-foreground" />
               <p className="text-sm text-muted-foreground">
-                This reset link is invalid or has expired. Request a new one from the sign-in
-                screen.
+                {linkError ??
+                  "This reset link is invalid or has expired. Request a new one from the sign-in screen."}
               </p>
               <Button asChild className="h-11 w-full rounded-xl">
                 <Link to="/login">Back to sign in</Link>
