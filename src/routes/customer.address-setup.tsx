@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MapPin, Crosshair, PencilLine, Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useDeliveryContext } from "@/hooks/useDeliveryContext";
+import { dismissAddressPrompt } from "@/lib/addressPrompt";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,11 +60,13 @@ function AddressSetupPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { hasAddress, refresh } = useDeliveryContext();
-  const search = useRouterState({ select: (s) => s.location.search as { next?: string } });
+  const search = useRouterState({
+    select: (s) => s.location.search as { next?: string; start?: "locate" | "form" },
+  });
 
   const geocode = useServerFn(reverseGeocode);
 
-  const [mode, setMode] = useState<"choose" | "form">("choose");
+  const [mode, setMode] = useState<"choose" | "form">(search?.start === "form" ? "form" : "choose");
   const [form, setForm] = useState<Form>(EMPTY);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
@@ -89,7 +92,7 @@ function AddressSetupPage() {
     }
   };
 
-  const useCurrentLocation = () => {
+  const locateMe = () => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       toast.error("Location is not available on this device");
       setMode("form");
@@ -110,6 +113,16 @@ function AddressSetupPage() {
       { enableHighAccuracy: true, timeout: 10_000 },
     );
   };
+
+  // Arriving from the address sheet's "Use current location": start locating right away.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (search?.start === "locate" && !autoStarted.current) {
+      autoStarted.current = true;
+      locateMe();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on arrival
+  }, []);
 
   const save = async () => {
     if (!user) return;
@@ -173,11 +186,7 @@ function AddressSetupPage() {
             </p>
 
             <div className="mt-6 space-y-2.5">
-              <Button
-                onClick={useCurrentLocation}
-                disabled={locating}
-                className="h-11 w-full rounded-xl"
-              >
+              <Button onClick={locateMe} disabled={locating} className="h-11 w-full rounded-xl">
                 {locating ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -194,12 +203,22 @@ function AddressSetupPage() {
               </Button>
             </div>
 
-            {hasAddress && (
+            {hasAddress ? (
               <button
                 onClick={() => navigate({ to: "/customer/home" })}
                 className="press mt-5 text-meta font-medium text-primary"
               >
                 Keep my current address
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  dismissAddressPrompt(user?.id);
+                  navigate({ to: search?.next ?? "/customer/home", replace: true });
+                }}
+                className="press mt-5 text-meta font-medium text-muted-foreground"
+              >
+                Not now
               </button>
             )}
           </div>
