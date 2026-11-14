@@ -424,7 +424,7 @@ function Page() {
   });
 
   const reportRow = (i: InvRow): ReportProductRow => ({
-    name: i.products?.name ?? "Unnamed product",
+    name: (i.products?.name ?? "Unnamed product").trim(),
     category: i.products?.categories?.name ?? "",
     unit: i.products?.unit ?? "",
     stock: i.stock,
@@ -434,6 +434,7 @@ function Page() {
     expiry: i.expiry_date,
     daysLeft: daysBetween(i.expiry_date),
     status: statusOf(i).label,
+    image: i.products?.image_url ?? i.products?.cover_image ?? null,
   });
 
   // Builds a designed PDF from the data on this page (not a screenshot of it).
@@ -487,16 +488,18 @@ function Page() {
           { label: "This month", rows: expiryGroups.month.map(reportRow) },
         ],
         bestSelling: bestSelling.map((b) => ({
-          name: b.name,
+          name: b.name.trim(),
           orders: b.orders,
           units: b.units,
           revenue: b.revenue,
+          image: b.image,
         })),
         slowMoving: lowestSelling.map((b) => ({
-          name: b.name,
+          name: b.name.trim(),
           orders: b.orders,
           units: b.units,
           revenue: b.revenue,
+          image: b.image,
         })),
         inventory: filtered.map(reportRow),
       });

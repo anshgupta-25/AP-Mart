@@ -20,9 +20,17 @@ export type ReportProductRow = {
   expiry: string | null;
   daysLeft: number | null;
   status: string;
+  /** Stored image reference/URL (storage:// ref or http URL); optional. */
+  image?: string | null;
 };
 
-export type ReportSalesRow = { name: string; orders: number; units: number; revenue: number };
+export type ReportSalesRow = {
+  name: string;
+  orders: number;
+  units: number;
+  revenue: number;
+  image?: string | null;
+};
 
 export type InventoryReportData = {
   shop: {
@@ -95,9 +103,71 @@ function daysLeftText(d: number | null) {
   return `${d}d`;
 }
 
+/* ---------------------------------------------------------------- product photos */
+
+const THUMB_PX = 120; // source thumbnail size (keeps the PDF small but sharp at ~30pt)
+const THUMB_TIMEOUT_MS = 8000;
+
+/** Fetches one image and returns a small square JPEG data URL, or null if it can't be loaded. */
+async function loadThumbnail(raw: string): Promise<string | null> {
+  try {
+    const { resolveStorageUrl } = await import("@/lib/storage");
+    const url = await resolveStorageUrl(raw);
+    if (!url) return null;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), THUMB_TIMEOUT_MS);
+    try {
+      const res = await fetch(url, { signal: ctrl.signal });
+      if (!res.ok) return null;
+      const bmp = await createImageBitmap(await res.blob());
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = THUMB_PX;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+      ctx.fillStyle = "#ffffff"; // JPEG has no transparency
+      ctx.fillRect(0, 0, THUMB_PX, THUMB_PX);
+      // Fit inside the square (contain), centred, so product shots are never cropped.
+      const k = Math.min(THUMB_PX / bmp.width, THUMB_PX / bmp.height);
+      const w = bmp.width * k;
+      const h = bmp.height * k;
+      ctx.drawImage(bmp, (THUMB_PX - w) / 2, (THUMB_PX - h) / 2, w, h);
+      bmp.close?.();
+      return canvas.toDataURL("image/jpeg", 0.82);
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch {
+    return null; // blocked by CORS, missing object, offline...: the report just shows a placeholder
+  }
+}
+
+/** Loads every unique image once (a few at a time). Keys are the raw stored values. */
+async function loadThumbnails(raws: (string | null | undefined)[]) {
+  const unique = [...new Set(raws.filter((r): r is string => !!r))];
+  const out = new Map<string, string>();
+  let next = 0;
+  const worker = async () => {
+    while (next < unique.length) {
+      const raw = unique[next++];
+      const data = await loadThumbnail(raw);
+      if (data) out.set(raw, data);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(6, unique.length) }, worker));
+  return out;
+}
+
 export async function downloadInventoryReportPdf(data: InventoryReportData): Promise<void> {
   const [{ jsPDF }, autoTableMod] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
   const autoTable = autoTableMod.default;
+
+  // Photos for every product that appears anywhere in the report.
+  const thumbs = await loadThumbnails([
+    ...data.inventory.map((r) => r.image),
+    ...data.bestSelling.map((r) => r.image),
+    ...data.slowMoving.map((r) => r.image),
+    ...data.expiry.flatMap((g) => g.rows.map((r) => r.image)),
+  ]);
 
   const doc: JsPDF = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
@@ -261,6 +331,8 @@ export async function downloadInventoryReportPdf(data: InventoryReportData): Pro
   // ---------- Shared table styling ----------
   const tableBase = {
     margin: { left: PAGE_MARGIN, right: PAGE_MARGIN, bottom: 56 },
+    // Never split a row (and its photo) across two pages.
+    rowPageBreak: "avoid" as const,
     theme: "plain" as const,
     headStyles: {
       fillColor: HEAD,
@@ -278,6 +350,35 @@ export async function downloadInventoryReportPdf(data: InventoryReportData): Pro
       valign: "middle" as const,
     },
     alternateRowStyles: { fillColor: PANEL },
+  };
+
+  const THUMB = 30;
+  const THUMB_PAD = THUMB + 18; // left padding that leaves room for the photo
+
+  /** Makes room for the photo in a product cell. */
+  const photoCellStyle = (h: CellHookData) => {
+    h.cell.styles.cellPadding = { top: 5, bottom: 5, left: THUMB_PAD, right: 8 };
+    h.cell.styles.minCellHeight = THUMB + 10;
+  };
+
+  /** Draws the product photo (or a quiet placeholder) at the left of a product cell. */
+  const drawPhoto = (h: CellHookData, raw: string | null | undefined) => {
+    const x = h.cell.x + 8;
+    const yy = h.cell.y + (h.cell.height - THUMB) / 2;
+    const img = raw ? thumbs.get(raw) : undefined;
+    if (img) {
+      doc.addImage(img, "JPEG", x, yy, THUMB, THUMB);
+    } else {
+      doc.setFillColor(...PANEL);
+      doc.rect(x, yy, THUMB, THUMB, "F");
+      doc.setDrawColor(...LINE);
+      doc.setLineWidth(0.6);
+      // simple "box" glyph so a missing photo reads as intentional
+      doc.rect(x + 9, yy + 9, THUMB - 18, THUMB - 18, "S");
+    }
+    doc.setDrawColor(...LINE);
+    doc.setLineWidth(0.6);
+    doc.rect(x, yy, THUMB, THUMB, "S");
   };
 
   /** Draws a small grey "category • unit" line under the bold product name (column 0). */
@@ -323,15 +424,20 @@ export async function downloadInventoryReportPdf(data: InventoryReportData): Pro
       4: { halign: "right", fontStyle: "bold" },
     },
     didDrawCell: expiryRows.length
-      ? productSubLine((i) =>
-          [expiryRows[i]?.category, expiryRows[i]?.unit].filter(Boolean).join(" • "),
-        )
+      ? (h: CellHookData) => {
+          if (h.section !== "body" || h.column.index !== 0) return;
+          drawPhoto(h, expiryRows[h.row.index]?.image);
+          productSubLine((i) =>
+            [expiryRows[i]?.category, expiryRows[i]?.unit].filter(Boolean).join(" • "),
+          )(h);
+        }
       : undefined,
     didParseCell: (h: CellHookData) => {
       if (!expiryRows.length) return;
       if (h.section === "body" && h.column.index === 0) {
         h.cell.styles.fontStyle = "bold";
         h.cell.text = [...h.cell.text, " "];
+        photoCellStyle(h);
       }
       if (h.section === "body" && h.column.index === 4) {
         const d = expiryRows[h.row.index]?.daysLeft;
@@ -359,9 +465,16 @@ export async function downloadInventoryReportPdf(data: InventoryReportData): Pro
         4: { halign: "right", fontStyle: "bold" },
       },
       didParseCell: (h: CellHookData) => {
-        if (h.section === "body" && h.column.index === 4 && rows[h.row.index]?.revenue > 0)
-          h.cell.styles.textColor = GOOD;
+        if (!rows.length || h.section !== "body") return;
+        if (h.column.index === 1) photoCellStyle(h);
+        if (h.column.index === 4 && rows[h.row.index]?.revenue > 0) h.cell.styles.textColor = GOOD;
       },
+      didDrawCell: rows.length
+        ? (h: CellHookData) => {
+            if (h.section === "body" && h.column.index === 1)
+              drawPhoto(h, rows[h.row.index]?.image);
+          }
+        : undefined,
     });
     y = lastY();
   };
@@ -401,7 +514,7 @@ export async function downloadInventoryReportPdf(data: InventoryReportData): Pro
         ])
       : emptyRow(6, "No products match the current filters."),
     columnStyles: {
-      0: { cellWidth: 150 },
+      0: { cellWidth: 190 },
       1: { halign: "right" },
       2: { halign: "right" },
       3: { halign: "right", fontStyle: "bold" },
@@ -409,13 +522,18 @@ export async function downloadInventoryReportPdf(data: InventoryReportData): Pro
       5: { halign: "right", fontStyle: "bold" },
     },
     didDrawCell: inv.length
-      ? productSubLine((i) => [inv[i]?.category, inv[i]?.unit].filter(Boolean).join(" • "))
+      ? (h: CellHookData) => {
+          if (h.section !== "body" || h.column.index !== 0) return;
+          drawPhoto(h, inv[h.row.index]?.image);
+          productSubLine((i) => [inv[i]?.category, inv[i]?.unit].filter(Boolean).join(" • "))(h);
+        }
       : undefined,
     didParseCell: (h: CellHookData) => {
       if (!inv.length || h.section !== "body") return;
       if (h.column.index === 0) {
         h.cell.styles.fontStyle = "bold";
         h.cell.text = [...h.cell.text, " "];
+        photoCellStyle(h);
       }
       if (h.column.index === 5) h.cell.styles.textColor = statusColor(inv[h.row.index]?.status);
     },
