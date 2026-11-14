@@ -1,25 +1,28 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import {
   ArrowDownNarrowWide,
   BadgePercent,
+  ChevronRight,
   PackageCheck,
   Search,
   Sparkles,
   Star,
+  X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { StorageImg } from "@/components/StorageImg";
-import { CategoryGroups } from "@/components/customer/CategoryGroups";
-import { useSubcategoriesAll } from "@/hooks/useSubcategoriesAll";
+import { ProductImage } from "@/components/ProductImage";
 import { loadProductCategoriesMap } from "@/lib/productCategories";
 import { useDeliveryContext } from "@/hooks/useDeliveryContext";
 import { useHeaderOffset } from "@/hooks/useHeaderOffset";
+import { useSubcategoriesAll } from "@/hooks/useSubcategoriesAll";
 import { rpcArgs } from "@/integrations/supabase/rpc";
+import { cn } from "@/lib/utils";
 
-const search = z.object({ q: z.string().optional() });
+/** `c` = selected category slug (kept in the URL so Back returns to the same category). */
+const search = z.object({ q: z.string().optional(), c: z.string().optional() });
 
 export const Route = createFileRoute("/customer/categories")({
   validateSearch: search,
@@ -45,23 +48,17 @@ const QUICK_PICKS = [
   { key: "stock", label: "In stock", icon: PackageCheck, search: { stock: true } },
 ];
 
-const TINTS = [
-  "bg-tint-mint",
-  "bg-tint-sun",
-  "bg-tint-sky",
-  "bg-tint-rose",
-  "bg-tint-violet",
-  "bg-tint-peach",
-];
+/** Height of the sticky search bar (h-10 field + py-2.5). */
+const SEARCH_BAR_H = 60;
 
-/** Height of the sticky search bar (h-11 field + py-3), used to offset jump-to-section scrolling. */
-const SEARCH_BAR_H = 68;
+type Category = { id: string; slug: string; name: string; icon: string | null };
 
 function CategoriesBrowse() {
-  const { q: qParam } = Route.useSearch();
+  const { q: qParam, c: selectedSlug } = Route.useSearch();
   const navigate = useNavigate();
   const headerH = useHeaderOffset();
   const [query, setQuery] = useState(qParam ?? "");
+  const panelTop = useRef<HTMLDivElement>(null);
 
   const categories = useQuery({
     queryKey: ["cats-browse"],
@@ -77,7 +74,6 @@ function CategoriesBrowse() {
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
-
   const subs = useSubcategoriesAll();
 
   const { pincode, ready } = useDeliveryContext();
@@ -120,274 +116,358 @@ function CategoriesBrowse() {
       (
         await supabase
           .from("collections")
-          .select("*")
+          .select("id, name")
           .eq("is_active", true)
           .order("display_order")
           .limit(6)
       ).data ?? [],
   });
 
-  const all = useMemo(() => categories.data ?? [], [categories.data]);
-  // Categories that have subcategories get their own section below; the rest are grouped
-  // once under "More categories", so nothing is listed twice.
-  const withSubs = useMemo(() => {
-    const ids = new Set((subs.data ?? []).map((s) => s.category_id));
-    return new Set(all.filter((c) => ids.has(c.id)).map((c) => c.id));
-  }, [all, subs.data]);
-  const sectioned = all.filter((c) => withSubs.has(c.id));
-  const others = all.filter((c) => !withSubs.has(c.id));
+  const all = useMemo(() => (categories.data ?? []) as Category[], [categories.data]);
+  const selected = all.find((c) => c.slug === selectedSlug) ?? all[0];
+  const selectedSubs = useMemo(
+    () => (subs.data ?? []).filter((s) => s.category_id === selected?.id),
+    [subs.data, selected?.id],
+  );
 
-  const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return all;
-    return all.filter(
-      (c) => c.name.toLowerCase().includes(needle) || c.slug.toLowerCase().includes(needle),
-    );
-  }, [all, query]);
+  // Search: match categories and subcategories by name.
+  const needle = query.trim().toLowerCase();
+  const searching = needle.length > 0;
+  const catById = useMemo(() => new Map(all.map((c) => [c.id, c])), [all]);
+  const results = useMemo(() => {
+    if (!needle) return { cats: [] as Category[], subs: [] as typeof selectedSubs };
+    return {
+      cats: all.filter((c) => c.name.toLowerCase().includes(needle)),
+      subs: (subs.data ?? []).filter(
+        (s) => s.name.toLowerCase().includes(needle) && catById.has(s.category_id),
+      ),
+    };
+  }, [needle, all, subs.data, catById]);
 
-  const searching = query.trim().length > 0;
-  const anchorOffset = headerH + SEARCH_BAR_H + 8;
+  const selectCategory = (slug: string) => {
+    navigate({ to: "/customer/categories", search: { c: slug }, replace: true });
+  };
+
+  // Switching category brings the panel back to its top.
+  useEffect(() => {
+    const el = panelTop.current;
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY - headerH - SEARCH_BAR_H;
+    if (window.scrollY > top) window.scrollTo({ top, behavior: "smooth" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the category changes
+  }, [selected?.id]);
 
   const onSubmitSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) navigate({ to: "/products", search: { q: query.trim() } });
   };
 
-  /** Scroll to a category's section on this page, or open its page if it has none. */
-  const openCategory = (c: { id: string; slug: string }) => {
-    const el = withSubs.has(c.id) ? document.getElementById(`cat-${c.slug}`) : null;
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    else navigate({ to: "/category/$slug", params: { slug: c.slug } });
-  };
-
+  const stickyTop = headerH + SEARCH_BAR_H;
   const loading = categories.isLoading || subs.isLoading;
+  const count = selected ? (counts.data?.[selected.id] ?? 0) : 0;
 
   return (
-    <div className="pb-10">
-      {/* Title scrolls away; only the search bar stays pinned below the storefront header. */}
-      <div className="bg-tint-mint px-4 pb-1 pt-4">
-        <h1 className="large-title">Categories</h1>
-        <p className="mt-0.5 text-meta text-muted-foreground">
-          {all.length ? `${all.length} categories from shops near you` : "Shops near you"}
-        </p>
-      </div>
-      <div style={{ top: headerH }} className="hairline-b sticky z-30 bg-tint-mint px-4 py-3">
+    <div>
+      {/* Search (pinned below the storefront header) */}
+      <div style={{ top: headerH }} className="hairline-b sticky z-30 bg-tint-mint px-4 py-2.5">
         <form
           onSubmit={onSubmitSearch}
-          className="flex h-11 items-center gap-2.5 rounded-xl bg-card px-3.5 shadow-soft"
+          className="flex h-10 items-center gap-2.5 rounded-xl bg-card px-3.5 shadow-soft"
         >
-          <Search className="h-[18px] w-[18px] shrink-0 text-foreground" />
+          <Search className="h-[17px] w-[17px] shrink-0 text-muted-foreground" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search categories and products"
             className="min-w-0 flex-1 bg-transparent text-body placeholder:text-muted-foreground focus:outline-none"
           />
+          {query && (
+            <button
+              type="button"
+              aria-label="Clear search"
+              onClick={() => setQuery("")}
+              className="grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:bg-secondary"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </form>
       </div>
 
-      <div className="space-y-8 pt-5">
-        {/* Quick picks: real filters on the product list, plus active collections */}
-        {!searching && (
-          <section className="space-y-2.5">
-            <h2 className="section-title px-4">Quick picks</h2>
-            <div className="scrollbar-hide flex scroll-px-4 gap-2 overflow-x-auto px-4">
-              {QUICK_PICKS.map((p) => {
-                const Icon = p.icon;
-                return (
-                  <Link
-                    key={p.key}
-                    to="/products"
-                    search={p.search}
-                    className="press inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-border/70 bg-card px-3.5 text-meta font-medium"
-                  >
-                    <Icon className="h-4 w-4 text-primary" />
-                    {p.label}
-                  </Link>
-                );
-              })}
-              {(collections.data ?? []).map((col) => (
-                <Link
-                  key={col.id}
-                  to="/products"
-                  search={{ coll: col.id }}
-                  className="press inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-border/70 bg-card px-3.5 text-meta font-medium"
-                >
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  {col.name}
+      {searching ? (
+        <SearchResults
+          query={query.trim()}
+          cats={results.cats}
+          subs={results.subs}
+          catById={catById}
+        />
+      ) : (
+        <>
+          {/* Quick picks: one slim row of real shortcuts */}
+          <div className="scrollbar-hide flex scroll-px-4 gap-2 overflow-x-auto px-4 pb-3 pt-3.5">
+            {QUICK_PICKS.map((p) => {
+              const Icon = p.icon;
+              return (
+                <Link key={p.key} to="/products" search={p.search} className={chip}>
+                  <Icon className="h-3.5 w-3.5 text-primary" />
+                  {p.label}
                 </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {loading ? (
-          <div className="grid grid-cols-4 gap-x-3 gap-y-5 px-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="aspect-square rounded-2xl shimmer" />
+              );
+            })}
+            {(collections.data ?? []).map((col) => (
+              <Link key={col.id} to="/products" search={{ coll: col.id }} className={chip}>
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                {col.name}
+              </Link>
             ))}
           </div>
-        ) : categories.isError && !categories.data ? (
-          <div className="mx-4 rounded-xl border border-border/70 bg-card px-5 py-10 text-center">
-            <p className="text-meta text-muted-foreground">Couldn’t load categories.</p>
-            <button
-              onClick={() => categories.refetch()}
-              className="press mt-3 h-10 rounded-xl bg-primary px-6 text-meta font-semibold text-primary-foreground"
-            >
-              Try again
-            </button>
-          </div>
-        ) : searching && filtered.length === 0 ? (
-          <EmptyState onReset={() => setQuery("")} />
-        ) : searching ? (
-          <CategoryTiles items={filtered} title="Matching categories" counts={counts.data} />
-        ) : (
-          <>
-            {/* 1. Every category at a glance; tapping jumps to its section */}
-            <section className="space-y-3">
-              <h2 className="section-title px-4">Shop by category</h2>
-              <div className="scrollbar-hide flex scroll-px-4 gap-3 overflow-x-auto px-4 pb-1">
-                {all.map((c, i) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => openCategory(c)}
-                    className="press flex w-[72px] shrink-0 flex-col items-center gap-1.5"
-                  >
-                    <span
-                      className={`${TINTS[i % TINTS.length]} grid h-16 w-16 place-items-center rounded-2xl text-[28px]`}
-                    >
-                      {c.icon ?? "🛍️"}
-                    </span>
-                    <span className="line-clamp-2 text-center text-caption font-medium leading-[14px]">
-                      {c.name}
-                    </span>
-                  </button>
+
+          {loading ? (
+            <div className="flex gap-3 px-3">
+              <div className="w-[76px] shrink-0 space-y-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="mx-auto h-14 w-14 rounded-2xl shimmer" />
                 ))}
               </div>
-            </section>
+              <div className="grid flex-1 grid-cols-3 gap-3">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <div key={i} className="aspect-square rounded-2xl shimmer" />
+                ))}
+              </div>
+            </div>
+          ) : categories.isError && !categories.data ? (
+            <div className="mx-4 rounded-2xl border border-border/60 bg-card px-5 py-10 text-center">
+              <p className="text-meta text-muted-foreground">Couldn’t load categories.</p>
+              <button
+                onClick={() => categories.refetch()}
+                className="press mt-3 h-10 rounded-xl bg-primary px-6 text-meta font-semibold text-primary-foreground"
+              >
+                Try again
+              </button>
+            </div>
+          ) : !selected ? (
+            <p className="px-4 py-10 text-center text-meta text-muted-foreground">
+              No categories yet.
+            </p>
+          ) : (
+            <div className="flex items-start border-t border-border/50">
+              {/* Left rail: every category, listed once. Its height leaves room for the
+                  shell's bottom padding (tab bar + floating cart bar: pb-36 / md:pb-10), so it
+                  stays fully visible and pinned at any scroll position. */}
+              <nav
+                aria-label="Categories"
+                style={{ top: stickyTop, height: `calc(100dvh - ${stickyTop}px - var(--tabbar))` }}
+                className="scrollbar-hide sticky w-[84px] shrink-0 overflow-y-auto border-r border-border/50 bg-card pb-4 [--tabbar:144px] md:w-[120px] md:[--tabbar:40px]"
+              >
+                {all.map((c) => {
+                  const on = c.id === selected.id;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => selectCategory(c.slug)}
+                      aria-current={on ? "true" : undefined}
+                      className={cn(
+                        "relative flex w-full flex-col items-center gap-1.5 px-1.5 py-3 text-center transition-colors",
+                        on ? "bg-primary-soft/60" : "hover:bg-secondary/60",
+                      )}
+                    >
+                      {on && (
+                        <span className="absolute inset-y-2 right-0 w-[3px] rounded-l-full bg-primary" />
+                      )}
+                      <span
+                        className={cn(
+                          "grid h-12 w-12 place-items-center rounded-2xl text-[24px] transition-colors",
+                          on ? "bg-card shadow-soft" : "bg-secondary/70",
+                        )}
+                      >
+                        {c.icon ?? "🛍️"}
+                      </span>
+                      <span
+                        className={cn(
+                          "line-clamp-2 text-[11px] leading-[13px]",
+                          on
+                            ? "font-semibold text-foreground"
+                            : "font-medium text-muted-foreground",
+                        )}
+                      >
+                        {c.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </nav>
 
-            {/* 2. One section per category with its subcategories */}
-            <CategoryGroups
-              categories={sectioned}
-              from={0}
-              count={sectioned.length}
-              showAll
-              anchorOffset={anchorOffset}
-              className="space-y-3.5"
-            />
-
-            {/* 3. Categories without subcategories, listed once */}
-            {others.length > 0 && (
-              <CategoryTiles
-                items={others}
-                title={sectioned.length ? "More categories" : "All categories"}
-                counts={counts.data}
-              />
-            )}
-
-            {/* 4. Collections, as visual cards */}
-            {collections.data && collections.data.length > 0 && (
-              <section className="space-y-3">
-                <div className="flex items-center justify-between px-4">
-                  <h2 className="section-title">Featured collections</h2>
-                  <Link to="/products" className="press text-meta font-semibold text-primary">
-                    See all
+              {/* Right panel: the selected category */}
+              <section ref={panelTop} className="min-w-0 flex-1 px-4 pb-6 pt-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h1 className="text-[19px] font-semibold leading-tight tracking-[-0.02em]">
+                      {selected.name}
+                    </h1>
+                    <p className="mt-0.5 text-caption text-muted-foreground">
+                      {counts.isFetched
+                        ? count > 0
+                          ? `${count} product${count === 1 ? "" : "s"} near you`
+                          : "No products near you yet"
+                        : "Checking shops near you…"}
+                    </p>
+                  </div>
+                  <Link
+                    to="/category/$slug"
+                    params={{ slug: selected.slug }}
+                    className="press inline-flex shrink-0 items-center gap-0.5 rounded-full bg-primary-soft px-3 py-1.5 text-caption font-semibold text-primary-ink"
+                  >
+                    View all <ChevronRight className="h-3.5 w-3.5" />
                   </Link>
                 </div>
-                <div className="scrollbar-hide flex gap-3 overflow-x-auto px-4">
-                  {collections.data.map((col) => (
-                    <Link
-                      key={col.id}
-                      to="/products"
-                      search={{ coll: col.id }}
-                      className="press relative block h-[104px] w-[200px] shrink-0 overflow-hidden rounded-2xl bg-foreground/80"
-                    >
-                      {col.image_url && (
-                        <StorageImg
-                          src={col.image_url}
-                          alt=""
-                          className="absolute inset-0 h-full w-full object-cover"
-                          loading="lazy"
-                        />
-                      )}
-                      <div className="absolute inset-0 bg-black/35" />
-                      <div className="relative flex h-full flex-col justify-end p-3 text-white">
-                        <div className="text-body font-semibold leading-tight">{col.name}</div>
-                        {col.description && (
-                          <div className="mt-0.5 line-clamp-1 text-caption opacity-90">
-                            {col.description}
-                          </div>
-                        )}
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+
+                {selectedSubs.length > 0 ? (
+                  <div className="mt-5 grid grid-cols-3 gap-x-3 gap-y-5 md:grid-cols-5 lg:grid-cols-6">
+                    {selectedSubs.map((s) => (
+                      <Link
+                        key={s.id}
+                        to="/category/$slug"
+                        params={{ slug: selected.slug }}
+                        search={{ sub: s.id } as never}
+                        className="press flex flex-col items-center gap-2"
+                      >
+                        <div className="grid aspect-square w-full place-items-center overflow-hidden rounded-2xl bg-tint-mint ring-1 ring-black/5">
+                          {s.image_url ? (
+                            <ProductImage
+                              src={s.image_url}
+                              alt={s.name}
+                              fit="cover"
+                              className="h-full w-full bg-transparent"
+                            />
+                          ) : (
+                            <span className="text-[30px]">{s.icon ?? selected.icon ?? "🛍️"}</span>
+                          )}
+                        </div>
+                        <span className="line-clamp-2 text-center text-caption font-medium leading-[14px]">
+                          {s.name}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <Link
+                    to="/category/$slug"
+                    params={{ slug: selected.slug }}
+                    className="press mt-5 flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-4"
+                  >
+                    <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-tint-mint text-[24px]">
+                      {selected.icon ?? "🛍️"}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-body font-semibold">
+                        Browse all {selected.name}
+                      </span>
+                      <span className="block text-caption text-muted-foreground">
+                        See every product in this category
+                      </span>
+                    </span>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </Link>
+                )}
               </section>
-            )}
-          </>
-        )}
-      </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
 
-function CategoryTiles({
-  items,
-  title,
-  counts,
+const chip =
+  "press inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 text-caption font-medium";
+
+function SearchResults({
+  query,
+  cats,
+  subs,
+  catById,
 }: {
-  items: { id: string; slug: string; name: string; icon: string | null }[];
+  query: string;
+  cats: Category[];
+  subs: { id: string; category_id: string; name: string; icon: string | null }[];
+  catById: Map<string, Category>;
+}) {
+  const none = cats.length === 0 && subs.length === 0;
+  return (
+    <div className="space-y-5 px-4 pt-4">
+      {none ? (
+        <div className="rounded-2xl border border-border/60 bg-card px-5 py-10 text-center">
+          <div className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-tint-mint text-primary-ink">
+            <Search className="h-5 w-5" strokeWidth={1.8} />
+          </div>
+          <div className="mt-3 text-body font-semibold">No categories match “{query}”</div>
+          <p className="mt-1 text-caption text-muted-foreground">
+            You can still search all products for it.
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
+          {cats.map((c) => (
+            <ResultRow
+              key={c.id}
+              icon={c.icon}
+              title={c.name}
+              subtitle="Category"
+              to={{ slug: c.slug }}
+            />
+          ))}
+          {subs.map((s) => {
+            const parent = catById.get(s.category_id)!;
+            return (
+              <ResultRow
+                key={s.id}
+                icon={s.icon ?? parent.icon}
+                title={s.name}
+                subtitle={`in ${parent.name}`}
+                to={{ slug: parent.slug, sub: s.id }}
+              />
+            );
+          })}
+        </div>
+      )}
+      <Link
+        to="/products"
+        search={{ q: query }}
+        className="press flex h-11 items-center justify-center gap-2 rounded-xl bg-primary text-meta font-semibold text-primary-foreground"
+      >
+        <Search className="h-4 w-4" /> Search products for “{query}”
+      </Link>
+    </div>
+  );
+}
+
+function ResultRow({
+  icon,
+  title,
+  subtitle,
+  to,
+}: {
+  icon: string | null;
   title: string;
-  counts?: Record<string, number>;
+  subtitle: string;
+  to: { slug: string; sub?: string };
 }) {
   return (
-    <section className="space-y-3.5 px-4">
-      <h2 className="section-title">{title}</h2>
-      <div className="grid grid-cols-4 gap-x-3 gap-y-5">
-        {items.map((c, i) => (
-          <Link
-            key={c.id}
-            to="/category/$slug"
-            params={{ slug: c.slug }}
-            className="press flex flex-col items-center gap-1.5"
-          >
-            <div
-              className={`${TINTS[i % TINTS.length]} relative grid aspect-square w-full place-items-center rounded-2xl text-[28px]`}
-            >
-              {c.icon ?? "🛍️"}
-              {(counts?.[c.id] ?? 0) > 0 && (
-                <span className="absolute right-1 top-1 rounded-full bg-card/90 px-1.5 text-micro font-semibold text-foreground/70">
-                  {counts![c.id]}
-                </span>
-              )}
-            </div>
-            <span className="line-clamp-2 text-center text-caption font-medium leading-[14px]">
-              {c.name}
-            </span>
-          </Link>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function EmptyState({ onReset }: { onReset: () => void }) {
-  return (
-    <div className="mx-4 rounded-xl border border-border/70 bg-card px-5 py-12 text-center">
-      <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-tint-mint text-primary-ink">
-        <Search className="h-5 w-5" strokeWidth={1.8} />
-      </div>
-      <div className="section-title mt-3">No categories match</div>
-      <div className="mt-1 text-meta text-muted-foreground">
-        Try another keyword, or search all products.
-      </div>
-      <button
-        onClick={onReset}
-        className="press mt-4 h-10 rounded-xl bg-primary px-6 text-meta font-semibold text-primary-foreground"
-      >
-        Clear search
-      </button>
-    </div>
+    <Link
+      to="/category/$slug"
+      params={{ slug: to.slug }}
+      search={(to.sub ? { sub: to.sub } : {}) as never}
+      className="press flex items-center gap-3 border-b border-border/50 px-3.5 py-3 last:border-b-0"
+    >
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-tint-mint text-[20px]">
+        {icon ?? "🛍️"}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-body font-medium">{title}</span>
+        <span className="block truncate text-caption text-muted-foreground">{subtitle}</span>
+      </span>
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+    </Link>
   );
 }

@@ -7,47 +7,26 @@ export function CategoryGroups({
   categories,
   from = 0,
   count = 3,
-  showAll = false,
-  anchorOffset,
-  className = "space-y-3",
 }: {
   categories?: CategoryLite[];
   from?: number;
   count?: number;
-  /** Show every subcategory (the home page trims to 8, in full rows of 4). */
-  showAll?: boolean;
-  /** When set, each section gets id="cat-<slug>" and this scroll-margin-top (px) for jump links. */
-  anchorOffset?: number;
-  className?: string;
 }) {
   const subs = useSubcategoriesAll();
   const groups = (categories ?? [])
-    .map((c) => ({
-      c,
-      items: (subs.data ?? [])
-        .filter((s) => s.category_id === c.id)
-        .slice(0, showAll ? undefined : 8),
-    }))
+    .map((c) => ({ c, items: (subs.data ?? []).filter((s) => s.category_id === c.id).slice(0, 8) }))
     .filter((g) => g.items.length > 0)
     .map((g) => ({
       ...g,
       items:
-        showAll || g.items.length < 4
-          ? g.items
-          : g.items.slice(0, g.items.length - (g.items.length % 4)),
+        g.items.length >= 4 ? g.items.slice(0, g.items.length - (g.items.length % 4)) : g.items,
     }))
     .slice(from, from + count);
 
   return (
     <>
       {groups.map(({ c, items }) => (
-        <section
-          key={c.id}
-          id={anchorOffset !== undefined ? `cat-${c.slug}` : undefined}
-          style={anchorOffset !== undefined ? { scrollMarginTop: anchorOffset } : undefined}
-          // Jump links need real section heights, so skip content-visibility when anchored.
-          className={`${anchorOffset !== undefined ? "" : "cv-auto"} px-4 ${className}`}
-        >
+        <section key={c.id} className="cv-auto space-y-3 px-4">
           <div className="flex items-center justify-between">
             <h2 className="section-title">{c.name}</h2>
             <Link
