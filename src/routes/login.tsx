@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { requestPasswordReset } from "@/lib/passwordReset";
+import { requestSignupCode, type SignupDetails } from "@/lib/authEmail";
+import { VerifyEmailStep } from "@/components/auth/VerifyEmailStep";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ function LoginPage() {
   const [show, setShow] = useState(false);
   const [remember, setRemember] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [verifying, setVerifying] = useState<SignupDetails | null>(null);
 
   const { signIn } = useAuth();
   const navigate = useNavigate();
@@ -72,6 +74,20 @@ function LoginPage() {
     const { error } = await signIn(email, password, remember);
     if (error) {
       setSubmitting(false);
+      // Signed up but never verified: send a fresh code and show the code screen.
+      const code = (error as { code?: string }).code;
+      if (code === "email_not_confirmed" || /email not confirmed/i.test(error.message)) {
+        const details: SignupDetails = {
+          email: email.trim().toLowerCase(),
+          password,
+          fullName: "",
+        };
+        const { error: sendErr } = await requestSignupCode(details);
+        if (sendErr) return toast.error(sendErr);
+        toast("Verify your email to continue", { description: "We've sent you a new code." });
+        setVerifying(details);
+        return;
+      }
       toast.error(describeAuthError(error));
       return;
     }
@@ -87,12 +103,27 @@ function LoginPage() {
     toast.success("Welcome back");
   }
 
-  async function handleForgot() {
-    const target = email || window.prompt("Enter your email to receive a reset link") || "";
-    if (!target) return;
-    const { error } = await requestPasswordReset(target);
-    if (error) toast.error(error);
-    else toast.success("If an account exists for that email, a reset link has been sent.");
+  function handleForgot() {
+    navigate({ to: "/forgot-password", search: (email ? { email } : {}) as never });
+  }
+
+  if (verifying) {
+    return (
+      <div className="flex min-h-screen items-start justify-center bg-background px-4 pb-10 pt-safe md:items-center">
+        <div className="w-full max-w-md">
+          <div className="mt-10 rounded-xl border border-border/70 bg-card p-5 md:p-7">
+            <VerifyEmailStep
+              details={verifying}
+              onBack={() => setVerifying(null)}
+              onVerified={() => {
+                if (next) sessionStorage.setItem("flashbasket.auth.next", next);
+                navigate({ to: "/auth/callback", replace: true });
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

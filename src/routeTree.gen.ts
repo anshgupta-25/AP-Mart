@@ -20,6 +20,7 @@ import { Route as CustomerRouteImport } from './routes/customer'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DeliveryRouteImport } from './routes/delivery'
 import { Route as FavouritesRouteImport } from './routes/favourites'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -49,6 +50,7 @@ import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminShopsRouteImport } from './routes/admin.shops'
 import { Route as AdminSupportRouteImport } from './routes/admin.support'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as CustomerAboutRouteImport } from './routes/customer.about'
 import { Route as CustomerAddressSetupRouteImport } from './routes/customer.address-setup'
@@ -97,6 +99,7 @@ import { Route as SupportProfileRouteImport } from './routes/support.profile'
 import { Route as AdminComplaintsIndexRouteImport } from './routes/admin.complaints.index'
 import { Route as AdminComplaintsIdRouteImport } from './routes/admin.complaints.$id'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
+import { Route as ApiPublicAuthEmailRouteImport } from './routes/api/public/auth-email'
 import { Route as ApiPublicAuthGoogleRouteImport } from './routes/api/public/auth-google'
 import { Route as ApiPublicBootstrapSuperAdminRouteImport } from './routes/api/public/bootstrap-super-admin'
 import { Route as ApiPublicFcmDispatchRouteImport } from './routes/api/public/fcm-dispatch'
@@ -164,6 +167,11 @@ const DeliveryRoute = DeliveryRouteImport.update({
 const FavouritesRoute = FavouritesRouteImport.update({
   id: '/favourites',
   path: '/favourites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -309,6 +317,11 @@ const AdminSupportRoute = AdminSupportRouteImport.update({
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/callback',
   path: '/callback',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthConfirmRoute = AuthConfirmRouteImport.update({
+  id: '/confirm',
+  path: '/confirm',
   getParentRoute: () => AuthRoute,
 } as any)
 const CategorySlugRoute = CategorySlugRouteImport.update({
@@ -552,6 +565,11 @@ const AdminOrdersIdRoute = AdminOrdersIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AdminOrdersRoute,
 } as any)
+const ApiPublicAuthEmailRoute = ApiPublicAuthEmailRouteImport.update({
+  id: '/api/public/auth-email',
+  path: '/api/public/auth-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAuthGoogleRoute = ApiPublicAuthGoogleRouteImport.update({
   id: '/api/public/auth-google',
   path: '/api/public/auth-google',
@@ -632,6 +650,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/delivery': typeof DeliveryRouteWithChildren
   '/favourites': typeof FavouritesRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -661,6 +680,7 @@ export interface FileRoutesByFullPath {
   '/admin/shops': typeof AdminShopsRoute
   '/admin/support': typeof AdminSupportRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/category/$slug': typeof CategorySlugRoute
   '/customer/about': typeof CustomerAboutRoute
   '/customer/address-setup': typeof CustomerAddressSetupRoute
@@ -708,6 +728,7 @@ export interface FileRoutesByFullPath {
   '/orders/': typeof OrdersIndexRoute
   '/admin/complaints/$id': typeof AdminComplaintsIdRoute
   '/admin/orders/$id': typeof AdminOrdersIdRoute
+  '/api/public/auth-email': typeof ApiPublicAuthEmailRoute
   '/api/public/auth-google': typeof ApiPublicAuthGoogleRoute
   '/api/public/bootstrap-super-admin': typeof ApiPublicBootstrapSuperAdminRoute
   '/api/public/fcm-dispatch': typeof ApiPublicFcmDispatchRoute
@@ -735,6 +756,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/delivery': typeof DeliveryRouteWithChildren
   '/favourites': typeof FavouritesRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -764,6 +786,7 @@ export interface FileRoutesByTo {
   '/admin/shops': typeof AdminShopsRoute
   '/admin/support': typeof AdminSupportRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/category/$slug': typeof CategorySlugRoute
   '/customer/about': typeof CustomerAboutRoute
   '/customer/address-setup': typeof CustomerAddressSetupRoute
@@ -811,6 +834,7 @@ export interface FileRoutesByTo {
   '/orders': typeof OrdersIndexRoute
   '/admin/complaints/$id': typeof AdminComplaintsIdRoute
   '/admin/orders/$id': typeof AdminOrdersIdRoute
+  '/api/public/auth-email': typeof ApiPublicAuthEmailRoute
   '/api/public/auth-google': typeof ApiPublicAuthGoogleRoute
   '/api/public/bootstrap-super-admin': typeof ApiPublicBootstrapSuperAdminRoute
   '/api/public/fcm-dispatch': typeof ApiPublicFcmDispatchRoute
@@ -839,6 +863,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/delivery': typeof DeliveryRouteWithChildren
   '/favourites': typeof FavouritesRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/products': typeof ProductsRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -868,6 +893,7 @@ export interface FileRoutesById {
   '/admin/shops': typeof AdminShopsRoute
   '/admin/support': typeof AdminSupportRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/category/$slug': typeof CategorySlugRoute
   '/customer/about': typeof CustomerAboutRoute
   '/customer/address-setup': typeof CustomerAddressSetupRoute
@@ -915,6 +941,7 @@ export interface FileRoutesById {
   '/orders/': typeof OrdersIndexRoute
   '/admin/complaints/$id': typeof AdminComplaintsIdRoute
   '/admin/orders/$id': typeof AdminOrdersIdRoute
+  '/api/public/auth-email': typeof ApiPublicAuthEmailRoute
   '/api/public/auth-google': typeof ApiPublicAuthGoogleRoute
   '/api/public/bootstrap-super-admin': typeof ApiPublicBootstrapSuperAdminRoute
   '/api/public/fcm-dispatch': typeof ApiPublicFcmDispatchRoute
@@ -944,6 +971,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/delivery'
     | '/favourites'
+    | '/forgot-password'
     | '/login'
     | '/products'
     | '/reset-password'
@@ -973,6 +1001,7 @@ export interface FileRouteTypes {
     | '/admin/shops'
     | '/admin/support'
     | '/auth/callback'
+    | '/auth/confirm'
     | '/category/$slug'
     | '/customer/about'
     | '/customer/address-setup'
@@ -1020,6 +1049,7 @@ export interface FileRouteTypes {
     | '/orders/'
     | '/admin/complaints/$id'
     | '/admin/orders/$id'
+    | '/api/public/auth-email'
     | '/api/public/auth-google'
     | '/api/public/bootstrap-super-admin'
     | '/api/public/fcm-dispatch'
@@ -1047,6 +1077,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/delivery'
     | '/favourites'
+    | '/forgot-password'
     | '/login'
     | '/products'
     | '/reset-password'
@@ -1076,6 +1107,7 @@ export interface FileRouteTypes {
     | '/admin/shops'
     | '/admin/support'
     | '/auth/callback'
+    | '/auth/confirm'
     | '/category/$slug'
     | '/customer/about'
     | '/customer/address-setup'
@@ -1123,6 +1155,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/admin/complaints/$id'
     | '/admin/orders/$id'
+    | '/api/public/auth-email'
     | '/api/public/auth-google'
     | '/api/public/bootstrap-super-admin'
     | '/api/public/fcm-dispatch'
@@ -1150,6 +1183,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/delivery'
     | '/favourites'
+    | '/forgot-password'
     | '/login'
     | '/products'
     | '/reset-password'
@@ -1179,6 +1213,7 @@ export interface FileRouteTypes {
     | '/admin/shops'
     | '/admin/support'
     | '/auth/callback'
+    | '/auth/confirm'
     | '/category/$slug'
     | '/customer/about'
     | '/customer/address-setup'
@@ -1226,6 +1261,7 @@ export interface FileRouteTypes {
     | '/orders/'
     | '/admin/complaints/$id'
     | '/admin/orders/$id'
+    | '/api/public/auth-email'
     | '/api/public/auth-google'
     | '/api/public/bootstrap-super-admin'
     | '/api/public/fcm-dispatch'
@@ -1254,6 +1290,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   DeliveryRoute: typeof DeliveryRouteWithChildren
   FavouritesRoute: typeof FavouritesRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   ProductsRoute: typeof ProductsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -1268,6 +1305,7 @@ export interface RootRouteChildren {
   ProductSlugRoute: typeof ProductSlugRoute
   SuperadminDashboardRoute: typeof SuperadminDashboardRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
+  ApiPublicAuthEmailRoute: typeof ApiPublicAuthEmailRoute
   ApiPublicAuthGoogleRoute: typeof ApiPublicAuthGoogleRoute
   ApiPublicBootstrapSuperAdminRoute: typeof ApiPublicBootstrapSuperAdminRoute
   ApiPublicFcmDispatchRoute: typeof ApiPublicFcmDispatchRoute
@@ -1351,6 +1389,13 @@ declare module '@tanstack/react-router' {
       path: '/favourites'
       fullPath: '/favourites'
       preLoaderRoute: typeof FavouritesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -1554,6 +1599,13 @@ declare module '@tanstack/react-router' {
       path: '/callback'
       fullPath: '/auth/callback'
       preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/auth/confirm': {
+      id: '/auth/confirm'
+      path: '/confirm'
+      fullPath: '/auth/confirm'
+      preLoaderRoute: typeof AuthConfirmRouteImport
       parentRoute: typeof AuthRoute
     }
     '/category/$slug': {
@@ -1892,6 +1944,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersIdRouteImport
       parentRoute: typeof AdminOrdersRoute
     }
+    '/api/public/auth-email': {
+      id: '/api/public/auth-email'
+      path: '/api/public/auth-email'
+      fullPath: '/api/public/auth-email'
+      preLoaderRoute: typeof ApiPublicAuthEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/auth-google': {
       id: '/api/public/auth-google'
       path: '/api/public/auth-google'
@@ -2050,10 +2109,12 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface AuthRouteChildren {
   AuthCallbackRoute: typeof AuthCallbackRoute
+  AuthConfirmRoute: typeof AuthConfirmRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthCallbackRoute: AuthCallbackRoute,
+  AuthConfirmRoute: AuthConfirmRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
@@ -2217,6 +2278,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   DeliveryRoute: DeliveryRouteWithChildren,
   FavouritesRoute: FavouritesRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   ProductsRoute: ProductsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
@@ -2231,6 +2293,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProductSlugRoute: ProductSlugRoute,
   SuperadminDashboardRoute: SuperadminDashboardRoute,
   OrdersIndexRoute: OrdersIndexRoute,
+  ApiPublicAuthEmailRoute: ApiPublicAuthEmailRoute,
   ApiPublicAuthGoogleRoute: ApiPublicAuthGoogleRoute,
   ApiPublicBootstrapSuperAdminRoute: ApiPublicBootstrapSuperAdminRoute,
   ApiPublicFcmDispatchRoute: ApiPublicFcmDispatchRoute,

@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, Lock, Loader2, CheckCircle2, ShieldAlert } from "lucide-react";
+import { Loader2, CheckCircle2, ShieldAlert } from "lucide-react";
+import { Logo } from "@/components/Logo";
+import { NewPasswordForm } from "@/components/auth/NewPasswordForm";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -24,13 +25,10 @@ function ResetPasswordPage() {
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
   const [valid, setValid] = useState(false);
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [show, setShow] = useState(false);
-  const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
 
   const [linkError, setLinkError] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
     // Supabase puts either a recovery token (type=recovery) or an error
@@ -38,6 +36,32 @@ function ResetPasswordPage() {
     const params = new URLSearchParams(window.location.search);
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     const get = (k: string) => hash.get(k) ?? params.get(k);
+    // Our branded reset email links here with ?type=recovery&token_hash=… (one-time).
+    const tokenHash = params.get("token_hash");
+    if (tokenHash && params.get("type") === "recovery") {
+      // Remove the token from the address bar so a refresh can't try to reuse it.
+      window.history.replaceState(null, "", window.location.pathname);
+      void supabase.auth
+        .verifyOtp({ token_hash: tokenHash, type: "recovery" })
+        .then(async ({ error }) => {
+          if (error) {
+            console.error("[ResetPassword] verifyOtp failed:", error.message);
+            setLinkError(
+              /expired/i.test(error.message)
+                ? "This reset link has expired. Request a new one below."
+                : "This reset link is invalid or has already been used. Request a new one below.",
+            );
+            setReady(true);
+            return;
+          }
+          const { data } = await supabase.auth.getUser();
+          setEmail(data.user?.email ?? null);
+          setValid(true);
+          setReady(true);
+        });
+      return;
+    }
+
     const errCode = get("error_code") ?? get("error");
     if (errCode) {
       const expired = /expired|otp_expired/i.test(`${errCode} ${get("error_description") ?? ""}`);
@@ -69,7 +93,10 @@ function ResetPasswordPage() {
 
     const check = async () => {
       const { data } = await supabase.auth.getSession();
-      if (data.session) accept();
+      if (data.session) {
+        setEmail(data.session.user.email ?? null);
+        accept();
+      }
     };
     void check();
 
@@ -86,19 +113,9 @@ function ResetPasswordPage() {
     };
   }, []);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (password.length < 8) return toast.error("Password must be at least 8 characters");
-    if (password !== confirm) return toast.error("Passwords do not match");
-    setBusy(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    setBusy(false);
-    if (error) {
-      console.error("[ResetPassword] updateUser failed:", error.message);
-      return toast.error(error.message || "Could not update your password");
-    }
+  async function onSaved() {
     setDone(true);
-    toast.success("Password updated");
+    toast.success("Password updated. Please log in with your new password.");
     // Force a clean sign-in with the new credentials.
     await supabase.auth.signOut();
     setTimeout(() => navigate({ to: "/login", replace: true }), 1600);
@@ -106,78 +123,53 @@ function ResetPasswordPage() {
 
   return (
     <div className="flex min-h-screen items-start justify-center bg-background px-4 pb-10 pt-safe md:items-center">
-      <div className="w-full max-w-md pt-12 md:pt-0">
-        <h1 className="large-title text-center">Set a new password</h1>
-        <div className="mt-6 rounded-xl border border-border/70 bg-card p-4 md:p-6">
-          {!ready ? (
-            <div className="mt-8 flex justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="w-full max-w-md">
+        <Link to="/" className="mb-6 mt-6 flex justify-center">
+          <Logo size="md" />
+        </Link>
+        {!ready ? (
+          <div className="mt-10 flex justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : done ? (
+          <div className="space-y-3 text-center">
+            <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
+            <h1 className="large-title">Password updated</h1>
+            <p className="text-meta text-muted-foreground">Taking you to log in…</p>
+          </div>
+        ) : !valid ? (
+          <div className="space-y-4 text-center">
+            <ShieldAlert className="mx-auto h-10 w-10 text-warning-foreground" />
+            <h1 className="large-title">Link not valid</h1>
+            <p className="text-meta text-muted-foreground">
+              {linkError ?? "This reset link is invalid or has expired. Request a new one below."}
+            </p>
+            <Button asChild className="h-11 w-full rounded-xl">
+              <Link to="/forgot-password">Request a new link</Link>
+            </Button>
+            <Link to="/login" className="block text-meta font-medium text-muted-foreground">
+              Back to log in
+            </Link>
+          </div>
+        ) : (
+          <>
+            <h1 className="large-title text-center">Choose a new password</h1>
+            <p className="mt-1 text-center text-meta text-muted-foreground">
+              {email ? (
+                <>
+                  Signed in as <span className="font-semibold text-foreground">{email}</span>.{" "}
+                </>
+              ) : null}
+              Pick something you haven't used before.
+            </p>
+            <div className="mt-6 rounded-xl border border-border/70 bg-card p-5">
+              <NewPasswordForm submitLabel="Save new password" onSaved={onSaved} />
             </div>
-          ) : done ? (
-            <div className="mt-6 text-center space-y-3">
-              <CheckCircle2 className="mx-auto h-9 w-9 text-primary" />
-              <p className="text-sm text-muted-foreground">
-                Your password has been updated. Redirecting you to sign in…
-              </p>
-            </div>
-          ) : !valid ? (
-            <div className="mt-6 text-center space-y-4">
-              <ShieldAlert className="mx-auto h-9 w-9 text-warning-foreground" />
-              <p className="text-sm text-muted-foreground">
-                {linkError ??
-                  "This reset link is invalid or has expired. Request a new one from the sign-in screen."}
-              </p>
-              <Button asChild className="h-11 w-full rounded-xl">
-                <Link to="/login">Back to sign in</Link>
-              </Button>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="mt-6 space-y-3">
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type={show ? "text" : "password"}
-                  required
-                  autoComplete="new-password"
-                  placeholder="New password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 pl-11 pr-11"
-                />
-                <button
-                  type="button"
-                  aria-label={show ? "Hide password" : "Show password"}
-                  onClick={() => setShow((v) => !v)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type={show ? "text" : "password"}
-                  required
-                  autoComplete="new-password"
-                  placeholder="Confirm new password"
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  className="h-11 pl-11"
-                />
-              </div>
-              <p className="text-caption text-muted-foreground">Use at least 8 characters.</p>
-              <Button type="submit" disabled={busy} className="h-11 w-full rounded-xl">
-                {busy ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Updating…
-                  </>
-                ) : (
-                  "Update password"
-                )}
-              </Button>
-            </form>
-          )}
-        </div>
+            <p className="mt-4 text-center text-small text-muted-foreground">
+              You'll log in again with your new password once it's saved.
+            </p>
+          </>
+        )}
       </div>
     </div>
   );
