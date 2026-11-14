@@ -64,3 +64,6 @@ android/app/src/main/res/xml/config.xml
 
 # Firebase Android config (download from Firebase console; keep local)
 android/app/google-services.json
+
+# Supabase CLI local cache (created by `supabase link`)
+supabase/.temp/
