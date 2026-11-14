@@ -214,7 +214,8 @@ export async function downloadInventoryReportPdf(data: InventoryReportData): Pro
   };
 
   const sectionTitle = (title: string) => {
-    ensureSpace(60);
+    // Keep the title together with the start of its table (header + first row).
+    ensureSpace(120);
     y += 18;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(13);
@@ -596,7 +597,7 @@ export async function downloadInventoryReportPdf(data: InventoryReportData): Pro
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...MUTED);
-    doc.text("AP Mart Inventory Report — Local shops, delivered.", PAGE_MARGIN, H - 22);
+    doc.text("AP Mart Inventory Report — Groceries from shops near you", PAGE_MARGIN, H - 22);
     doc.text(`Page ${p} of ${pages}`, W - PAGE_MARGIN, H - 22, { align: "right" });
   }
 

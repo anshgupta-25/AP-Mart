@@ -403,6 +403,10 @@ function Page() {
   // Builds a designed PDF from the data on this page (not a screenshot of it).
   const downloadPdf = async () => {
     if (!shopId) return;
+    if (inventory.isError || sales.isError) {
+      toast.error("Inventory data failed to load. Please refresh and try again.");
+      return;
+    }
     setPdfBusy(true);
     try {
       const { data: shop } = await supabase
@@ -492,7 +496,7 @@ function Page() {
               size="sm"
               variant="outline"
               onClick={downloadPdf}
-              disabled={pdfBusy || !shopId || inventory.isLoading}
+              disabled={pdfBusy || !shopId || inventory.isLoading || sales.isFetching}
             >
               {pdfBusy ? (
                 <Loader2 className="h-4 w-4 mr-1 animate-spin" />
