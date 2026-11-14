@@ -30,7 +30,6 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrdersIndexRouteImport } from './routes/orders.index'
-import { Route as SupportTicketsRouteImport } from './routes/support.tickets'
 import { Route as SupportProfileRouteImport } from './routes/support.profile'
 import { Route as SupportMyTicketsRouteImport } from './routes/support.my-tickets'
 import { Route as SupportDashboardRouteImport } from './routes/support.dashboard'
@@ -94,10 +93,11 @@ import { Route as AdminDeliveryPartnersRouteImport } from './routes/admin.delive
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminCouponsRouteImport } from './routes/admin.coupons'
-import { Route as AdminComplaintsRouteImport } from './routes/admin.complaints'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
+import { Route as SupportTicketsIndexRouteImport } from './routes/support.tickets.index'
 import { Route as ShopkeeperOrdersIndexRouteImport } from './routes/shopkeeper.orders.index'
 import { Route as CustomerOrdersIndexRouteImport } from './routes/customer.orders.index'
+import { Route as AdminComplaintsIndexRouteImport } from './routes/admin.complaints.index'
 import { Route as SupportTicketsIdRouteImport } from './routes/support.tickets.$id'
 import { Route as SupportTicketIdRouteImport } from './routes/support.ticket.$id'
 import { Route as ShopkeeperOrdersIdRouteImport } from './routes/shopkeeper.orders.$id'
@@ -108,6 +108,7 @@ import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/publi
 import { Route as ApiPublicFcmDispatchRouteImport } from './routes/api/public/fcm-dispatch'
 import { Route as ApiPublicBootstrapSuperAdminRouteImport } from './routes/api/public/bootstrap-super-admin'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
+import { Route as AdminComplaintsIdRouteImport } from './routes/admin.complaints.$id'
 
 const WishlistRoute = WishlistRouteImport.update({
   id: '/wishlist',
@@ -213,11 +214,6 @@ const OrdersIndexRoute = OrdersIndexRouteImport.update({
   id: '/orders/',
   path: '/orders/',
   getParentRoute: () => rootRouteImport,
-} as any)
-const SupportTicketsRoute = SupportTicketsRouteImport.update({
-  id: '/tickets',
-  path: '/tickets',
-  getParentRoute: () => SupportRoute,
 } as any)
 const SupportProfileRoute = SupportProfileRouteImport.update({
   id: '/profile',
@@ -535,15 +531,15 @@ const AdminCouponsRoute = AdminCouponsRouteImport.update({
   path: '/coupons',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminComplaintsRoute = AdminComplaintsRouteImport.update({
-  id: '/complaints',
-  path: '/complaints',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
   id: '/categories',
   path: '/categories',
   getParentRoute: () => AdminRoute,
+} as any)
+const SupportTicketsIndexRoute = SupportTicketsIndexRouteImport.update({
+  id: '/tickets/',
+  path: '/tickets/',
+  getParentRoute: () => SupportRoute,
 } as any)
 const ShopkeeperOrdersIndexRoute = ShopkeeperOrdersIndexRouteImport.update({
   id: '/orders/',
@@ -555,10 +551,15 @@ const CustomerOrdersIndexRoute = CustomerOrdersIndexRouteImport.update({
   path: '/orders/',
   getParentRoute: () => CustomerRoute,
 } as any)
+const AdminComplaintsIndexRoute = AdminComplaintsIndexRouteImport.update({
+  id: '/complaints/',
+  path: '/complaints/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const SupportTicketsIdRoute = SupportTicketsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => SupportTicketsRoute,
+  id: '/tickets/$id',
+  path: '/tickets/$id',
+  getParentRoute: () => SupportRoute,
 } as any)
 const SupportTicketIdRoute = SupportTicketIdRouteImport.update({
   id: '/ticket/$id',
@@ -607,6 +608,11 @@ const AdminOrdersIdRoute = AdminOrdersIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AdminOrdersRoute,
 } as any)
+const AdminComplaintsIdRoute = AdminComplaintsIdRouteImport.update({
+  id: '/complaints/$id',
+  path: '/complaints/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -630,7 +636,6 @@ export interface FileRoutesByFullPath {
   '/support': typeof SupportRouteWithChildren
   '/wishlist': typeof WishlistRoute
   '/admin/categories': typeof AdminCategoriesRoute
-  '/admin/complaints': typeof AdminComplaintsRoute
   '/admin/coupons': typeof AdminCouponsRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -694,8 +699,8 @@ export interface FileRoutesByFullPath {
   '/support/dashboard': typeof SupportDashboardRoute
   '/support/my-tickets': typeof SupportMyTicketsRoute
   '/support/profile': typeof SupportProfileRoute
-  '/support/tickets': typeof SupportTicketsRouteWithChildren
   '/orders/': typeof OrdersIndexRoute
+  '/admin/complaints/$id': typeof AdminComplaintsIdRoute
   '/admin/orders/$id': typeof AdminOrdersIdRoute
   '/api/public/bootstrap-super-admin': typeof ApiPublicBootstrapSuperAdminRoute
   '/api/public/fcm-dispatch': typeof ApiPublicFcmDispatchRoute
@@ -706,8 +711,10 @@ export interface FileRoutesByFullPath {
   '/shopkeeper/orders/$id': typeof ShopkeeperOrdersIdRoute
   '/support/ticket/$id': typeof SupportTicketIdRoute
   '/support/tickets/$id': typeof SupportTicketsIdRoute
+  '/admin/complaints/': typeof AdminComplaintsIndexRoute
   '/customer/orders/': typeof CustomerOrdersIndexRoute
   '/shopkeeper/orders/': typeof ShopkeeperOrdersIndexRoute
+  '/support/tickets/': typeof SupportTicketsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -731,7 +738,6 @@ export interface FileRoutesByTo {
   '/support': typeof SupportRouteWithChildren
   '/wishlist': typeof WishlistRoute
   '/admin/categories': typeof AdminCategoriesRoute
-  '/admin/complaints': typeof AdminComplaintsRoute
   '/admin/coupons': typeof AdminCouponsRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -795,8 +801,8 @@ export interface FileRoutesByTo {
   '/support/dashboard': typeof SupportDashboardRoute
   '/support/my-tickets': typeof SupportMyTicketsRoute
   '/support/profile': typeof SupportProfileRoute
-  '/support/tickets': typeof SupportTicketsRouteWithChildren
   '/orders': typeof OrdersIndexRoute
+  '/admin/complaints/$id': typeof AdminComplaintsIdRoute
   '/admin/orders/$id': typeof AdminOrdersIdRoute
   '/api/public/bootstrap-super-admin': typeof ApiPublicBootstrapSuperAdminRoute
   '/api/public/fcm-dispatch': typeof ApiPublicFcmDispatchRoute
@@ -807,8 +813,10 @@ export interface FileRoutesByTo {
   '/shopkeeper/orders/$id': typeof ShopkeeperOrdersIdRoute
   '/support/ticket/$id': typeof SupportTicketIdRoute
   '/support/tickets/$id': typeof SupportTicketsIdRoute
+  '/admin/complaints': typeof AdminComplaintsIndexRoute
   '/customer/orders': typeof CustomerOrdersIndexRoute
   '/shopkeeper/orders': typeof ShopkeeperOrdersIndexRoute
+  '/support/tickets': typeof SupportTicketsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -833,7 +841,6 @@ export interface FileRoutesById {
   '/support': typeof SupportRouteWithChildren
   '/wishlist': typeof WishlistRoute
   '/admin/categories': typeof AdminCategoriesRoute
-  '/admin/complaints': typeof AdminComplaintsRoute
   '/admin/coupons': typeof AdminCouponsRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -897,8 +904,8 @@ export interface FileRoutesById {
   '/support/dashboard': typeof SupportDashboardRoute
   '/support/my-tickets': typeof SupportMyTicketsRoute
   '/support/profile': typeof SupportProfileRoute
-  '/support/tickets': typeof SupportTicketsRouteWithChildren
   '/orders/': typeof OrdersIndexRoute
+  '/admin/complaints/$id': typeof AdminComplaintsIdRoute
   '/admin/orders/$id': typeof AdminOrdersIdRoute
   '/api/public/bootstrap-super-admin': typeof ApiPublicBootstrapSuperAdminRoute
   '/api/public/fcm-dispatch': typeof ApiPublicFcmDispatchRoute
@@ -909,8 +916,10 @@ export interface FileRoutesById {
   '/shopkeeper/orders/$id': typeof ShopkeeperOrdersIdRoute
   '/support/ticket/$id': typeof SupportTicketIdRoute
   '/support/tickets/$id': typeof SupportTicketsIdRoute
+  '/admin/complaints/': typeof AdminComplaintsIndexRoute
   '/customer/orders/': typeof CustomerOrdersIndexRoute
   '/shopkeeper/orders/': typeof ShopkeeperOrdersIndexRoute
+  '/support/tickets/': typeof SupportTicketsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -936,7 +945,6 @@ export interface FileRouteTypes {
     | '/support'
     | '/wishlist'
     | '/admin/categories'
-    | '/admin/complaints'
     | '/admin/coupons'
     | '/admin/customers'
     | '/admin/dashboard'
@@ -1000,8 +1008,8 @@ export interface FileRouteTypes {
     | '/support/dashboard'
     | '/support/my-tickets'
     | '/support/profile'
-    | '/support/tickets'
     | '/orders/'
+    | '/admin/complaints/$id'
     | '/admin/orders/$id'
     | '/api/public/bootstrap-super-admin'
     | '/api/public/fcm-dispatch'
@@ -1012,8 +1020,10 @@ export interface FileRouteTypes {
     | '/shopkeeper/orders/$id'
     | '/support/ticket/$id'
     | '/support/tickets/$id'
+    | '/admin/complaints/'
     | '/customer/orders/'
     | '/shopkeeper/orders/'
+    | '/support/tickets/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1037,7 +1047,6 @@ export interface FileRouteTypes {
     | '/support'
     | '/wishlist'
     | '/admin/categories'
-    | '/admin/complaints'
     | '/admin/coupons'
     | '/admin/customers'
     | '/admin/dashboard'
@@ -1101,8 +1110,8 @@ export interface FileRouteTypes {
     | '/support/dashboard'
     | '/support/my-tickets'
     | '/support/profile'
-    | '/support/tickets'
     | '/orders'
+    | '/admin/complaints/$id'
     | '/admin/orders/$id'
     | '/api/public/bootstrap-super-admin'
     | '/api/public/fcm-dispatch'
@@ -1113,8 +1122,10 @@ export interface FileRouteTypes {
     | '/shopkeeper/orders/$id'
     | '/support/ticket/$id'
     | '/support/tickets/$id'
+    | '/admin/complaints'
     | '/customer/orders'
     | '/shopkeeper/orders'
+    | '/support/tickets'
   id:
     | '__root__'
     | '/'
@@ -1138,7 +1149,6 @@ export interface FileRouteTypes {
     | '/support'
     | '/wishlist'
     | '/admin/categories'
-    | '/admin/complaints'
     | '/admin/coupons'
     | '/admin/customers'
     | '/admin/dashboard'
@@ -1202,8 +1212,8 @@ export interface FileRouteTypes {
     | '/support/dashboard'
     | '/support/my-tickets'
     | '/support/profile'
-    | '/support/tickets'
     | '/orders/'
+    | '/admin/complaints/$id'
     | '/admin/orders/$id'
     | '/api/public/bootstrap-super-admin'
     | '/api/public/fcm-dispatch'
@@ -1214,8 +1224,10 @@ export interface FileRouteTypes {
     | '/shopkeeper/orders/$id'
     | '/support/ticket/$id'
     | '/support/tickets/$id'
+    | '/admin/complaints/'
     | '/customer/orders/'
     | '/shopkeeper/orders/'
+    | '/support/tickets/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1397,13 +1409,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/orders/'
       preLoaderRoute: typeof OrdersIndexRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/support/tickets': {
-      id: '/support/tickets'
-      path: '/tickets'
-      fullPath: '/support/tickets'
-      preLoaderRoute: typeof SupportTicketsRouteImport
-      parentRoute: typeof SupportRoute
     }
     '/support/profile': {
       id: '/support/profile'
@@ -1846,19 +1851,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCouponsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/complaints': {
-      id: '/admin/complaints'
-      path: '/complaints'
-      fullPath: '/admin/complaints'
-      preLoaderRoute: typeof AdminComplaintsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/categories': {
       id: '/admin/categories'
       path: '/categories'
       fullPath: '/admin/categories'
       preLoaderRoute: typeof AdminCategoriesRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/support/tickets/': {
+      id: '/support/tickets/'
+      path: '/tickets'
+      fullPath: '/support/tickets/'
+      preLoaderRoute: typeof SupportTicketsIndexRouteImport
+      parentRoute: typeof SupportRoute
     }
     '/shopkeeper/orders/': {
       id: '/shopkeeper/orders/'
@@ -1874,12 +1879,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CustomerOrdersIndexRouteImport
       parentRoute: typeof CustomerRoute
     }
+    '/admin/complaints/': {
+      id: '/admin/complaints/'
+      path: '/complaints'
+      fullPath: '/admin/complaints/'
+      preLoaderRoute: typeof AdminComplaintsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/support/tickets/$id': {
       id: '/support/tickets/$id'
-      path: '/$id'
+      path: '/tickets/$id'
       fullPath: '/support/tickets/$id'
       preLoaderRoute: typeof SupportTicketsIdRouteImport
-      parentRoute: typeof SupportTicketsRoute
+      parentRoute: typeof SupportRoute
     }
     '/support/ticket/$id': {
       id: '/support/ticket/$id'
@@ -1944,6 +1956,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersIdRouteImport
       parentRoute: typeof AdminOrdersRoute
     }
+    '/admin/complaints/$id': {
+      id: '/admin/complaints/$id'
+      path: '/complaints/$id'
+      fullPath: '/admin/complaints/$id'
+      preLoaderRoute: typeof AdminComplaintsIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
@@ -1961,7 +1980,6 @@ const AdminOrdersRouteWithChildren = AdminOrdersRoute._addFileChildren(
 
 interface AdminRouteChildren {
   AdminCategoriesRoute: typeof AdminCategoriesRoute
-  AdminComplaintsRoute: typeof AdminComplaintsRoute
   AdminCouponsRoute: typeof AdminCouponsRoute
   AdminCustomersRoute: typeof AdminCustomersRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
@@ -1980,11 +1998,12 @@ interface AdminRouteChildren {
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminShopsRoute: typeof AdminShopsRoute
   AdminSupportRoute: typeof AdminSupportRoute
+  AdminComplaintsIdRoute: typeof AdminComplaintsIdRoute
+  AdminComplaintsIndexRoute: typeof AdminComplaintsIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminCategoriesRoute: AdminCategoriesRoute,
-  AdminComplaintsRoute: AdminComplaintsRoute,
   AdminCouponsRoute: AdminCouponsRoute,
   AdminCustomersRoute: AdminCustomersRoute,
   AdminDashboardRoute: AdminDashboardRoute,
@@ -2003,6 +2022,8 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSettingsRoute: AdminSettingsRoute,
   AdminShopsRoute: AdminShopsRoute,
   AdminSupportRoute: AdminSupportRoute,
+  AdminComplaintsIdRoute: AdminComplaintsIdRoute,
+  AdminComplaintsIndexRoute: AdminComplaintsIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -2143,32 +2164,22 @@ const SuperAdminRouteWithChildren = SuperAdminRoute._addFileChildren(
   SuperAdminRouteChildren,
 )
 
-interface SupportTicketsRouteChildren {
-  SupportTicketsIdRoute: typeof SupportTicketsIdRoute
-}
-
-const SupportTicketsRouteChildren: SupportTicketsRouteChildren = {
-  SupportTicketsIdRoute: SupportTicketsIdRoute,
-}
-
-const SupportTicketsRouteWithChildren = SupportTicketsRoute._addFileChildren(
-  SupportTicketsRouteChildren,
-)
-
 interface SupportRouteChildren {
   SupportDashboardRoute: typeof SupportDashboardRoute
   SupportMyTicketsRoute: typeof SupportMyTicketsRoute
   SupportProfileRoute: typeof SupportProfileRoute
-  SupportTicketsRoute: typeof SupportTicketsRouteWithChildren
   SupportTicketIdRoute: typeof SupportTicketIdRoute
+  SupportTicketsIdRoute: typeof SupportTicketsIdRoute
+  SupportTicketsIndexRoute: typeof SupportTicketsIndexRoute
 }
 
 const SupportRouteChildren: SupportRouteChildren = {
   SupportDashboardRoute: SupportDashboardRoute,
   SupportMyTicketsRoute: SupportMyTicketsRoute,
   SupportProfileRoute: SupportProfileRoute,
-  SupportTicketsRoute: SupportTicketsRouteWithChildren,
   SupportTicketIdRoute: SupportTicketIdRoute,
+  SupportTicketsIdRoute: SupportTicketsIdRoute,
+  SupportTicketsIndexRoute: SupportTicketsIndexRoute,
 }
 
 const SupportRouteWithChildren =
