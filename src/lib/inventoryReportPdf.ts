@@ -126,6 +126,8 @@ async function loadLogo(): Promise<string | null> {
 
 const THUMB_PX = 120; // source thumbnail size (keeps the PDF small but sharp at ~30pt)
 const THUMB_TIMEOUT_MS = 8000;
+/** Each photo is a network request, so very large inventories only get photos for the first N. */
+const MAX_PHOTOS = 300;
 
 /** Fetches one image and returns a small square JPEG data URL, or null if it can't be loaded. */
 async function loadThumbnail(raw: string): Promise<string | null> {
@@ -160,9 +162,13 @@ async function loadThumbnail(raw: string): Promise<string | null> {
   }
 }
 
-/** Loads every unique image once (a few at a time). Keys are the raw stored values. */
+/**
+ * Loads unique images once, a few at a time, in the order given (so put the important ones
+ * first). Keys are the raw stored values. `capped` is true when some were skipped.
+ */
 async function loadThumbnails(raws: (string | null | undefined)[]) {
-  const unique = [...new Set(raws.filter((r): r is string => !!r))];
+  const all = [...new Set(raws.filter((r): r is string => !!r))];
+  const unique = all.slice(0, MAX_PHOTOS);
   const out = new Map<string, string>();
   let next = 0;
   const worker = async () => {
@@ -173,7 +179,7 @@ async function loadThumbnails(raws: (string | null | undefined)[]) {
     }
   };
   await Promise.all(Array.from({ length: Math.min(6, unique.length) }, worker));
-  return out;
+  return { map: out, capped: all.length > MAX_PHOTOS };
 }
 
 export async function downloadInventoryReportPdf(data: InventoryReportData): Promise<void> {
@@ -181,13 +187,13 @@ export async function downloadInventoryReportPdf(data: InventoryReportData): Pro
   const autoTable = autoTableMod.default;
 
   // Photos for every product that appears anywhere in the report, plus the logo.
-  const [logo, thumbs] = await Promise.all([
+  const [logo, { map: thumbs, capped: photosCapped }] = await Promise.all([
     loadLogo(),
     loadThumbnails([
-      ...data.inventory.map((r) => r.image),
       ...data.bestSelling.map((r) => r.image),
       ...data.slowMoving.map((r) => r.image),
       ...data.expiry.flatMap((g) => g.rows.map((r) => r.image)),
+      ...data.inventory.map((r) => r.image),
     ]),
   ]);
 
@@ -526,6 +532,17 @@ export async function downloadInventoryReportPdf(data: InventoryReportData): Pro
     doc.setFontSize(8.5);
     doc.setTextColor(...MUTED);
     doc.text(`Filters applied: ${data.filtersLabel}`, PAGE_MARGIN + 8, y + 2);
+    y += 10;
+  }
+  if (photosCapped) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...MUTED);
+    doc.text(
+      `Product photos are included for the first ${MAX_PHOTOS} products only.`,
+      PAGE_MARGIN + 8,
+      y + 2,
+    );
     y += 10;
   }
   const inv = data.inventory;
