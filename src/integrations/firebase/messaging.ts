@@ -39,12 +39,7 @@ export function isFcmConfigured(): boolean {
 }
 
 export type PushStatus =
-  | "registered"
-  | "not-configured"
-  | "unsupported"
-  | "open-in-new-tab"
-  | "denied"
-  | "error";
+  "registered" | "not-configured" | "unsupported" | "open-in-new-tab" | "denied" | "error";
 
 export type PushResult = { status: PushStatus; token?: string; error?: string };
 
