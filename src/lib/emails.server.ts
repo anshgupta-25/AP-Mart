@@ -23,7 +23,22 @@ const C = {
 };
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif";
 
-export type Email = { to: string; subject: string; html: string; text: string };
+export type Email = {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  /** Embed the logo as an inline (cid) attachment: only when the site isn't publicly reachable. */
+  inlineLogo?: boolean;
+};
+
+/**
+ * Live site (https): load the small hosted logo, which mail apps fetch and cache fast and
+ * which adds no attachment. Local dev (localhost isn't reachable by Gmail): embed it instead.
+ */
+const canHostLogo = (site: string) => /^https:\/\//.test(site);
+const logoSrc = (site: string) =>
+  canHostLogo(site) ? `${site}/email-logo.png` : "cid:apmart-logo";
 
 /** Send through Resend. Needs RESEND_API_KEY; EMAIL_FROM must use a domain verified in Resend. */
 export async function sendEmail(email: Email): Promise<void> {
@@ -39,9 +54,17 @@ export async function sendEmail(email: Email): Promise<void> {
       subject: email.subject,
       html: email.html,
       text: email.text,
-      attachments: [
-        { filename: "apmart-logo.png", content: EMAIL_LOGO_PNG_BASE64, content_id: "apmart-logo" },
-      ],
+      ...(email.inlineLogo
+        ? {
+            attachments: [
+              {
+                filename: "apmart-logo.png",
+                content: EMAIL_LOGO_PNG_BASE64,
+                content_id: "apmart-logo",
+              },
+            ],
+          }
+        : {}),
     }),
   });
   if (!res.ok) {
@@ -76,7 +99,7 @@ function layout(o: { site: string; preheader: string; hero: string; body: string
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
         <td style="vertical-align:middle;">
           <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-            <td style="background:#ffffff;border-radius:14px;padding:5px;"><img src="cid:apmart-logo" width="38" height="38" alt="AP Mart" style="display:block;border-radius:10px;"></td>
+            <td style="background:#ffffff;border-radius:14px;padding:5px;"><img src="${logoSrc(o.site)}" width="38" height="38" alt="AP Mart" style="display:block;border-radius:10px;"></td>
             <td style="padding-left:12px;font:800 20px/1 ${FONT};color:#ffffff;letter-spacing:-0.02em;">AP Mart</td>
           </tr></table>
         </td>
@@ -184,6 +207,7 @@ export function confirmSignupEmail(o: {
     ${note("🔒", `<b style="color:${C.text};">Keep this code private.</b> AP Mart will never ask for it on a call or message. Didn't sign up? You can safely ignore this email.`)}`;
   return {
     to: o.to,
+    inlineLogo: !canHostLogo(o.site),
     subject: `${o.code} is your AP Mart verification code`,
     html: layout({
       site: o.site,
@@ -210,6 +234,7 @@ export function resetPasswordEmail(o: { to: string; link: string; site: string }
     ${note("🛡️", `<b style="color:${C.text};">Didn't ask for this?</b> Your password hasn't changed and your account is safe. You can ignore this email.`)}`;
   return {
     to: o.to,
+    inlineLogo: !canHostLogo(o.site),
     subject: "Reset your AP Mart password",
     html: layout({
       site: o.site,
@@ -274,6 +299,7 @@ export function welcomeEmail(o: { to: string; name: string; site: string }): Ema
 
   return {
     to: o.to,
+    inlineLogo: !canHostLogo(o.site),
     subject: `Welcome to AP Mart, ${o.name ? o.name.split(" ")[0] : "friend"}! 🎉`,
     html: layout({
       site: o.site,
