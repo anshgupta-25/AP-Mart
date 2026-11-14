@@ -126,6 +126,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Website links the Android app opens itself (must match the intent-filter in AndroidManifest.xml).
+const APP_LINK_HOSTS = new Set(["www.apmart.in", "apmart.in"]);
+const APP_LINK_PATHS = new Set(["/reset-password", "/auth/confirm"]);
+
 // The launch URL stays the same for the process lifetime: handle it once.
 let launchUrlHandled = false;
 
@@ -153,6 +157,17 @@ function RootComponent() {
       try {
         parsed = new URL(url);
       } catch {
+        return;
+      }
+      // Android App Links: email links (https://www.apmart.in/reset-password?…, /auth/confirm?…)
+      // open the app when it's installed (AndroidManifest + /.well-known/assetlinks.json).
+      // Only our own domain and these paths are accepted; open the same screen in-app.
+      if (
+        parsed.protocol === "https:" &&
+        APP_LINK_HOSTS.has(parsed.hostname) &&
+        APP_LINK_PATHS.has(parsed.pathname)
+      ) {
+        router.history.push(parsed.pathname + parsed.search);
         return;
       }
       // com.apmart.app://auth/callback -> host "auth", pathname "/callback"
