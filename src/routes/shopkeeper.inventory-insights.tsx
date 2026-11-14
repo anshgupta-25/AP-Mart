@@ -11,8 +11,6 @@ import {
   Clock,
   CalendarClock,
   Search,
-  Download,
-  FileSpreadsheet,
   FileText,
   TrendingUp,
   TrendingDown,
@@ -106,23 +104,6 @@ function statusOf(row: InvRow): { label: string; tone: string } {
   if (row.stock <= LOW_STOCK_THRESHOLD)
     return { label: "Low Stock", tone: "bg-tint-sun text-warning-foreground" };
   return { label: "Fresh", tone: "bg-primary-soft text-primary-ink" };
-}
-
-function toCsv(rows: Record<string, unknown>[]): string {
-  if (!rows.length) return "";
-  const keys = Object.keys(rows[0]);
-  const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  return [keys.join(","), ...rows.map((r) => keys.map((k) => esc(r[k])).join(","))].join("\n");
-}
-
-function download(name: string, content: string, mime: string) {
-  const blob = new Blob([content], { type: mime });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 function Page() {
@@ -405,24 +386,6 @@ function Page() {
     return list;
   }, [bestSelling, items, summary, lowestSelling]);
 
-  const exportRows = filtered.map((i) => {
-    const st = statusOf(i);
-    const dl = daysBetween(i.expiry_date);
-    return {
-      name: i.products?.name ?? "",
-      category: i.products?.categories?.name ?? "",
-      unit: i.products?.unit ?? "",
-      current_stock: i.stock,
-      initial_stock: i.initial_stock ?? i.stock,
-      price: i.price,
-      value: i.stock * Number(i.price),
-      added_on: new Date(i.created_at).toLocaleDateString(),
-      expiry_date: i.expiry_date ?? "",
-      days_left: dl ?? "",
-      status: st.label,
-    };
-  });
-
   const reportRow = (i: InvRow): ReportProductRow => ({
     name: (i.products?.name ?? "Unnamed product").trim(),
     category: i.products?.categories?.name ?? "",
@@ -525,28 +488,6 @@ function Page() {
             <h1 className="large-title">Insights</h1>
           </div>
           <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => download(`inventory-${Date.now()}.csv`, toCsv(exportRows), "text/csv")}
-            >
-              <Download className="h-4 w-4 mr-1" />
-              CSV
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                download(
-                  `inventory-${Date.now()}.xls`,
-                  toCsv(exportRows),
-                  "application/vnd.ms-excel",
-                )
-              }
-            >
-              <FileSpreadsheet className="h-4 w-4 mr-1" />
-              Excel
-            </Button>
             <Button
               size="sm"
               variant="outline"
