@@ -4,7 +4,7 @@
 -- 1. create_support_ticket notifies support agents AND admins (each with a link to
 --    their own portal), not just support.
 -- 2. admin_list_complaints returns tickets from every role (delivery partners were
---    missing) and includes assigned_to / resolved_by.
+--    missing) and includes assigned_to / resolved_by. No row limit (same as before).
 -- 3. update_ticket_status locks the ticket row, rejects a second "resolve" with
 --    "Already resolved by <name>", skips no-op updates (no duplicate notifications),
 --    records a fresh resolver after a reopen, and tells the assigned agent when
@@ -99,8 +99,7 @@ BEGIN
     ORDER BY shops.created_at ASC
     LIMIT 1
   ) s ON TRUE
-  ORDER BY t.created_at DESC
-  LIMIT 500;
+  ORDER BY t.created_at DESC;
 END $$;
 
 REVOKE ALL ON FUNCTION public.admin_list_complaints() FROM PUBLIC, anon;
@@ -200,7 +199,10 @@ BEGIN
       'Ticket ' || COALESCE(_num,'') || ' was ' || _status::text || ' by '
         || COALESCE(public.ticket_staff_name(_uid), 'another agent') || '.',
       'support',
-      jsonb_build_object('ticket_id', _ticket_id, 'url', '/support/tickets/' || _ticket_id));
+      -- Link to the assignee's own portal (admins use /admin/complaints).
+      jsonb_build_object('ticket_id', _ticket_id, 'url',
+        CASE WHEN has_role(_assignee,'admin'::app_role) THEN '/admin/complaints/' ELSE '/support/tickets/' END
+        || _ticket_id));
   END IF;
 
   IF _creator IS NULL THEN RETURN; END IF;

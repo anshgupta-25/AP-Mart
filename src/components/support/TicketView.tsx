@@ -24,6 +24,8 @@ import {
 import { toast } from "sonner";
 import { rupees } from "@/lib/format";
 import { StorageImg, StorageLink } from "@/components/StorageImg";
+import { rpcArgs } from "@/integrations/supabase/rpc";
+import type { Database } from "@/integrations/supabase/types";
 
 const STATUSES: { value: string; label: string; dot: string; tone: string }[] = [
   { value: "open", label: "Open", dot: "bg-amber-500", tone: "bg-tint-sun" },
@@ -154,7 +156,11 @@ export function TicketView({ id }: { id: string }) {
     setStatusBusy(next);
     // Always send _notes: with it omitted, Postgres cannot choose between the two
     // update_ticket_status overloads ("best candidate function" error).
-    const payload: any = { _ticket_id: id, _status: next, _notes: null };
+    const payload = rpcArgs("update_ticket_status", {
+      _ticket_id: id,
+      _status: next as Database["public"]["Enums"]["ticket_status"],
+      _notes: null,
+    });
     const { error } = await supabase.rpc("update_ticket_status", payload);
     setStatusBusy(null);
     if (error) {
