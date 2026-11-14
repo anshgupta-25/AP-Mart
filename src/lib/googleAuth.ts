@@ -19,7 +19,10 @@ const NativeGoogleAuth = registerPlugin<NativeGoogleAuthPlugin>("GoogleAuth");
  * Returns the Google ID token and verifies it through the same server endpoint
  * as the Web GIS button.
  */
-export async function signInWithGoogleNative(): Promise<{ error: Error | null }> {
+export async function signInWithGoogleNative(): Promise<{
+  error: Error | null;
+  cancelled?: boolean;
+}> {
   try {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
     if (!clientId) {
@@ -33,7 +36,7 @@ export async function signInWithGoogleNative(): Promise<{ error: Error | null }>
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (/cancel/i.test(msg)) {
-      return { error: null }; // User closed account picker without selecting
+      return { error: null, cancelled: true }; // User closed the account picker
     }
     return { error: new Error(msg || "Google sign-in failed.") };
   }

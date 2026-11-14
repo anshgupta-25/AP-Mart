@@ -45,46 +45,36 @@ async function handle(request: Request): Promise<Response> {
       google_sub: identity.sub,
     };
 
-    // Pre-hijack defence: an UNCONFIRMED account with this email may have been
-    // registered by someone else with a password they chose. Google has just
-    // proven ownership of the address, so replace that password before the
-    // account is confirmed by the magic link below.
-    let existingUser: { id: string; email_confirmed_at?: string | null } | null = null;
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("id")
-      .eq("email", identity.email)
-      .maybeSingle();
-
-    if (profile?.id) {
-      const { data: u } = await supabaseAdmin.auth.admin.getUserById(profile.id);
-      if (u?.user) existingUser = u.user;
+    // generateLink(magiclink) targets the REAL auth user for this email (creating it if
+    // missing) and tells us whether it is confirmed: an indexed lookup in auth.users, with
+    // no scan of all users and no trust in the user-editable profiles.email column.
+    const link = () =>
+      supabaseAdmin.auth.admin.generateLink({
+        type: "magiclink",
+        email: identity.email,
+        options: { data: meta },
+      });
+    let { data, error } = await link();
+    if (error || !data?.user || !data.properties?.hashed_token) {
+      console.error("[google-auth] generateLink failed:", error?.message);
+      return fail(500, "Could not create your session. Please try again.");
     }
 
-    if (!existingUser) {
-      // Fallback check in case a profile record has not been created yet
-      const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 100 });
-      existingUser =
-        list?.users?.find((u) => (u.email ?? "").toLowerCase() === identity.email) ?? null;
-    }
-
-    if (existingUser && !existingUser.email_confirmed_at) {
-      const { error: resetErr } = await supabaseAdmin.auth.admin.updateUserById(existingUser.id, {
+    // Pre-hijack defence: an UNCONFIRMED account with this email may have been registered by
+    // someone else with a password they chose (or was just created above). Google has proven
+    // ownership of the address, so replace any password and confirm the email. Updating the
+    // user invalidates the token above, so issue a fresh one afterwards.
+    if (!data.user.email_confirmed_at) {
+      const { error: resetErr } = await supabaseAdmin.auth.admin.updateUserById(data.user.id, {
         password: crypto.randomUUID() + crypto.randomUUID(),
         email_confirm: true,
       });
       if (resetErr) throw resetErr;
-    }
-
-    // generateLink(magiclink) creates the user if missing and returns a token we can redeem.
-    const { data, error } = await supabaseAdmin.auth.admin.generateLink({
-      type: "magiclink",
-      email: identity.email,
-      options: { data: meta },
-    });
-    if (error || !data?.properties?.hashed_token) {
-      console.error("[google-auth] generateLink failed:", error?.message);
-      return fail(500, "Could not create your session. Please try again.");
+      ({ data, error } = await link());
+      if (error || !data?.properties?.hashed_token) {
+        console.error("[google-auth] generateLink (after confirm) failed:", error?.message);
+        return fail(500, "Could not create your session. Please try again.");
+      }
     }
     return Response.json({ token_hash: data.properties.hashed_token }, { headers: cors });
   } catch (err) {

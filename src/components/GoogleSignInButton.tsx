@@ -47,8 +47,9 @@ function NativeGoogleButton({ next }: { next?: string }) {
   const start = async () => {
     setBusy(true);
     if (next) sessionStorage.setItem("flashbasket.auth.next", next);
-    const { error } = await signInWithGoogleNative();
+    const { error, cancelled } = await signInWithGoogleNative();
     setBusy(false);
+    if (cancelled) return; // closed the account picker: stay on this page
     if (error) {
       toast.error(error.message);
       return;
