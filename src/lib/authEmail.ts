@@ -35,12 +35,17 @@ async function call(
   }
 }
 
-/** Creates the account (unconfirmed) and emails the 8-digit code + confirm link. */
+/**
+ * Creates the account (unconfirmed) and emails the 8-digit code + confirm link.
+ * `throttled`: a code was sent moments ago; it's still valid, so just show the code screen.
+ */
 export async function requestSignupCode(d: SignupDetails) {
   const r = await call({ action: "signup", ...d });
-  if (r.status === "exists") return { exists: true as const, error: null };
+  if (r.status === "exists") return { exists: true as const, throttled: false, error: null };
+  if (r.status === "throttled") return { exists: false as const, throttled: true, error: null };
   return {
     exists: false as const,
+    throttled: false,
     error: r.httpStatus === 200 ? null : (r.error ?? "Could not send the code."),
   };
 }
@@ -61,9 +66,10 @@ export async function sendWelcomeEmail() {
 }
 
 /**
- * Verifies the emailed code. On success the user is signed in; the password typed in this
- * session is (re)applied so the person who owns the inbox decides the password (closes the
- * "someone pre-registered my email" gap), then the welcome email goes out.
+ * Verifies the emailed code. On success the user is signed in, then the password typed in this
+ * session is applied, so the person who owns the inbox decides the password (closes the
+ * "someone pre-registered my email" gap). If that save fails, `needsPassword` asks the caller
+ * to collect a password before continuing.
  */
 export async function verifySignupCode(email: string, code: string, password?: string) {
   const { error } = await supabase.auth.verifyOtp({
@@ -73,12 +79,24 @@ export async function verifySignupCode(email: string, code: string, password?: s
   });
   if (error) {
     return {
+      needsPassword: false,
       error: /expired|invalid/i.test(error.message)
         ? "That code is incorrect or has expired. Check the latest email or send a new code."
         : error.message,
     };
   }
-  if (password) await supabase.auth.updateUser({ password });
+  if (password) {
+    const { error: pwError } = await supabase.auth.updateUser({ password });
+    if (pwError && !isSamePasswordError(pwError)) {
+      console.error("[verifySignupCode] password save failed:", pwError.message);
+      return { needsPassword: true, error: null };
+    }
+  }
   void sendWelcomeEmail();
-  return { error: null };
+  return { needsPassword: false, error: null };
+}
+
+/** Supabase rejects setting the password it already has; that is a success for our purposes. */
+export function isSamePasswordError(e: { message: string; code?: string }) {
+  return /different from the old password|same_password/i.test(`${e.message} ${e.code ?? ""}`);
 }

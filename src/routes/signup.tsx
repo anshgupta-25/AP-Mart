@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { useLocations, deriveLocationOptions } from "@/hooks/useLocations";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
-import { VerifyEmailStep } from "@/components/auth/VerifyEmailStep";
+import { VerifyEmailScreen } from "@/components/auth/VerifyEmailStep";
 import { requestSignupCode, type SignupDetails } from "@/lib/authEmail";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
@@ -67,7 +67,7 @@ function SignupPage() {
       pincode,
     };
     setSubmitting(true);
-    const { exists, error } = await requestSignupCode(details);
+    const { exists, error } = await requestSignupCode(details); // throttled = code already sent
     setSubmitting(false);
     if (exists) {
       toast.error("An account with this email already exists. Log in or reset your password.");
@@ -82,25 +82,7 @@ function SignupPage() {
 
   // Step 2: enter the emailed code (or tap the link in the email).
   if (pending) {
-    return (
-      <div className="flex min-h-screen items-start justify-center bg-background px-4 pb-10 pt-safe md:items-center">
-        <div className="w-full max-w-md">
-          <Link to="/" className="mb-4 mt-6 flex justify-center">
-            <Logo size="md" />
-          </Link>
-          <div className="rounded-xl border border-border/70 bg-card p-5 md:p-7">
-            <VerifyEmailStep
-              details={pending}
-              onBack={() => setPending(null)}
-              onVerified={() => {
-                if (next) sessionStorage.setItem("flashbasket.auth.next", next);
-                navigate({ to: "/auth/callback", replace: true });
-              }}
-            />
-          </div>
-        </div>
-      </div>
-    );
+    return <VerifyEmailScreen details={pending} next={next} onBack={() => setPending(null)} />;
   }
 
   return (

@@ -3,7 +3,8 @@ import { EMAIL_LOGO_PNG_BASE64 } from "./emailLogo.server";
 
 // Server-only: AP Mart transactional emails (sign-up code + confirm link, password reset,
 // welcome) sent through Resend. Email-safe HTML: table layout, inline styles, solid-colour
-// fallbacks behind gradients, logo embedded as an inline (cid) image.
+// fallbacks behind gradients. Logo: on the live (https) site a small hosted image
+// (`${site}/email-logo.png`, must be deployed); locally an inline (cid) attachment.
 
 const C = {
   green: "#1f8a4c",

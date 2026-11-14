@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, Loader2, ShieldAlert } from "lucide-react";
+import { MailCheck, ShieldAlert } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { NewPasswordForm } from "@/components/auth/NewPasswordForm";
@@ -14,44 +14,44 @@ export const Route = createFileRoute("/auth/confirm")({
 
 /**
  * "Confirm my email" link from the sign-up email (?type=signup&token_hash=…).
- * After confirming, the user sets their password here: whoever owns the inbox decides the
- * password, so an account someone else pre-registered with this email can't keep their password.
+ * The user sets their password and the email is confirmed in the same step (the one-time
+ * token is redeemed only on submit). Whoever owns the inbox therefore decides the password,
+ * and closing the page early leaves nothing confirmed: an account someone else pre-registered
+ * with this email can't end up confirmed with their password.
  */
 function ConfirmEmailPage() {
   const navigate = useNavigate();
-  const [state, setState] = useState<"checking" | "set-password" | "error">("checking");
-  const [error, setError] = useState("");
-  const [email, setEmail] = useState<string | null>(null);
-  const started = useRef(false);
+  const tokenHash = useRef<string | null>(null);
+  const verified = useRef(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (started.current) return;
-    started.current = true;
+    if (tokenHash.current !== null) return;
     const params = new URLSearchParams(window.location.search);
-    const tokenHash = params.get("token_hash");
-    window.history.replaceState(null, "", window.location.pathname); // one-time token: drop from URL
-    if (!tokenHash) {
+    tokenHash.current = params.get("token_hash") ?? "";
+    window.history.replaceState(null, "", window.location.pathname); // keep the token out of history
+    if (!tokenHash.current)
       setError("This confirmation link is incomplete. Open it again from the email.");
-      setState("error");
-      return;
-    }
-    void supabase.auth
-      .verifyOtp({ token_hash: tokenHash, type: "signup" })
-      .then(async ({ error }) => {
-        if (error) {
-          setError(
-            /expired/i.test(error.message)
-              ? "This link has expired. Sign up again with the same email to get a new code."
-              : "This link is invalid or has already been used. If you already confirmed your email, just log in.",
-          );
-          setState("error");
-          return;
-        }
-        const { data } = await supabase.auth.getUser();
-        setEmail(data.user?.email ?? null);
-        setState("set-password");
-      });
   }, []);
+
+  // Runs when the user submits their password: confirm the email first (once).
+  const confirmEmail = async (): Promise<string | null> => {
+    if (verified.current) return null;
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash.current ?? "",
+      type: "signup",
+    });
+    if (verifyError) {
+      setError(
+        /expired/i.test(verifyError.message)
+          ? "This link has expired. Sign up again with the same email to get a new code."
+          : "This link is invalid or has already been used. If you already confirmed your email, just log in.",
+      );
+      return "Couldn't confirm your email.";
+    }
+    verified.current = true;
+    return null;
+  };
 
   return (
     <div className="flex min-h-screen items-start justify-center bg-background px-4 pb-10 pt-safe md:items-center">
@@ -60,14 +60,7 @@ function ConfirmEmailPage() {
           <Logo size="md" />
         </Link>
 
-        {state === "checking" && (
-          <div className="mt-10 flex flex-col items-center gap-3 text-meta text-muted-foreground">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            Confirming your email…
-          </div>
-        )}
-
-        {state === "error" && (
+        {error ? (
           <div className="space-y-4 text-center">
             <ShieldAlert className="mx-auto h-10 w-10 text-warning-foreground" />
             <h1 className="large-title">Couldn't confirm</h1>
@@ -79,25 +72,21 @@ function ConfirmEmailPage() {
               Sign up again
             </Link>
           </div>
-        )}
-
-        {state === "set-password" && (
+        ) : (
           <>
             <div className="text-center">
-              <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
-              <h1 className="large-title mt-3">Email confirmed</h1>
+              <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary-soft text-primary-ink">
+                <MailCheck className="h-6 w-6" strokeWidth={1.8} />
+              </div>
+              <h1 className="large-title mt-4">Confirm your email</h1>
               <p className="mt-1 text-meta text-muted-foreground">
-                {email ? (
-                  <>
-                    <span className="font-semibold text-foreground">{email}</span> is verified.{" "}
-                  </>
-                ) : null}
-                Set your password to finish. You'll use it to log in.
+                Set your password to confirm your email and finish creating your account.
               </p>
             </div>
             <div className="mt-6 rounded-xl border border-border/70 bg-card p-5">
               <NewPasswordForm
-                submitLabel="Finish setting up"
+                submitLabel="Confirm & finish"
+                beforeSave={confirmEmail}
                 onSaved={() => {
                   void sendWelcomeEmail();
                   navigate({ to: "/auth/callback", replace: true });

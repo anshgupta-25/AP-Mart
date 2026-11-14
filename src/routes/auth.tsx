@@ -20,6 +20,8 @@ import {
   withRequestTimeout,
 } from "@/lib/phone";
 import { errorMessage } from "@/lib/utils";
+import { requestSignupCode, type SignupDetails } from "@/lib/authEmail";
+import { VerifyEmailScreen } from "@/components/auth/VerifyEmailStep";
 
 async function redirectByRole(navigate: ReturnType<typeof useNavigate>, userId: string) {
   const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
@@ -50,11 +52,12 @@ function AuthShell() {
 }
 
 function AuthPage() {
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [li, setLi] = useState({ email: "", password: "" });
   const [su, setSu] = useState({ name: "", email: "", password: "" });
+  const [pendingSignup, setPendingSignup] = useState<SignupDetails | null>(null);
   const phoneFlowRef = useRef(false);
 
   useEffect(() => {
@@ -76,12 +79,23 @@ function AuthPage() {
 
   const onSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (su.password.length < 8) return toast.error("Password must be at least 8 characters");
+    const details: SignupDetails = {
+      email: su.email.trim().toLowerCase(),
+      password: su.password,
+      fullName: su.name.trim(),
+    };
     setLoading(true);
-    const { error } = await signUp(su.email, su.password, su.name);
+    const { exists, error } = await requestSignupCode(details);
     setLoading(false);
-    if (error) toast.error(describeAuthError(error));
-    else toast.success("Account created! Check your email to confirm.");
+    if (exists) return toast.error("An account with this email already exists. Log in instead.");
+    if (error) return toast.error(error);
+    setPendingSignup(details);
   };
+
+  if (pendingSignup) {
+    return <VerifyEmailScreen details={pendingSignup} onBack={() => setPendingSignup(null)} />;
+  }
 
   return (
     <div className="grid min-h-[80vh] lg:grid-cols-2">
@@ -165,7 +179,7 @@ function AuthPage() {
                   />
                   <Field
                     id="su-password"
-                    label="Password (min 6)"
+                    label="Password (min 8)"
                     type="password"
                     value={su.password}
                     onChange={(v) => setSu({ ...su, password: v })}

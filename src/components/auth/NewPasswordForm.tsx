@@ -5,14 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { isSamePasswordError } from "@/lib/authEmail";
 
-/** New password + confirm (min 8 chars). Calls onSaved after supabase.auth.updateUser succeeds. */
+/**
+ * New password + confirm (min 8 chars). Calls onSaved after supabase.auth.updateUser succeeds.
+ * `beforeSave` runs first (e.g. redeem a one-time email token); return an error message to stop.
+ */
 export function NewPasswordForm({
   submitLabel,
   onSaved,
+  beforeSave,
 }: {
   submitLabel: string;
   onSaved: () => void;
+  beforeSave?: () => Promise<string | null>;
 }) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -24,13 +30,15 @@ export function NewPasswordForm({
     if (password.length < 8) return toast.error("Password must be at least 8 characters");
     if (password !== confirm) return toast.error("Passwords do not match");
     setBusy(true);
+    const blocked = beforeSave ? await beforeSave() : null;
+    if (blocked) {
+      setBusy(false);
+      return toast.error(blocked);
+    }
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
     // Same as the current password is fine (e.g. re-confirming the one chosen at sign-up).
-    if (
-      error &&
-      !/different from the old password|same_password/i.test(`${error.message} ${error.code ?? ""}`)
-    ) {
+    if (error && !isSamePasswordError(error)) {
       console.error("[NewPassword] updateUser failed:", error.message);
       return toast.error(error.message || "Could not save your password");
     }

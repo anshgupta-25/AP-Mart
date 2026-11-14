@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { requestSignupCode, type SignupDetails } from "@/lib/authEmail";
-import { VerifyEmailStep } from "@/components/auth/VerifyEmailStep";
+import { VerifyEmailScreen } from "@/components/auth/VerifyEmailStep";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,9 +82,13 @@ function LoginPage() {
           password,
           fullName: "",
         };
-        const { error: sendErr } = await requestSignupCode(details);
+        const { error: sendErr, throttled } = await requestSignupCode(details);
         if (sendErr) return toast.error(sendErr);
-        toast("Verify your email to continue", { description: "We've sent you a new code." });
+        toast("Verify your email to continue", {
+          description: throttled
+            ? "Enter the code we just emailed you."
+            : "We've sent you a new code.",
+        });
         setVerifying(details);
         return;
       }
@@ -108,22 +112,7 @@ function LoginPage() {
   }
 
   if (verifying) {
-    return (
-      <div className="flex min-h-screen items-start justify-center bg-background px-4 pb-10 pt-safe md:items-center">
-        <div className="w-full max-w-md">
-          <div className="mt-10 rounded-xl border border-border/70 bg-card p-5 md:p-7">
-            <VerifyEmailStep
-              details={verifying}
-              onBack={() => setVerifying(null)}
-              onVerified={() => {
-                if (next) sessionStorage.setItem("flashbasket.auth.next", next);
-                navigate({ to: "/auth/callback", replace: true });
-              }}
-            />
-          </div>
-        </div>
-      </div>
-    );
+    return <VerifyEmailScreen details={verifying} next={next} onBack={() => setVerifying(null)} />;
   }
 
   return (
