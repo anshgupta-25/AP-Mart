@@ -1,7 +1,67 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { User } from "@supabase/supabase-js";
+import { createClient, type User } from "@supabase/supabase-js";
 import { toApiUrl } from "@/lib/api-base";
 import type { TablesUpdate } from "@/integrations/supabase/types";
+
+// Deep link the Android app registers (AndroidManifest.xml). Must also be in
+// Supabase > Authentication > URL Configuration > Redirect URLs.
+export const NATIVE_AUTH_CALLBACK = "com.apmart.app://auth/callback";
+
+let pkceClient: ReturnType<typeof createClient> | undefined;
+
+/**
+ * PKCE-mode auth client used only to start Google sign-in in the Android app. It shares
+ * the main client's storage + storage key, so the code verifier it saves is found by
+ * `supabase.auth.exchangeCodeForSession(code)` on /auth/callback. The deep link only
+ * carries a one-time code that is useless without the verifier kept on this device.
+ */
+function nativePkceClient() {
+  pkceClient ??= createClient(
+    import.meta.env.VITE_SUPABASE_URL as string,
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string,
+    {
+      auth: {
+        flowType: "pkce",
+        storage: localStorage,
+        persistSession: true,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    },
+  );
+  return pkceClient;
+}
+
+/**
+ * Google sign-in for the Android app (Capacitor). Google blocks sign-in inside WebViews
+ * and the GIS button is unreliable there, so this opens Supabase's Google OAuth in the
+ * system browser; it returns via com.apmart.app://auth/callback?code=… (handled in
+ * __root.tsx), and /auth/callback exchanges the code. Requires the Google provider to be
+ * enabled in Supabase. Resolves once the browser closes (signed in, or backed out).
+ */
+export async function signInWithGoogleNative(): Promise<{ error: Error | null }> {
+  try {
+    const { data, error } = await nativePkceClient().auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: NATIVE_AUTH_CALLBACK,
+        skipBrowserRedirect: true,
+        queryParams: { prompt: "select_account" },
+      },
+    });
+    if (error || !data?.url) return { error: error ?? new Error("No sign-in URL") };
+    const { Browser } = await import("@capacitor/browser");
+    let onClosed!: () => void;
+    const closed = new Promise<void>((resolve) => (onClosed = resolve));
+    const handle = await Browser.addListener("browserFinished", () => onClosed());
+    await Browser.open({ url: data.url });
+    await closed;
+    await handle.remove();
+    return { error: null };
+  } catch (err) {
+    return { error: err instanceof Error ? err : new Error("Google sign-in failed") };
+  }
+}
 
 /**
  * Exchanges a Google Identity Services ID token for an application session.
