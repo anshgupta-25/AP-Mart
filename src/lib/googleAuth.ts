@@ -22,9 +22,12 @@ export async function signInWithGoogleCredential(credential: string): Promise<{
     if (!res.ok || !body.token_hash) {
       return { error: new Error(body.error || "Google sign-in failed") };
     }
+    // "email" redeems both cases: generateLink(magiclink) issues a "signup" token for a
+    // brand-new user and a "magiclink" token for an existing one. Verifying as
+    // "magiclink" rejects the new-user token, so a first Google sign-in would fail.
     const { error } = await supabase.auth.verifyOtp({
       token_hash: body.token_hash,
-      type: "magiclink",
+      type: "email",
     });
     return { error };
   } catch (err) {

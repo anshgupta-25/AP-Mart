@@ -11,13 +11,15 @@ function describeResetError(err: { message: string; status?: number; code?: stri
   )
     return "Too many reset emails requested. Please wait a few minutes and try again.";
   if (code === "validation_failed" || /redirect/i.test(err.message))
-    return `The reset link address is not allowed (${err.message}). Add it under Supabase → Authentication → URL Configuration → Redirect URLs.`;
+    // Admin fix (see console log): add the URL under Supabase → Auth → URL Configuration.
+    return "Password reset is temporarily unavailable. Please try again later or contact support.";
   if (
     err.status === 500 ||
     code === "unexpected_failure" ||
     /sending recovery email/i.test(err.message)
   )
-    return `The server could not send the email (${err.message}). Check the SMTP settings in Supabase → Authentication → SMTP.`;
+    // Admin fix (see console log): check Supabase → Auth → SMTP settings.
+    return "We couldn't send the reset email right now. Please try again in a few minutes.";
   return err.message || "Could not send the reset email.";
 }
 
