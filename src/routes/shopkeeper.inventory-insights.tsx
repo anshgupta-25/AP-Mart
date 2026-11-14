@@ -18,6 +18,7 @@ import {
   TrendingDown,
   Sparkles,
   BarChart3,
+  Loader2,
 } from "lucide-react";
 import {
   BarChart,
@@ -47,6 +48,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { rupees } from "@/lib/format";
 import { StorageImg } from "@/components/StorageImg";
+import { toast } from "sonner";
+import type { ReportProductRow } from "@/lib/inventoryReportPdf";
 
 export const Route = createFileRoute("/shopkeeper/inventory-insights")({
   head: () => ({ meta: [{ title: "Inventory Insights — Shopkeeper" }] }),
@@ -132,6 +135,7 @@ function Page() {
   const [sortBy, setSortBy] = useState<string>("newest");
   const [range, setRange] = useState<"today" | "week" | "month" | "year">("week");
   const [selected, setSelected] = useState<InvRow | null>(null);
+  const [pdfBusy, setPdfBusy] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -419,6 +423,90 @@ function Page() {
     };
   });
 
+  const reportRow = (i: InvRow): ReportProductRow => ({
+    name: i.products?.name ?? "Unnamed product",
+    category: i.products?.categories?.name ?? "",
+    unit: i.products?.unit ?? "",
+    stock: i.stock,
+    initialStock: i.initial_stock ?? i.stock,
+    price: Number(i.price),
+    value: i.stock * Number(i.price),
+    expiry: i.expiry_date,
+    daysLeft: daysBetween(i.expiry_date),
+    status: statusOf(i).label,
+  });
+
+  // Builds a designed PDF from the data on this page (not a screenshot of it).
+  const downloadPdf = async () => {
+    if (!shopId) return;
+    setPdfBusy(true);
+    try {
+      const { data: shop } = await supabase
+        .from("shops")
+        .select("id, name, address, city, state, pincode, phone")
+        .eq("id", shopId)
+        .maybeSingle();
+      const periodLabel = {
+        today: "Today",
+        week: "Last 7 days",
+        month: "Last 30 days",
+        year: "Last 12 months",
+      }[range];
+      const filters = [
+        q.trim() && `search "${q.trim()}"`,
+        catFilter !== "all" && `category ${categories.find((c) => c.id === catFilter)?.name ?? ""}`,
+        stockFilter !== "all" &&
+          { in: "in stock", low: "low stock", out: "out of stock" }[stockFilter],
+        expiryFilter !== "all" &&
+          {
+            expired: "expired",
+            today: "expiring today",
+            "7": "expiring in 7 days",
+            "30": "expiring in 30 days",
+            none: "no expiry set",
+          }[expiryFilter],
+      ].filter(Boolean);
+      const { downloadInventoryReportPdf } = await import("@/lib/inventoryReportPdf");
+      await downloadInventoryReportPdf({
+        shop: shop ?? { id: shopId, name: "My shop" },
+        ownerEmail: user?.email ?? null,
+        generatedAt: new Date(),
+        periodLabel,
+        filtersLabel: filters.length ? filters.join(", ") : null,
+        summary,
+        sales: {
+          orders: new Set(completedSales.map((s) => s.order_id)).size,
+          units: completedSales.reduce((a, s) => a + s.quantity, 0),
+          revenue: completedSales.reduce((a, s) => a + s.quantity * s.price, 0),
+        },
+        insights: insights.map((i) => i.text),
+        expiry: [
+          { label: "Expired", rows: expiryGroups.expired.map(reportRow) },
+          { label: "Today", rows: expiryGroups.today.map(reportRow) },
+          { label: "This week", rows: expiryGroups.week.map(reportRow) },
+          { label: "This month", rows: expiryGroups.month.map(reportRow) },
+        ],
+        bestSelling: bestSelling.map((b) => ({
+          name: b.name,
+          orders: b.orders,
+          units: b.units,
+          revenue: b.revenue,
+        })),
+        slowMoving: lowestSelling.map((b) => ({
+          name: b.name,
+          orders: b.orders,
+          units: b.units,
+          revenue: b.revenue,
+        })),
+        inventory: filtered.map(reportRow),
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not create the PDF");
+    } finally {
+      setPdfBusy(false);
+    }
+  };
+
   return (
     <>
       <div className="mx-auto max-w-6xl space-y-5 px-4 py-4 md:px-6">
@@ -456,8 +544,17 @@ function Page() {
               <FileSpreadsheet className="h-4 w-4 mr-1" />
               Excel
             </Button>
-            <Button size="sm" variant="outline" onClick={() => window.print()}>
-              <FileText className="h-4 w-4 mr-1" />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={downloadPdf}
+              disabled={pdfBusy || !shopId || inventory.isLoading}
+            >
+              {pdfBusy ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <FileText className="h-4 w-4 mr-1" />
+              )}
               PDF
             </Button>
           </div>
