@@ -8,6 +8,7 @@
  */
 import type { jsPDF as JsPDF } from "jspdf";
 import type { CellHookData } from "jspdf-autotable";
+import apmartLogoUrl from "@/assets/apmart-logo-192.png";
 
 export type ReportProductRow = {
   name: string;
@@ -61,6 +62,7 @@ export type InventoryReportData = {
   insights: string[];
   expiry: { label: string; rows: ReportProductRow[] }[];
   bestSelling: ReportSalesRow[];
+  /** Products that sold the least in the period, including ones with no sales. */
   slowMoving: ReportSalesRow[];
   inventory: ReportProductRow[];
 };
@@ -101,6 +103,23 @@ function daysLeftText(d: number | null) {
   if (d < 0) return `${Math.abs(d)}d ago`;
   if (d === 0) return "Today";
   return `${d}d`;
+}
+
+/** The AP Mart logo as a PNG data URL, or null if it can't be loaded (header falls back to text). */
+async function loadLogo(): Promise<string | null> {
+  try {
+    const res = await fetch(apmartLogoUrl);
+    if (!res.ok) return null;
+    const bmp = await createImageBitmap(await res.blob());
+    const canvas = document.createElement("canvas");
+    canvas.width = bmp.width;
+    canvas.height = bmp.height;
+    canvas.getContext("2d")?.drawImage(bmp, 0, 0);
+    bmp.close?.();
+    return canvas.toDataURL("image/png");
+  } catch {
+    return null;
+  }
 }
 
 /* ---------------------------------------------------------------- product photos */
@@ -161,12 +180,15 @@ export async function downloadInventoryReportPdf(data: InventoryReportData): Pro
   const [{ jsPDF }, autoTableMod] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
   const autoTable = autoTableMod.default;
 
-  // Photos for every product that appears anywhere in the report.
-  const thumbs = await loadThumbnails([
-    ...data.inventory.map((r) => r.image),
-    ...data.bestSelling.map((r) => r.image),
-    ...data.slowMoving.map((r) => r.image),
-    ...data.expiry.flatMap((g) => g.rows.map((r) => r.image)),
+  // Photos for every product that appears anywhere in the report, plus the logo.
+  const [logo, thumbs] = await Promise.all([
+    loadLogo(),
+    loadThumbnails([
+      ...data.inventory.map((r) => r.image),
+      ...data.bestSelling.map((r) => r.image),
+      ...data.slowMoving.map((r) => r.image),
+      ...data.expiry.flatMap((g) => g.rows.map((r) => r.image)),
+    ]),
   ]);
 
   const doc: JsPDF = new jsPDF({ unit: "pt", format: "a4" });
@@ -196,24 +218,32 @@ export async function downloadInventoryReportPdf(data: InventoryReportData): Pro
   };
 
   // ---------- Header ----------
-  doc.setFillColor(...BRAND);
-  doc.roundedRect(PAGE_MARGIN, y, 24, 24, 3, 3, "F");
+  const LOGO = 32;
+  if (logo) {
+    doc.addImage(logo, "PNG", PAGE_MARGIN, y - 2, LOGO, LOGO);
+  } else {
+    // Fallback if the logo image can't be loaded
+    doc.setFillColor(...BRAND);
+    doc.roundedRect(PAGE_MARGIN, y - 2, LOGO, LOGO, 4, 4, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(255, 255, 255);
+    doc.text("AP", PAGE_MARGIN + LOGO / 2, y + 18, { align: "center" });
+  }
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(255, 255, 255);
-  doc.text("AP", PAGE_MARGIN + 12, y + 15.5, { align: "center" });
   doc.setFontSize(19);
   doc.setTextColor(...INK);
-  doc.text("AP Mart", PAGE_MARGIN + 33, y + 18);
+  doc.text("AP Mart", PAGE_MARGIN + LOGO + 10, y + 20);
 
   doc.setFontSize(9);
-  doc.text("Inventory Report", W - PAGE_MARGIN, y + 8, { align: "right" });
+  doc.setFont("helvetica", "bold");
+  doc.text("Inventory Report", W - PAGE_MARGIN, y + 10, { align: "right" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(...MUTED);
-  doc.text(`Generated: ${stamp(data.generatedAt)}`, W - PAGE_MARGIN, y + 20, { align: "right" });
+  doc.text(`Generated: ${stamp(data.generatedAt)}`, W - PAGE_MARGIN, y + 22, { align: "right" });
 
-  y += 32;
+  y += 38;
   doc.setDrawColor(...BRAND);
   doc.setLineWidth(2);
   doc.line(PAGE_MARGIN, y, W - PAGE_MARGIN, y);
@@ -484,9 +514,9 @@ export async function downloadInventoryReportPdf(data: InventoryReportData): Pro
     "No delivered orders in this period.",
   );
   salesTable(
-    `Slow Movers (${data.periodLabel})`,
+    `Least Sold Products (${data.periodLabel})`,
     data.slowMoving,
-    "Every product sold in this period.",
+    "No sales recorded in this period.",
   );
 
   // ---------- Full inventory ledger ----------
