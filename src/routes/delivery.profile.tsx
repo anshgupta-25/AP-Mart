@@ -342,6 +342,8 @@ function Page() {
         </section>
         <SupportTicketForm open={ticketOpen} onOpenChange={setTicketOpen} />
 
+        <DeleteAccountSection />
+
         <Button
           onClick={onSignOut}
           variant="secondary"
@@ -349,7 +351,6 @@ function Page() {
         >
           <LogOut className="h-4 w-4" /> Sign out
         </Button>
-        <DeleteAccountSection />
       </div>
     </>
   );

@@ -2,7 +2,7 @@ import process from "node:process";
 import { EMAIL_LOGO_PNG_BASE64 } from "./emailLogo.server";
 
 // Server-only: AP Mart transactional emails (sign-up code + confirm link, password reset,
-// welcome) sent through Resend. Email-safe HTML: table layout, inline styles, solid-colour
+// welcome, account deletion) sent through Resend. Email-safe HTML: table layout, inline styles, solid-colour
 // fallbacks behind gradients. Logo: on the live (https) site a small hosted image
 // (`${site}/email-logo.png`, must be deployed); locally an inline (cid) attachment.
 
@@ -310,5 +310,57 @@ export function welcomeEmail(o: { to: string; name: string; site: string }): Ema
       body,
     }),
     text: `Welcome to AP Mart, ${o.name || "there"}!\n\nYour account is ready. Start shopping: ${shop}\n\n1. Add your delivery address\n2. Fill your cart\n3. Check out and track your order live`,
+  };
+}
+
+export function deleteAccountCodeEmail(o: { to: string; code: string; site: string }): Email {
+  const body = `
+    ${codeTiles(o.code)}
+    ${badge("Expires in 1 hour")}
+    <p style="margin:24px 0 0;text-align:center;">Enter this code on the <b style="color:${C.text};">Delete account</b> screen to confirm it's you. Your account is deleted only after you enter the code and confirm.</p>
+    ${note("🛡️", `<b style="color:${C.text};">Didn't ask for this?</b> Ignore this email and your account stays as it is. Never share this code with anyone.`)}`;
+  return {
+    to: o.to,
+    inlineLogo: !canHostLogo(o.site),
+    subject: `${o.code} is your code to delete your AP Mart account`,
+    html: layout({
+      site: o.site,
+      to: o.to,
+      preheader: `Your code to confirm deleting your AP Mart account is ${o.code}.`,
+      hero: hero({
+        icon: "🔐",
+        tint: C.rose,
+        title: "Confirm it's you",
+        subtitle: "You asked to delete your AP Mart account.",
+      }),
+      body,
+    }),
+    text: `Your code to confirm deleting your AP Mart account is ${o.code} (expires in 1 hour).\n\nDidn't ask for this? Ignore this email and your account stays as it is.`,
+  };
+}
+
+export function accountDeletedEmail(o: { to: string; site: string }): Email {
+  const body = `
+    <p style="margin:18px 0 0;text-align:center;">Your AP Mart account <b style="color:${C.text};">${esc(o.to)}</b> and its personal data have been permanently deleted.</p>
+    ${note("🧾", `Past orders and payments are kept only as anonymised records (shown as "Deleted user") because tax and accounting rules require them. They can't be linked back to you.`)}
+    <p style="margin:24px 0 0;text-align:center;color:${C.muted};font-size:14px;">Changed your mind? You're welcome back anytime with the same email.</p>
+    ${button(`${o.site}/signup`, "Create a new account")}`;
+  return {
+    to: o.to,
+    inlineLogo: !canHostLogo(o.site),
+    subject: "Your AP Mart account has been deleted",
+    html: layout({
+      site: o.site,
+      to: o.to,
+      preheader: "Your AP Mart account and personal data have been permanently deleted.",
+      hero: hero({
+        icon: "👋",
+        tint: C.sky,
+        title: "Your account has been deleted",
+        subtitle: "Thanks for shopping with AP Mart.",
+      }),
+      body,
+    }),
+    text: `Your AP Mart account (${o.to}) and its personal data have been permanently deleted.\n\nPast orders and payments are kept only as anonymised records required for tax and accounting; they can't be linked back to you.\n\nYou're welcome back anytime: ${o.site}/signup`,
   };
 }
