@@ -48,6 +48,16 @@ import { rupees } from "@/lib/format";
 import { StorageImg } from "@/components/StorageImg";
 import { toast } from "sonner";
 import type { ReportProductRow } from "@/lib/inventoryReportPdf";
+import { ReportPeriodPicker } from "@/components/ReportPeriodPicker";
+import {
+  periodDatesText,
+  periodDays,
+  periodLabel,
+  presetPeriod,
+  DEFAULT_PERIOD_KEY,
+  type ReportPeriod,
+} from "@/lib/reportPeriod";
+import { eachDayOfInterval, eachMonthOfInterval, format, startOfDay } from "date-fns";
 
 export const Route = createFileRoute("/shopkeeper/inventory-insights")({
   head: () => ({ meta: [{ title: "Inventory Insights — Shopkeeper" }] }),
@@ -88,6 +98,8 @@ type SaleRow = {
 };
 
 const LOW_STOCK_THRESHOLD = 5;
+/** Orders fetched per report period; above this the oldest orders are left out (and we say so). */
+const ORDER_LIMIT = 2000;
 
 function daysBetween(d: string | null): number | null {
   if (!d) return null;
@@ -114,7 +126,8 @@ function Page() {
   const [stockFilter, setStockFilter] = useState<string>("all");
   const [expiryFilter, setExpiryFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
-  const [range, setRange] = useState<"today" | "week" | "month" | "year">("week");
+  const [period, setPeriod] = useState<ReportPeriod>(() => presetPeriod(DEFAULT_PERIOD_KEY));
+  const periodText = periodLabel(period);
   const [selected, setSelected] = useState<InvRow | null>(null);
   const [pdfBusy, setPdfBusy] = useState(false);
 
@@ -147,19 +160,19 @@ function Page() {
   });
 
   const sales = useQuery({
-    queryKey: ["insights-sales", shopId, range],
+    queryKey: ["insights-sales", shopId, period.from.toISOString(), period.to.toISOString()],
     queryFn: async () => {
-      if (!shopId) return [] as SaleRow[];
-      const days = range === "today" ? 1 : range === "week" ? 7 : range === "month" ? 30 : 365;
-      const since = new Date(Date.now() - days * 86400000).toISOString();
+      if (!shopId) return { rows: [] as SaleRow[], truncated: false };
       const { data, error } = await supabase
         .from("orders")
         .select(
           "id, status, placed_at, order_items!order_items_order_id_fkey(product_id, name, image_url, quantity, price, variant_label)",
         )
         .eq("shop_id", shopId)
-        .gte("placed_at", since)
-        .limit(2000);
+        .gte("placed_at", period.from.toISOString())
+        .lte("placed_at", period.to.toISOString())
+        .order("placed_at", { ascending: false })
+        .limit(ORDER_LIMIT);
       if (error) throw error;
       const rows: SaleRow[] = [];
       for (const o of (data ?? []) as any[]) {
@@ -177,13 +190,15 @@ function Page() {
           });
         }
       }
-      return rows;
+      // If the cap was hit, the oldest orders in the period are missing: say so.
+      return { rows, truncated: (data ?? []).length >= ORDER_LIMIT };
     },
     enabled: !!shopId,
   });
 
   const items = inventory.data ?? [];
-  const salesRows = sales.data ?? [];
+  const salesRows = sales.data?.rows ?? [];
+  const salesTruncated = sales.data?.truncated ?? false;
   const completedSales = salesRows.filter((s) => s.status === "delivered");
 
   const summary = useMemo(() => {
@@ -312,34 +327,34 @@ function Page() {
   }, [items]);
 
   const movementChart = useMemo(() => {
-    const days = range === "today" ? 1 : range === "week" ? 7 : range === "month" ? 30 : 12;
-    const bucketBy: "hour" | "day" | "month" =
-      range === "today" ? "hour" : range === "year" ? "month" : "day";
+    const days = periodDays(period);
+    // One day: by hour. Up to ~2 months: by day. Longer: by month.
+    const bucketBy: "hour" | "day" | "month" = days <= 1 ? "hour" : days <= 62 ? "day" : "month";
+    const keyOf = (d: Date) =>
+      bucketBy === "hour"
+        ? `${d.getHours()}:00`
+        : bucketBy === "month"
+          ? format(d, "MMM yyyy")
+          : format(d, "d MMM");
     const buckets = new Map<string, { key: string; sold: number; revenue: number }>();
-    const fmt = (d: Date) => {
-      if (bucketBy === "hour") return `${d.getHours()}:00`;
-      if (bucketBy === "month") return d.toLocaleString(undefined, { month: "short" });
-      return d.toLocaleString(undefined, { month: "short", day: "numeric" });
-    };
-    const now = new Date();
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(now);
-      if (bucketBy === "hour") d.setHours(now.getHours() - i);
-      else if (bucketBy === "month") d.setMonth(now.getMonth() - i);
-      else d.setDate(now.getDate() - i);
-      const k = fmt(d);
-      buckets.set(k, { key: k, sold: 0, revenue: 0 });
+    if (bucketBy === "hour") {
+      for (let h = 0; h < 24; h++) buckets.set(`${h}:00`, { key: `${h}:00`, sold: 0, revenue: 0 });
+    } else {
+      const slots =
+        bucketBy === "day"
+          ? eachDayOfInterval({ start: startOfDay(period.from), end: period.to })
+          : eachMonthOfInterval({ start: period.from, end: period.to });
+      for (const d of slots) buckets.set(keyOf(d), { key: keyOf(d), sold: 0, revenue: 0 });
     }
     for (const s of completedSales) {
-      const k = fmt(new Date(s.created_at));
-      const b = buckets.get(k);
+      const b = buckets.get(keyOf(new Date(s.created_at)));
       if (b) {
         b.sold += s.quantity;
         b.revenue += s.quantity * s.price;
       }
     }
     return Array.from(buckets.values());
-  }, [completedSales, range]);
+  }, [completedSales, period]);
 
   const insights = useMemo(() => {
     const list: { icon: React.ElementType; text: string; tone: string }[] = [];
@@ -414,12 +429,6 @@ function Page() {
         .select("id, name, address, city, state, pincode, phone")
         .eq("id", shopId)
         .maybeSingle();
-      const periodLabel = {
-        today: "Today",
-        week: "Last 7 days",
-        month: "Last 30 days",
-        year: "Last 12 months",
-      }[range];
       const filters = [
         q.trim() && `search "${q.trim()}"`,
         catFilter !== "all" && `category ${categories.find((c) => c.id === catFilter)?.name ?? ""}`,
@@ -439,7 +448,9 @@ function Page() {
         shop: shop ?? { id: shopId, name: "My shop" },
         ownerEmail: user?.email ?? null,
         generatedAt: new Date(),
-        periodLabel,
+        periodLabel: period.preset === "custom" ? periodDatesText(period) : periodText,
+        periodDates: periodDatesText(period),
+        salesTruncated,
         filtersLabel: filters.length ? filters.join(", ") : null,
         summary,
         sales: {
@@ -507,6 +518,25 @@ function Page() {
             </Button>
           </div>
         </div>
+
+        {/* Period: drives sales, best sellers, the movement charts and the PDF */}
+        {shopId && (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <ReportPeriodPicker value={period} onChange={setPeriod} />
+              <span className="min-w-0 text-caption text-muted-foreground">
+                Sales and the PDF cover {periodDatesText(period)}. Stock levels are current.
+              </span>
+            </div>
+            {salesTruncated && (
+              <p className="rounded-lg bg-tint-sun px-3 py-2 text-caption text-foreground">
+                This period has more than {ORDER_LIMIT.toLocaleString("en-IN")} orders, so only the
+                latest {ORDER_LIMIT.toLocaleString("en-IN")} are counted. Pick a shorter period for
+                complete figures.
+              </p>
+            )}
+          </div>
+        )}
 
         {!shopId ? (
           <p className="rounded-xl bg-card px-6 py-10 text-center text-body text-muted-foreground border border-border/70">
@@ -793,7 +823,7 @@ function Page() {
                   <div className="flex items-center gap-2 mb-3">
                     <TrendingUp className="h-5 w-5 text-primary" />
                     <h2 className="section-title">Top 10 best selling</h2>
-                    <span className="text-xs text-muted-foreground ml-auto">({range})</span>
+                    <span className="text-xs text-muted-foreground ml-auto">({periodText})</span>
                   </div>
                   {bestSelling.length === 0 ? (
                     <p className="text-sm text-muted-foreground">No sales yet in this period.</p>
@@ -910,19 +940,11 @@ function Page() {
 
               {/* SECTION 6: Stock Movement */}
               <TabsContent value="movement" className="mt-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold">Range:</span>
-                  {(["today", "week", "month", "year"] as const).map((r) => (
-                    <Button
-                      key={r}
-                      size="sm"
-                      variant={range === r ? "default" : "outline"}
-                      onClick={() => setRange(r)}
-                    >
-                      {r[0].toUpperCase() + r.slice(1)}
-                    </Button>
-                  ))}
-                </div>
+                <p className="text-sm text-muted-foreground">
+                  Showing{" "}
+                  <span className="font-medium text-foreground">{periodDatesText(period)}</span>.
+                  Change the period at the top of the page.
+                </p>
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="rounded-xl bg-card p-4 border border-border/70">
                     <h3 className="section-title mb-3">Products sold</h3>

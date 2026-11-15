@@ -47,6 +47,10 @@ export type InventoryReportData = {
   generatedAt: Date;
   /** e.g. "Last 7 days" */
   periodLabel: string;
+  /** Explicit dates, e.g. "12 Nov 2026 – 14 Nov 2026" (printed even for presets like "Last 7 days"). */
+  periodDates: string;
+  /** True when the orders query hit its cap, so the oldest orders in the period are not counted. */
+  salesTruncated?: boolean;
   /** Human-readable active filters for the inventory table, or null when unfiltered. */
   filtersLabel: string | null;
   summary: {
@@ -266,11 +270,16 @@ export async function downloadInventoryReportPdf(data: InventoryReportData): Pro
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(...MUTED);
-  doc.text(`Shop ID: ${data.shop.id}  •  Sales period: ${data.periodLabel}`, PAGE_MARGIN + 8, y);
+  doc.text(`Shop ID: ${data.shop.id}  •  Sales period: ${data.periodDates}`, PAGE_MARGIN + 8, y);
   y += 8;
 
   // ---------- Shop profile ----------
   sectionTitle("Shop Profile");
+  // "Last 7 days (8 Nov 2026 – 14 Nov 2026)", or just the dates when the label already is the dates.
+  const reportPeriodText =
+    data.periodLabel === data.periodDates
+      ? data.periodDates
+      : `${data.periodLabel} (${data.periodDates})`;
   const address =
     [data.shop.address, data.shop.city, data.shop.state, data.shop.pincode]
       .filter(Boolean)
@@ -294,7 +303,7 @@ export async function downloadInventoryReportPdf(data: InventoryReportData): Pro
     body: [
       ["Shop Name:", data.shop.name, "Owner Email:", data.ownerEmail ?? "Not provided"],
       ["Phone:", data.shop.phone || "Not provided", "Products Listed:", int(data.summary.total)],
-      ["Address:", address, "Report Period:", data.periodLabel],
+      ["Address:", address, "Report Period:", reportPeriodText],
     ],
   });
   y = lastY();
@@ -325,7 +334,7 @@ export async function downloadInventoryReportPdf(data: InventoryReportData): Pro
       value: int(data.summary.exp7),
       color: data.summary.exp7 ? WARN : undefined,
     },
-    { label: `UNITS SOLD (${data.periodLabel.toUpperCase()})`, value: int(data.sales.units) },
+    { label: "UNITS SOLD IN PERIOD", value: int(data.sales.units) },
     { label: "SALES REVENUE", value: money(data.sales.revenue), color: GOOD },
   ];
   const cols = 3;
@@ -349,6 +358,24 @@ export async function downloadInventoryReportPdf(data: InventoryReportData): Pro
     doc.text(c.value, cx, cy + 19);
   });
   y += gridH;
+
+  // Be explicit about what is a snapshot and what covers the chosen dates.
+  const basis = [
+    `Stock levels, inventory value and expiry are as of ${stamp(data.generatedAt)}.`,
+    `Sales figures (units, revenue, best and least sold) cover ${data.periodDates}.`,
+    data.salesTruncated
+      ? "This period has too many orders to list fully: only the latest orders are counted."
+      : "",
+  ].filter(Boolean);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...MUTED);
+  y += 14;
+  for (const line of basis) {
+    ensureSpace(14);
+    doc.text(line, PAGE_MARGIN + 8, y);
+    y += 11;
+  }
 
   // ---------- Insights ----------
   sectionTitle("Insights");
