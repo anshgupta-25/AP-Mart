@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, CheckCheck, Inbox } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { supportNotificationsKey, supportUnreadKey } from "@/lib/supportNotificationKeys";
@@ -17,7 +18,8 @@ export const Route = createFileRoute("/support/notifications")({
 /** Where a notification should open: the deep link stored with it (e.g. /support/tickets/<id>). */
 const urlOf = (data: unknown): string | undefined => {
   const u = (data as { url?: unknown } | null)?.url;
-  return typeof u === "string" && u.startsWith("/") ? u : undefined;
+  // In-app paths only: "/x" is fine, "//host" (protocol-relative) and full URLs are not.
+  return typeof u === "string" && u.startsWith("/") && !u.startsWith("//") ? u : undefined;
 };
 
 function SupportNotifications() {
@@ -63,17 +65,23 @@ function SupportNotifications() {
 
   const markRead = async (id: string) => {
     if (!userId) return;
-    await supabase.from("notifications").update({ read: true }).eq("id", id).eq("user_id", userId);
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read: true })
+      .eq("id", id)
+      .eq("user_id", userId);
+    if (error) toast.error("Couldn't mark as read. Please try again.");
     refreshRead();
   };
 
   const markAllRead = async () => {
     if (!userId) return;
-    await supabase
+    const { error } = await supabase
       .from("notifications")
       .update({ read: true })
       .eq("user_id", userId)
       .eq("read", false);
+    if (error) toast.error("Couldn't mark all as read. Please try again.");
     refreshRead();
   };
 
