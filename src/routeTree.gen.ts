@@ -18,6 +18,7 @@ import { Route as CartRouteImport } from './routes/cart'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CustomerRouteImport } from './routes/customer'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as DeliveryRouteImport } from './routes/delivery'
 import { Route as FavouritesRouteImport } from './routes/favourites'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -158,6 +159,11 @@ const CustomerRoute = CustomerRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeleteAccountRoute = DeleteAccountRouteImport.update({
+  id: '/delete-account',
+  path: '/delete-account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeliveryRoute = DeliveryRouteImport.update({
@@ -654,6 +660,7 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRoute
   '/customer': typeof CustomerRouteWithChildren
   '/dashboard': typeof DashboardRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/delivery': typeof DeliveryRouteWithChildren
   '/favourites': typeof FavouritesRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -761,6 +768,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/customer': typeof CustomerRouteWithChildren
   '/dashboard': typeof DashboardRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/delivery': typeof DeliveryRouteWithChildren
   '/favourites': typeof FavouritesRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -869,6 +877,7 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRoute
   '/customer': typeof CustomerRouteWithChildren
   '/dashboard': typeof DashboardRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/delivery': typeof DeliveryRouteWithChildren
   '/favourites': typeof FavouritesRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -978,6 +987,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/customer'
     | '/dashboard'
+    | '/delete-account'
     | '/delivery'
     | '/favourites'
     | '/forgot-password'
@@ -1085,6 +1095,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/customer'
     | '/dashboard'
+    | '/delete-account'
     | '/delivery'
     | '/favourites'
     | '/forgot-password'
@@ -1192,6 +1203,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/customer'
     | '/dashboard'
+    | '/delete-account'
     | '/delivery'
     | '/favourites'
     | '/forgot-password'
@@ -1300,6 +1312,7 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   CustomerRoute: typeof CustomerRouteWithChildren
   DashboardRoute: typeof DashboardRoute
+  DeleteAccountRoute: typeof DeleteAccountRoute
   DeliveryRoute: typeof DeliveryRouteWithChildren
   FavouritesRoute: typeof FavouritesRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -1387,6 +1400,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/delete-account': {
+      id: '/delete-account'
+      path: '/delete-account'
+      fullPath: '/delete-account'
+      preLoaderRoute: typeof DeleteAccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/delivery': {
@@ -2297,6 +2317,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   CustomerRoute: CustomerRouteWithChildren,
   DashboardRoute: DashboardRoute,
+  DeleteAccountRoute: DeleteAccountRoute,
   DeliveryRoute: DeliveryRouteWithChildren,
   FavouritesRoute: FavouritesRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,

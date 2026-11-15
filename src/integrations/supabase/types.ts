@@ -2174,7 +2174,7 @@ export type Database = {
           created_at: string
           id: string
           is_internal_note: boolean
-          sender_id: string
+          sender_id: string | null
           sender_role: string
           ticket_id: string
         }
@@ -2183,7 +2183,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_internal_note?: boolean
-          sender_id: string
+          sender_id?: string | null
           sender_role: string
           ticket_id: string
         }
@@ -2192,7 +2192,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_internal_note?: boolean
-          sender_id?: string
+          sender_id?: string | null
           sender_role?: string
           ticket_id?: string
         }
@@ -2341,7 +2341,7 @@ export type Database = {
           message_id: string | null
           mime: string | null
           ticket_id: string
-          uploaded_by: string
+          uploaded_by: string | null
         }
         Insert: {
           created_at?: string
@@ -2351,7 +2351,7 @@ export type Database = {
           message_id?: string | null
           mime?: string | null
           ticket_id: string
-          uploaded_by: string
+          uploaded_by?: string | null
         }
         Update: {
           created_at?: string
@@ -2361,7 +2361,7 @@ export type Database = {
           message_id?: string | null
           mime?: string | null
           ticket_id?: string
-          uploaded_by?: string
+          uploaded_by?: string | null
         }
         Relationships: [
           {
