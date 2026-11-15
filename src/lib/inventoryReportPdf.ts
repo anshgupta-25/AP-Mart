@@ -8,6 +8,7 @@
  */
 import type { jsPDF as JsPDF } from "jspdf";
 import type { CellHookData } from "jspdf-autotable";
+import { savePdf } from "@/lib/savePdf";
 import apmartLogoUrl from "@/assets/apmart-logo-192.png";
 
 export type ReportProductRow = {
@@ -629,31 +630,5 @@ export async function downloadInventoryReportPdf(data: InventoryReportData): Pro
   }
 
   const safeName = data.shop.name.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "shop";
-  const fileName = `ap-mart-inventory-report-${safeName}-${isoDate(data.generatedAt)}.pdf`;
-  const { Capacitor } = await import("@capacitor/core");
-  if (Capacitor.isNativePlatform()) await saveInApp(doc, fileName);
-  else doc.save(fileName);
-}
-
-/**
- * Android app: the WebView can't do browser (blob) downloads, so write the PDF to the app's
- * cache and open the share sheet (save to Files/Drive, send on WhatsApp, open in a PDF viewer).
- */
-async function saveInApp(doc: JsPDF, fileName: string) {
-  const [{ Filesystem, Directory }, { Share }] = await Promise.all([
-    import("@capacitor/filesystem"),
-    import("@capacitor/share"),
-  ]);
-  const base64 = doc.output("datauristring").split(",")[1] ?? "";
-  const { uri } = await Filesystem.writeFile({
-    path: fileName,
-    data: base64,
-    directory: Directory.Cache,
-  });
-  try {
-    await Share.share({ title: fileName, files: [uri], dialogTitle: "Save or share the report" });
-  } catch (e) {
-    // Closing the share sheet without picking an app is not an error.
-    if (!/cancel/i.test(e instanceof Error ? e.message : String(e))) throw e;
-  }
+  await savePdf(doc, `ap-mart-inventory-report-${safeName}-${isoDate(data.generatedAt)}.pdf`);
 }
