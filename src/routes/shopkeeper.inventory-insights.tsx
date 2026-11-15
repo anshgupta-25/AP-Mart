@@ -131,6 +131,24 @@ function Page() {
   const [selected, setSelected] = useState<InvRow | null>(null);
   const [pdfBusy, setPdfBusy] = useState(false);
 
+  // Presets ("Today", "Last 7 days") end today: roll them forward when the day changes while
+  // the page stays open (or the app comes back from the background), so they never go stale.
+  useEffect(() => {
+    if (period.preset === "custom") return;
+    const preset = period.preset;
+    const refresh = () => {
+      const fresh = presetPeriod(preset);
+      if (fresh.to.getTime() !== period.to.getTime()) setPeriod(fresh);
+    };
+    const timer = setInterval(refresh, 60_000);
+    const onVisible = () => document.visibilityState === "visible" && refresh();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [period]);
+
   useEffect(() => {
     if (!user) return;
     supabase
@@ -169,6 +187,8 @@ function Page() {
           "id, status, placed_at, order_items!order_items_order_id_fkey(product_id, name, image_url, quantity, price, variant_label)",
         )
         .eq("shop_id", shopId)
+        // Only delivered orders count as sales, so the cap (and its warning) applies to them alone.
+        .eq("status", "delivered")
         .gte("placed_at", period.from.toISOString())
         .lte("placed_at", period.to.toISOString())
         .order("placed_at", { ascending: false })
@@ -424,11 +444,13 @@ function Page() {
     }
     setPdfBusy(true);
     try {
-      const { data: shop } = await supabase
+      const { data: shop, error: shopError } = await supabase
         .from("shops")
         .select("id, name, address, city, state, pincode, phone")
         .eq("id", shopId)
         .maybeSingle();
+      // Don't print a report with a made-up shop name and no address.
+      if (shopError || !shop) throw new Error("Couldn't load your shop details. Please try again.");
       const filters = [
         q.trim() && `search "${q.trim()}"`,
         catFilter !== "all" && `category ${categories.find((c) => c.id === catFilter)?.name ?? ""}`,
@@ -445,7 +467,7 @@ function Page() {
       ].filter(Boolean);
       const { downloadInventoryReportPdf } = await import("@/lib/inventoryReportPdf");
       await downloadInventoryReportPdf({
-        shop: shop ?? { id: shopId, name: "My shop" },
+        shop,
         ownerEmail: user?.email ?? null,
         generatedAt: new Date(),
         periodLabel: period.preset === "custom" ? periodDatesText(period) : periodText,
