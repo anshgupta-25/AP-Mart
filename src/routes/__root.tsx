@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
+  type ErrorComponentProps,
   Outlet,
   Link,
   createRootRouteWithContext,
@@ -15,6 +16,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { Layout } from "@/components/Layout";
 import { supabase } from "@/integrations/supabase/client";
 import { Capacitor } from "@capacitor/core";
+import { errorMessage } from "@/lib/utils";
 import { setNativeNavigator } from "@/integrations/firebase/native-push";
 
 function NotFoundComponent() {
@@ -39,14 +41,15 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+// TanStack types the thrown value as `unknown` (anything can be thrown), so read it safely.
+function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold">This page didn't load</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{errorMessage(error)}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
@@ -123,6 +126,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Website links the Android app opens itself (must match the intent-filter in AndroidManifest.xml).
+const APP_LINK_HOSTS = new Set(["www.apmart.in", "apmart.in"]);
+const APP_LINK_PATHS = new Set(["/reset-password", "/auth/confirm"]);
+
 // The launch URL stays the same for the process lifetime: handle it once.
 let launchUrlHandled = false;
 
@@ -150,6 +157,17 @@ function RootComponent() {
       try {
         parsed = new URL(url);
       } catch {
+        return;
+      }
+      // Android App Links: email links (https://www.apmart.in/reset-password?…, /auth/confirm?…)
+      // open the app when it's installed (AndroidManifest + /.well-known/assetlinks.json).
+      // Only our own domain and these paths are accepted; open the same screen in-app.
+      if (
+        parsed.protocol === "https:" &&
+        APP_LINK_HOSTS.has(parsed.hostname) &&
+        APP_LINK_PATHS.has(parsed.pathname)
+      ) {
+        router.history.push(parsed.pathname + parsed.search);
         return;
       }
       // com.apmart.app://auth/callback -> host "auth", pathname "/callback"

@@ -1,4 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { requestSignupCode, type SignupDetails } from "@/lib/authEmail";
+import { VerifyEmailScreen } from "@/components/auth/VerifyEmailStep";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,13 +9,12 @@ import { Eye, EyeOff, Lock, Mail, Loader2, ShieldCheck } from "lucide-react";
 import { useAuth, homeForRoles } from "@/hooks/useAuth";
 import { PhoneOtpForm } from "@/components/PhoneOtpForm";
 import { supabase } from "@/integrations/supabase/client";
-import { signInWithGoogle } from "@/lib/googleAuth";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { toast } from "sonner";
 import { describeAuthError } from "@/lib/authErrors";
 import { LogoMark } from "@/components/Logo";
 import { DevLoginPanel } from "@/components/DevLoginPanel";
 import { cn, errorMessage } from "@/lib/utils";
-import { publicSiteOrigin } from "@/lib/api-base";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>): { next?: string } =>
@@ -32,7 +33,7 @@ function LoginPage() {
   const [show, setShow] = useState(false);
   const [remember, setRemember] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [verifying, setVerifying] = useState<SignupDetails | null>(null);
 
   const { signIn } = useAuth();
   const navigate = useNavigate();
@@ -73,6 +74,24 @@ function LoginPage() {
     const { error } = await signIn(email, password, remember);
     if (error) {
       setSubmitting(false);
+      // Signed up but never verified: send a fresh code and show the code screen.
+      const code = (error as { code?: string }).code;
+      if (code === "email_not_confirmed" || /email not confirmed/i.test(error.message)) {
+        const details: SignupDetails = {
+          email: email.trim().toLowerCase(),
+          password,
+          fullName: "",
+        };
+        const { error: sendErr, throttled } = await requestSignupCode(details);
+        if (sendErr) return toast.error(sendErr);
+        toast("Verify your email to continue", {
+          description: throttled
+            ? "Enter the code we just emailed you."
+            : "We've sent you a new code.",
+        });
+        setVerifying(details);
+        return;
+      }
       toast.error(describeAuthError(error));
       return;
     }
@@ -88,34 +107,12 @@ function LoginPage() {
     toast.success("Welcome back");
   }
 
-  async function handleGoogle() {
-    setGoogleLoading(true);
-    try {
-      if (next) {
-        sessionStorage.setItem("flashbasket.auth.next", next);
-      }
-      const result = await signInWithGoogle("/auth/callback");
-      if (result.error) {
-        setGoogleLoading(false);
-        return toast.error(result.error.message || "Google sign-in failed");
-      }
-      // Web: the page navigates away to Google. App: the sign-in browser has
-      // closed (deep link handles success), so re-enable the button.
-      if (!result.redirected) setGoogleLoading(false);
-    } catch (err) {
-      setGoogleLoading(false);
-      toast.error(errorMessage(err, "Google sign-in failed"));
-    }
+  function handleForgot() {
+    navigate({ to: "/forgot-password", search: (email ? { email } : {}) as never });
   }
 
-  async function handleForgot() {
-    const target = email || window.prompt("Enter your email to receive a reset link") || "";
-    if (!target) return;
-    const { error } = await supabase.auth.resetPasswordForEmail(target, {
-      redirectTo: publicSiteOrigin() + "/reset-password",
-    });
-    if (error) toast.error(error.message);
-    else toast.success("Password reset link sent — check your inbox");
+  if (verifying) {
+    return <VerifyEmailScreen details={verifying} next={next} onBack={() => setVerifying(null)} />;
   }
 
   return (
@@ -247,24 +244,7 @@ function LoginPage() {
             </div>
           </div>
 
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleGoogle}
-            disabled={submitting || googleLoading}
-            className="h-11 w-full gap-2 rounded-xl"
-          >
-            {googleLoading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                Connecting to Google…
-              </>
-            ) : (
-              <>
-                <GoogleIcon /> Continue with Google
-              </>
-            )}
-          </Button>
+          <GoogleSignInButton next={next} />
         </div>
 
         <p className="mt-5 text-center text-meta text-muted-foreground">

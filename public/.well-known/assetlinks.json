@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.apmart.app",
+      "sha256_cert_fingerprints": [
+        "28:71:92:99:7D:52:73:89:91:74:E8:53:E8:D3:08:18:8A:8B:82:7F:7E:8C:E7:51:1B:86:35:1C:F5:44:4D:96"
+      ]
+    }
+  }
+]
