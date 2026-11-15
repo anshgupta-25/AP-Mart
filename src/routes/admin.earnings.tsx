@@ -168,21 +168,7 @@ const RETURNED_SET = new Set<string>([]); // no explicit status; keep zero unles
 function Page() {
   const [preset, setPreset] = useState<PresetKey>("this_month");
   const [custom, setCustom] = useState({ from: "", to: "" });
-  // Presets like "Today" end today: re-evaluate when the day changes while the page stays open
-  // (or the app returns from the background) so they never point at yesterday.
-  const [dayKey, setDayKey] = useState(() => new Date().toDateString());
-  useEffect(() => {
-    const check = () => setDayKey(new Date().toDateString());
-    const timer = setInterval(check, 60_000);
-    const onVisible = () => document.visibilityState === "visible" && check();
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      clearInterval(timer);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, []);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- dayKey intentionally forces a refresh
-  const range = useMemo(() => presetRange(preset, custom), [preset, custom, dayKey]);
+  const range = useMemo(() => presetRange(preset, custom), [preset, custom]);
 
   const [commission, setCommission] = useState(0.1);
   useEffect(() => {
@@ -455,11 +441,6 @@ function Page() {
   const [pdfBusy, setPdfBusy] = useState(false);
   const exportPdf = async () => {
     if (pdfBusy) return;
-    // Don't print a report of zeros when the data failed to load.
-    if (ordersQ.isError || shopsQ.isError) {
-      toast.error("Couldn't load the earnings data, so the PDF can't be made. Please retry.");
-      return;
-    }
     setPdfBusy(true);
     try {
       const { downloadEarningsReportPdf } = await import("@/lib/earningsReportPdf");
