@@ -11,13 +11,12 @@ import {
   Clock,
   CalendarClock,
   Search,
-  Download,
-  FileSpreadsheet,
   FileText,
   TrendingUp,
   TrendingDown,
   Sparkles,
   BarChart3,
+  Loader2,
 } from "lucide-react";
 import {
   BarChart,
@@ -47,6 +46,18 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { rupees } from "@/lib/format";
 import { StorageImg } from "@/components/StorageImg";
+import { toast } from "sonner";
+import type { ReportProductRow } from "@/lib/inventoryReportPdf";
+import { ReportPeriodPicker } from "@/components/ReportPeriodPicker";
+import {
+  periodDatesText,
+  periodDays,
+  periodLabel,
+  presetPeriod,
+  DEFAULT_PERIOD_KEY,
+  type ReportPeriod,
+} from "@/lib/reportPeriod";
+import { eachDayOfInterval, eachMonthOfInterval, format, startOfDay } from "date-fns";
 
 export const Route = createFileRoute("/shopkeeper/inventory-insights")({
   head: () => ({ meta: [{ title: "Inventory Insights — Shopkeeper" }] }),
@@ -87,6 +98,8 @@ type SaleRow = {
 };
 
 const LOW_STOCK_THRESHOLD = 5;
+/** Orders fetched per report period; above this the oldest orders are left out (and we say so). */
+const ORDER_LIMIT = 2000;
 
 function daysBetween(d: string | null): number | null {
   if (!d) return null;
@@ -105,23 +118,6 @@ function statusOf(row: InvRow): { label: string; tone: string } {
   return { label: "Fresh", tone: "bg-primary-soft text-primary-ink" };
 }
 
-function toCsv(rows: Record<string, unknown>[]): string {
-  if (!rows.length) return "";
-  const keys = Object.keys(rows[0]);
-  const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  return [keys.join(","), ...rows.map((r) => keys.map((k) => esc(r[k])).join(","))].join("\n");
-}
-
-function download(name: string, content: string, mime: string) {
-  const blob = new Blob([content], { type: mime });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
 function Page() {
   const { user } = useAuth();
   const [shopId, setShopId] = useState<string | null>(null);
@@ -130,8 +126,28 @@ function Page() {
   const [stockFilter, setStockFilter] = useState<string>("all");
   const [expiryFilter, setExpiryFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
-  const [range, setRange] = useState<"today" | "week" | "month" | "year">("week");
+  const [period, setPeriod] = useState<ReportPeriod>(() => presetPeriod(DEFAULT_PERIOD_KEY));
+  const periodText = periodLabel(period);
   const [selected, setSelected] = useState<InvRow | null>(null);
+  const [pdfBusy, setPdfBusy] = useState(false);
+
+  // Presets ("Today", "Last 7 days") end today: roll them forward when the day changes while
+  // the page stays open (or the app comes back from the background), so they never go stale.
+  useEffect(() => {
+    if (period.preset === "custom") return;
+    const preset = period.preset;
+    const refresh = () => {
+      const fresh = presetPeriod(preset);
+      if (fresh.to.getTime() !== period.to.getTime()) setPeriod(fresh);
+    };
+    const timer = setInterval(refresh, 60_000);
+    const onVisible = () => document.visibilityState === "visible" && refresh();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [period]);
 
   useEffect(() => {
     if (!user) return;
@@ -162,19 +178,21 @@ function Page() {
   });
 
   const sales = useQuery({
-    queryKey: ["insights-sales", shopId, range],
+    queryKey: ["insights-sales", shopId, period.from.toISOString(), period.to.toISOString()],
     queryFn: async () => {
-      if (!shopId) return [] as SaleRow[];
-      const days = range === "today" ? 1 : range === "week" ? 7 : range === "month" ? 30 : 365;
-      const since = new Date(Date.now() - days * 86400000).toISOString();
+      if (!shopId) return { rows: [] as SaleRow[], truncated: false };
       const { data, error } = await supabase
         .from("orders")
         .select(
           "id, status, placed_at, order_items!order_items_order_id_fkey(product_id, name, image_url, quantity, price, variant_label)",
         )
         .eq("shop_id", shopId)
-        .gte("placed_at", since)
-        .limit(2000);
+        // Only delivered orders count as sales, so the cap (and its warning) applies to them alone.
+        .eq("status", "delivered")
+        .gte("placed_at", period.from.toISOString())
+        .lte("placed_at", period.to.toISOString())
+        .order("placed_at", { ascending: false })
+        .limit(ORDER_LIMIT);
       if (error) throw error;
       const rows: SaleRow[] = [];
       for (const o of (data ?? []) as any[]) {
@@ -192,13 +210,15 @@ function Page() {
           });
         }
       }
-      return rows;
+      // If the cap was hit, the oldest orders in the period are missing: say so.
+      return { rows, truncated: (data ?? []).length >= ORDER_LIMIT };
     },
     enabled: !!shopId,
   });
 
   const items = inventory.data ?? [];
-  const salesRows = sales.data ?? [];
+  const salesRows = sales.data?.rows ?? [];
+  const salesTruncated = sales.data?.truncated ?? false;
   const completedSales = salesRows.filter((s) => s.status === "delivered");
 
   const summary = useMemo(() => {
@@ -327,34 +347,34 @@ function Page() {
   }, [items]);
 
   const movementChart = useMemo(() => {
-    const days = range === "today" ? 1 : range === "week" ? 7 : range === "month" ? 30 : 12;
-    const bucketBy: "hour" | "day" | "month" =
-      range === "today" ? "hour" : range === "year" ? "month" : "day";
+    const days = periodDays(period);
+    // One day: by hour. Up to ~2 months: by day. Longer: by month.
+    const bucketBy: "hour" | "day" | "month" = days <= 1 ? "hour" : days <= 62 ? "day" : "month";
+    const keyOf = (d: Date) =>
+      bucketBy === "hour"
+        ? `${d.getHours()}:00`
+        : bucketBy === "month"
+          ? format(d, "MMM yyyy")
+          : format(d, "d MMM");
     const buckets = new Map<string, { key: string; sold: number; revenue: number }>();
-    const fmt = (d: Date) => {
-      if (bucketBy === "hour") return `${d.getHours()}:00`;
-      if (bucketBy === "month") return d.toLocaleString(undefined, { month: "short" });
-      return d.toLocaleString(undefined, { month: "short", day: "numeric" });
-    };
-    const now = new Date();
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(now);
-      if (bucketBy === "hour") d.setHours(now.getHours() - i);
-      else if (bucketBy === "month") d.setMonth(now.getMonth() - i);
-      else d.setDate(now.getDate() - i);
-      const k = fmt(d);
-      buckets.set(k, { key: k, sold: 0, revenue: 0 });
+    if (bucketBy === "hour") {
+      for (let h = 0; h < 24; h++) buckets.set(`${h}:00`, { key: `${h}:00`, sold: 0, revenue: 0 });
+    } else {
+      const slots =
+        bucketBy === "day"
+          ? eachDayOfInterval({ start: startOfDay(period.from), end: period.to })
+          : eachMonthOfInterval({ start: period.from, end: period.to });
+      for (const d of slots) buckets.set(keyOf(d), { key: keyOf(d), sold: 0, revenue: 0 });
     }
     for (const s of completedSales) {
-      const k = fmt(new Date(s.created_at));
-      const b = buckets.get(k);
+      const b = buckets.get(keyOf(new Date(s.created_at)));
       if (b) {
         b.sold += s.quantity;
         b.revenue += s.quantity * s.price;
       }
     }
     return Array.from(buckets.values());
-  }, [completedSales, range]);
+  }, [completedSales, period]);
 
   const insights = useMemo(() => {
     const list: { icon: React.ElementType; text: string; tone: string }[] = [];
@@ -401,23 +421,94 @@ function Page() {
     return list;
   }, [bestSelling, items, summary, lowestSelling]);
 
-  const exportRows = filtered.map((i) => {
-    const st = statusOf(i);
-    const dl = daysBetween(i.expiry_date);
-    return {
-      name: i.products?.name ?? "",
-      category: i.products?.categories?.name ?? "",
-      unit: i.products?.unit ?? "",
-      current_stock: i.stock,
-      initial_stock: i.initial_stock ?? i.stock,
-      price: i.price,
-      value: i.stock * Number(i.price),
-      added_on: new Date(i.created_at).toLocaleDateString(),
-      expiry_date: i.expiry_date ?? "",
-      days_left: dl ?? "",
-      status: st.label,
-    };
+  const reportRow = (i: InvRow): ReportProductRow => ({
+    name: (i.products?.name ?? "Unnamed product").trim(),
+    category: i.products?.categories?.name ?? "",
+    unit: i.products?.unit ?? "",
+    stock: i.stock,
+    initialStock: i.initial_stock ?? i.stock,
+    price: Number(i.price),
+    value: i.stock * Number(i.price),
+    expiry: i.expiry_date,
+    daysLeft: daysBetween(i.expiry_date),
+    status: statusOf(i).label,
+    image: i.products?.image_url ?? i.products?.cover_image ?? null,
   });
+
+  // Builds a designed PDF from the data on this page (not a screenshot of it).
+  const downloadPdf = async () => {
+    if (!shopId) return;
+    if (inventory.isError || sales.isError) {
+      toast.error("Inventory data failed to load. Please refresh and try again.");
+      return;
+    }
+    setPdfBusy(true);
+    try {
+      const { data: shop, error: shopError } = await supabase
+        .from("shops")
+        .select("id, name, address, city, state, pincode, phone")
+        .eq("id", shopId)
+        .maybeSingle();
+      // Don't print a report with a made-up shop name and no address.
+      if (shopError || !shop) throw new Error("Couldn't load your shop details. Please try again.");
+      const filters = [
+        q.trim() && `search "${q.trim()}"`,
+        catFilter !== "all" && `category ${categories.find((c) => c.id === catFilter)?.name ?? ""}`,
+        stockFilter !== "all" &&
+          { in: "in stock", low: "low stock", out: "out of stock" }[stockFilter],
+        expiryFilter !== "all" &&
+          {
+            expired: "expired",
+            today: "expiring today",
+            "7": "expiring in 7 days",
+            "30": "expiring in 30 days",
+            none: "no expiry set",
+          }[expiryFilter],
+      ].filter(Boolean);
+      const { downloadInventoryReportPdf } = await import("@/lib/inventoryReportPdf");
+      await downloadInventoryReportPdf({
+        shop,
+        ownerEmail: user?.email ?? null,
+        generatedAt: new Date(),
+        periodLabel: period.preset === "custom" ? periodDatesText(period) : periodText,
+        periodDates: periodDatesText(period),
+        salesTruncated,
+        filtersLabel: filters.length ? filters.join(", ") : null,
+        summary,
+        sales: {
+          orders: new Set(completedSales.map((s) => s.order_id)).size,
+          units: completedSales.reduce((a, s) => a + s.quantity, 0),
+          revenue: completedSales.reduce((a, s) => a + s.quantity * s.price, 0),
+        },
+        insights: insights.map((i) => i.text),
+        expiry: [
+          { label: "Expired", rows: expiryGroups.expired.map(reportRow) },
+          { label: "Today", rows: expiryGroups.today.map(reportRow) },
+          { label: "This week", rows: expiryGroups.week.map(reportRow) },
+          { label: "This month", rows: expiryGroups.month.map(reportRow) },
+        ],
+        bestSelling: bestSelling.map((b) => ({
+          name: b.name.trim(),
+          orders: b.orders,
+          units: b.units,
+          revenue: b.revenue,
+          image: b.image,
+        })),
+        slowMoving: lowestSelling.map((b) => ({
+          name: b.name.trim(),
+          orders: b.orders,
+          units: b.units,
+          revenue: b.revenue,
+          image: b.image,
+        })),
+        inventory: filtered.map(reportRow),
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not create the PDF");
+    } finally {
+      setPdfBusy(false);
+    }
+  };
 
   return (
     <>
@@ -437,31 +528,37 @@ function Page() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => download(`inventory-${Date.now()}.csv`, toCsv(exportRows), "text/csv")}
+              onClick={downloadPdf}
+              disabled={pdfBusy || !shopId || inventory.isLoading || sales.isFetching}
             >
-              <Download className="h-4 w-4 mr-1" />
-              CSV
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                download(
-                  `inventory-${Date.now()}.xls`,
-                  toCsv(exportRows),
-                  "application/vnd.ms-excel",
-                )
-              }
-            >
-              <FileSpreadsheet className="h-4 w-4 mr-1" />
-              Excel
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => window.print()}>
-              <FileText className="h-4 w-4 mr-1" />
+              {pdfBusy ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <FileText className="h-4 w-4 mr-1" />
+              )}
               PDF
             </Button>
           </div>
         </div>
+
+        {/* Period: drives sales, best sellers, the movement charts and the PDF */}
+        {shopId && (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <ReportPeriodPicker value={period} onChange={setPeriod} />
+              <span className="min-w-0 text-caption text-muted-foreground">
+                Sales and the PDF cover {periodDatesText(period)}. Stock levels are current.
+              </span>
+            </div>
+            {salesTruncated && (
+              <p className="rounded-lg bg-tint-sun px-3 py-2 text-caption text-foreground">
+                This period has more than {ORDER_LIMIT.toLocaleString("en-IN")} orders, so only the
+                latest {ORDER_LIMIT.toLocaleString("en-IN")} are counted. Pick a shorter period for
+                complete figures.
+              </p>
+            )}
+          </div>
+        )}
 
         {!shopId ? (
           <p className="rounded-xl bg-card px-6 py-10 text-center text-body text-muted-foreground border border-border/70">
@@ -748,7 +845,7 @@ function Page() {
                   <div className="flex items-center gap-2 mb-3">
                     <TrendingUp className="h-5 w-5 text-primary" />
                     <h2 className="section-title">Top 10 best selling</h2>
-                    <span className="text-xs text-muted-foreground ml-auto">({range})</span>
+                    <span className="text-xs text-muted-foreground ml-auto">({periodText})</span>
                   </div>
                   {bestSelling.length === 0 ? (
                     <p className="text-sm text-muted-foreground">No sales yet in this period.</p>
@@ -865,19 +962,11 @@ function Page() {
 
               {/* SECTION 6: Stock Movement */}
               <TabsContent value="movement" className="mt-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold">Range:</span>
-                  {(["today", "week", "month", "year"] as const).map((r) => (
-                    <Button
-                      key={r}
-                      size="sm"
-                      variant={range === r ? "default" : "outline"}
-                      onClick={() => setRange(r)}
-                    >
-                      {r[0].toUpperCase() + r.slice(1)}
-                    </Button>
-                  ))}
-                </div>
+                <p className="text-sm text-muted-foreground">
+                  Showing{" "}
+                  <span className="font-medium text-foreground">{periodDatesText(period)}</span>.
+                  Change the period at the top of the page.
+                </p>
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="rounded-xl bg-card p-4 border border-border/70">
                     <h3 className="section-title mb-3">Products sold</h3>
