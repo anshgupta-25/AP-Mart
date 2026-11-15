@@ -30,7 +30,7 @@ export function CustomerHeader({
 }) {
   const { user } = useAuth();
   const { totalQty } = useCart();
-  const { addressLabel } = useDeliveryContext();
+  const { addressLabel, hasAddress, ready: addressReady } = useDeliveryContext();
   const initials = (user?.email ?? "U").slice(0, 1).toUpperCase();
 
   const cats = useQuery({
@@ -55,7 +55,16 @@ export function CustomerHeader({
           <LogoMark size="xs" className="h-8 w-8 rounded-full" />
         </Link>
 
-        <Link to={user ? "/customer/profile" : "/login"} className="min-w-0 flex-1 leading-tight">
+        <Link
+          to={
+            !user
+              ? "/login"
+              : addressReady && !hasAddress
+                ? "/customer/address-setup"
+                : "/customer/profile"
+          }
+          className="min-w-0 flex-1 leading-tight"
+        >
           <span className="block text-micro font-medium text-muted-foreground">Deliver to</span>
           <span className="flex items-center gap-0.5 text-meta font-semibold">
             <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />

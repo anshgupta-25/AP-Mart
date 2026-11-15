@@ -22,6 +22,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Android App Links: password-reset and email-confirm links from our emails open the
+                 app when it's installed (website otherwise). Verified via
+                 https://www.apmart.in/.well-known/assetlinks.json -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="www.apmart.in" />
+                <data android:host="apmart.in" />
+                <data android:path="/reset-password" />
+                <data android:path="/auth/confirm" />
+            </intent-filter>
+
             <!-- Deep link back from Google sign-in: com.apmart.app://auth/callback -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

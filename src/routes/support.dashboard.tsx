@@ -245,7 +245,8 @@ function ResolveButton({ ticketId, onDone }: { ticketId: string; onDone: () => v
     const { error } = await supabase.rpc("update_ticket_status", {
       _ticket_id: ticketId,
       _status: "resolved",
-      _notes: notes.trim() || null,
+      // "" = no notes (the function ignores blank notes); always sent so the call is unambiguous
+      _notes: notes.trim(),
     });
     setBusy(false);
     if (error) {

@@ -89,7 +89,7 @@ In **Authentication**:
 - **URL Configuration** → Site URL: your site URL (`http://localhost:8080` for local). Redirect URLs: add `http://localhost:8080/**` (and your deployed URL).
 - **Providers → Email**: enabled, *Confirm email* on.
 - **Emails → SMTP Settings**: set up a **custom SMTP provider** (Resend, Brevo, SendGrid, …). The built-in Supabase mailer only delivers to your own team members and is heavily rate-limited — without custom SMTP, sign-ups fail with *"Error sending confirmation email"*. Use a verified sender address.
-- **Providers → Google** (optional): create an OAuth client in Google Cloud Console and add `https://<your-project-ref>.supabase.co/auth/v1/callback` as an authorized redirect URI.
+- **Google sign-in** uses Google Identity Services, not the Supabase Google provider (leave that disabled). Create a Web OAuth client, add your site origin(s) under *Authorized JavaScript origins*, and set `VITE_GOOGLE_CLIENT_ID`. The server verifies the ID token at `/api/public/auth-google`; no client secret is needed.
 
 ## 8. Run the app
 
