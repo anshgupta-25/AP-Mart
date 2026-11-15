@@ -16,8 +16,9 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import { Download, Search, ArrowUpDown, TrendingUp, TrendingDown } from "lucide-react";
+import { Download, Loader2, Search, ArrowUpDown, TrendingUp, TrendingDown } from "lucide-react";
 
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { rupees } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -437,55 +438,52 @@ function Page() {
     }
   };
 
-  const exportCsv = () => {
-    const cols = [
-      "Shop",
-      "Owner",
-      "Pincode",
-      "City",
-      "Status",
-      "Orders (Total)",
-      "Today",
-      "This Week",
-      "This Month",
-      "Completed",
-      "Pending",
-      "Cancelled",
-      "Gross Revenue",
-      "Shop Earnings",
-      "Platform Commission",
-      "AOV",
-      "Last Order",
-    ];
-    const lines = [cols.join(",")];
-    for (const s of filteredShops) {
-      const row = [
-        s.name,
-        s.owner,
-        s.pincode,
-        s.city,
-        s.status,
-        s.ordersTotal,
-        s.ordersToday,
-        s.ordersWeek,
-        s.ordersMonth,
-        s.completed,
-        s.pending,
-        s.cancelled,
-        s.grossRevenue.toFixed(2),
-        s.shopEarnings.toFixed(2),
-        s.platformCommission.toFixed(2),
-        s.aov.toFixed(2),
-        s.lastOrderAt ?? "",
-      ].map((v) => `"${String(v).replace(/"/g, '""')}"`);
-      lines.push(row.join(","));
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const exportPdf = async () => {
+    if (pdfBusy) return;
+    setPdfBusy(true);
+    try {
+      const { downloadEarningsReportPdf } = await import("@/lib/earningsReportPdf");
+      const fmt = (d: Date) =>
+        d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+      const sameDay = range.from.toDateString() === range.to.toDateString();
+      const dates = sameDay ? fmt(range.from) : `${fmt(range.from)} – ${fmt(range.to)}`;
+      await downloadEarningsReportPdf({
+        generatedAt: new Date(),
+        periodLabel: preset === "custom" ? dates : range.label,
+        periodDates: dates,
+        commissionRate: commission,
+        kpis: {
+          grossRevenue: stats.grossRevenue,
+          shopEarnings: stats.shopEarnings,
+          platformCommission: stats.platformCommission,
+          netRevenue: stats.netRevenue,
+          deliveryCharges: stats.deliveryCharges,
+          refunds: stats.refunds,
+          aov: stats.aov,
+          totalOrders: stats.totalOrders,
+          completed: stats.completed,
+          pending: stats.pending,
+          cancelled: stats.cancelled,
+          returned: stats.returned,
+        },
+        shops: [...shopStats]
+          .sort((a, b) => b.grossRevenue - a.grossRevenue || b.ordersTotal - a.ordersTotal)
+          .map((s) => ({
+            name: s.name,
+            owner: s.owner,
+            city: s.city,
+            orders: s.ordersTotal,
+            grossRevenue: s.grossRevenue,
+            commission: s.platformCommission,
+          })),
+      });
+    } catch (e) {
+      console.error(e);
+      toast.error("Couldn't create the PDF. Please try again.");
+    } finally {
+      setPdfBusy(false);
     }
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `shop-performance-${range.label.replace(/\s+/g, "_").toLowerCase()}.csv`;
-    a.click();
-    URL.revokeObjectURL(a.href);
   };
 
   const loading = ordersQ.isLoading || shopsQ.isLoading;
@@ -532,9 +530,17 @@ function Page() {
                 />
               </div>
             )}
-            <Button className="gap-2" onClick={exportCsv}>
-              <Download className="h-4 w-4" />
-              Export CSV
+            <Button
+              className="gap-2"
+              onClick={exportPdf}
+              disabled={pdfBusy || loading || ownersQ.isLoading}
+            >
+              {pdfBusy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              {pdfBusy ? "Preparing…" : "Export PDF"}
             </Button>
           </div>
         </header>
