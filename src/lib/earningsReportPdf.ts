@@ -7,6 +7,7 @@
  */
 import type { jsPDF as JsPDF } from "jspdf";
 import type { CellHookData } from "jspdf-autotable";
+import { savePdf } from "@/lib/savePdf";
 import apmartLogoUrl from "@/assets/apmart-logo-192.png";
 
 export type EarningsShopRow = {
@@ -310,5 +311,5 @@ export async function downloadEarningsReportPdf(data: EarningsReportData): Promi
     doc.text(`Page ${p} of ${pages}`, W - PAGE_MARGIN, H - 22, { align: "right" });
   }
 
-  doc.save(`ap-mart-earnings-report-${isoDate(data.generatedAt)}.pdf`);
+  await savePdf(doc, `ap-mart-earnings-report-${isoDate(data.generatedAt)}.pdf`);
 }
