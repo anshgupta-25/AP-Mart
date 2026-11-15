@@ -56,6 +56,24 @@ const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   no_shop_available: { label: "No shop available", cls: "bg-tint-rose text-[oklch(0.45_0.12_15)]" },
 };
 
+// Values stored in orders.delivery_type (see place_order), with readable labels.
+const DELIVERY_TYPES: { value: string; label: string }[] = [
+  { value: "standard_delivery", label: "Standard" },
+  { value: "fast_delivery", label: "Fast" },
+  { value: "express_delivery", label: "Express" },
+  { value: "pickup", label: "Pickup" },
+];
+const PAYMENT_STATUSES = ["pending", "paid", "failed", "refund_initiated", "refunded", "cod"];
+
+/** "YYYY-MM-DD" of a timestamp in the viewer's time zone (matches the date picker). */
+const localDay = (iso: string | null | undefined) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+
 const statusBadge = (s: string) =>
   STATUS_BADGE[s] ?? {
     label: String(s).replace(/_/g, " "),
@@ -187,10 +205,10 @@ function Page() {
       if (shopId !== "all" && o.shop_id !== shopId) return false;
       if (partnerId !== "all" && o.partner_id !== partnerId) return false;
       if (payStatus !== "all" && o.payment_status !== payStatus) return false;
-      if (delType !== "all" && (o.delivery_type ?? "standard") !== delType) return false;
+      if (delType !== "all" && (o.delivery_type ?? "standard_delivery") !== delType) return false;
       if (pincode && !String(o.delivery_pincode ?? a.pincode ?? "").includes(pincode.trim()))
         return false;
-      if (date && !(o.placed_at ?? "").startsWith(date)) return false;
+      if (date && localDay(o.placed_at) !== date) return false;
       if (!term) return true;
       const hay = [
         o.order_number,
@@ -223,6 +241,15 @@ function Page() {
   };
 
   const selectCls = "h-10 w-full rounded-xl border-0 bg-secondary px-3 text-meta font-medium";
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const clearSecondary = () => {
+    setShopId("all");
+    setPartnerId("all");
+    setPayStatus("all");
+    setDelType("all");
+    setPincode("");
+    setDate("");
+  };
 
   // Count active secondary filters for badge
   const activeFilterCount = [
@@ -264,7 +291,13 @@ function Page() {
         ]
       : []),
     ...(delType !== "all"
-      ? [{ key: "del", label: `Delivery: ${delType}`, clear: () => setDelType("all") }]
+      ? [
+          {
+            key: "del",
+            label: `Delivery: ${DELIVERY_TYPES.find((t) => t.value === delType)?.label ?? delType}`,
+            clear: () => setDelType("all"),
+          },
+        ]
       : []),
     ...(pincode ? [{ key: "pin", label: `PIN: ${pincode}`, clear: () => setPincode("") }] : []),
     ...(date ? [{ key: "date", label: `Date: ${date}`, clear: () => setDate("") }] : []),
@@ -292,28 +325,37 @@ function Page() {
               className="pl-10"
             />
           </div>
-          <Sheet>
+          <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
             <SheetTrigger asChild>
               <Button variant="secondary" className="relative shrink-0 gap-2">
                 <Filter className="h-4 w-4" />
                 Filters
                 {activeFilterCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
+                  <span
+                    aria-label={`${activeFilterCount} active`}
+                    className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white"
+                  >
                     {activeFilterCount}
                   </span>
                 )}
               </Button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="rounded-t-2xl px-4 pb-8 pt-4">
+            <SheetContent
+              side="bottom"
+              className="mx-auto max-h-[85vh] w-full max-w-xl overflow-y-auto rounded-t-2xl px-4 pb-8 pt-4"
+            >
               <SheetHeader className="mb-4">
                 <SheetTitle>Filters</SheetTitle>
               </SheetHeader>
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="eyebrow">Shop</label>
+                    <label htmlFor="f-shop" className="eyebrow">
+                      Shop
+                    </label>
                     <select
                       className={selectCls}
+                      id="f-shop"
                       value={shopId}
                       onChange={(e) => setShopId(e.target.value)}
                     >
@@ -326,9 +368,12 @@ function Page() {
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="eyebrow">Rider</label>
+                    <label htmlFor="f-rider" className="eyebrow">
+                      Rider
+                    </label>
                     <select
                       className={selectCls}
+                      id="f-rider"
                       value={partnerId}
                       onChange={(e) => setPartnerId(e.target.value)}
                     >
@@ -341,50 +386,61 @@ function Page() {
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="eyebrow">Payment</label>
+                    <label htmlFor="f-pay" className="eyebrow">
+                      Payment
+                    </label>
                     <select
                       className={selectCls}
+                      id="f-pay"
                       value={payStatus}
                       onChange={(e) => setPayStatus(e.target.value)}
                     >
                       <option value="all">All</option>
-                      {["pending", "paid", "failed", "refund_initiated", "refunded", "cod"].map(
-                        (s) => (
-                          <option key={s} value={s}>
-                            {s.replace(/_/g, " ")}
-                          </option>
-                        ),
-                      )}
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="eyebrow">Delivery type</label>
-                    <select
-                      className={selectCls}
-                      value={delType}
-                      onChange={(e) => setDelType(e.target.value)}
-                    >
-                      <option value="all">All</option>
-                      {["standard", "fast", "express", "pickup"].map((s) => (
+                      {PAYMENT_STATUSES.map((s) => (
                         <option key={s} value={s}>
-                          {s}
+                          {s.replace(/_/g, " ")}
                         </option>
                       ))}
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="eyebrow">PIN code</label>
+                    <label htmlFor="f-del" className="eyebrow">
+                      Delivery type
+                    </label>
+                    <select
+                      className={selectCls}
+                      id="f-del"
+                      value={delType}
+                      onChange={(e) => setDelType(e.target.value)}
+                    >
+                      <option value="all">All</option>
+                      {DELIVERY_TYPES.map((t) => (
+                        <option key={t.value} value={t.value}>
+                          {t.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label htmlFor="f-pin" className="eyebrow">
+                      PIN code
+                    </label>
                     <Input
+                      id="f-pin"
                       value={pincode}
                       onChange={(e) => setPincode(e.target.value)}
+                      inputMode="numeric"
                       placeholder="e.g. 141001"
                       className="h-10"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="eyebrow">Date</label>
+                    <label htmlFor="f-date" className="eyebrow">
+                      Date
+                    </label>
                     <Input
                       type="date"
+                      id="f-date"
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
                       className="h-10"
@@ -396,16 +452,13 @@ function Page() {
                 <Button
                   variant="secondary"
                   className="flex-1"
-                  onClick={() => {
-                    setShopId("all");
-                    setPartnerId("all");
-                    setPayStatus("all");
-                    setDelType("all");
-                    setPincode("");
-                    setDate("");
-                  }}
+                  onClick={clearSecondary}
+                  disabled={activeFilterCount === 0}
                 >
                   Clear all
+                </Button>
+                <Button className="flex-1" onClick={() => setFiltersOpen(false)}>
+                  Show {filtered.length} {filtered.length === 1 ? "order" : "orders"}
                 </Button>
               </div>
             </SheetContent>
@@ -413,13 +466,15 @@ function Page() {
         </div>
 
         {/* Row 2: Status chip rail */}
-        <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
+        <div className="no-scrollbar flex gap-2 overflow-x-auto pb-0.5">
           {[
             { value: "all", label: "All" },
             ...Object.entries(STATUS_BADGE).map(([v, { label }]) => ({ value: v, label })),
           ].map(({ value, label }) => (
             <button
               key={value}
+              type="button"
+              aria-pressed={status === value}
               onClick={() => setStatus(value)}
               className={`shrink-0 rounded-full px-3 py-1.5 text-caption font-semibold transition-colors ${
                 status === value
@@ -442,8 +497,10 @@ function Page() {
               >
                 {tag.label}
                 <button
+                  type="button"
                   onClick={tag.clear}
-                  className="ml-0.5 rounded-full hover:bg-primary/20 p-0.5"
+                  aria-label={`Remove filter ${tag.label}`}
+                  className="ml-0.5 rounded-full p-0.5 hover:bg-primary/20"
                 >
                   <X className="h-3 w-3" />
                 </button>
