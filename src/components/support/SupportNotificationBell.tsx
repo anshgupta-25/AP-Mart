@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { supportUnreadKey } from "@/lib/supportNotificationKeys";
+import { supportUnreadKey, supportUnreadQuery } from "@/lib/supportNotificationKeys";
 
 /**
  * Support portal bell: opens /support/notifications (it used to open the customer page) and
@@ -12,19 +12,7 @@ import { supportUnreadKey } from "@/lib/supportNotificationKeys";
 export function SupportNotificationBell({ userId }: { userId?: string }) {
   const qc = useQueryClient();
 
-  const { data: count = 0 } = useQuery({
-    queryKey: supportUnreadKey(userId),
-    enabled: !!userId,
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("notifications")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", userId!)
-        .eq("read", false);
-      if (error) throw error;
-      return count ?? 0;
-    },
-  });
+  const { data: count = 0 } = useQuery(supportUnreadQuery(userId));
 
   useEffect(() => {
     if (!userId) return;

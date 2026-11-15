@@ -6,7 +6,11 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { supportNotificationsKey, supportUnreadKey } from "@/lib/supportNotificationKeys";
+import {
+  supportNotificationsKey,
+  supportUnreadKey,
+  supportUnreadQuery,
+} from "@/lib/supportNotificationKeys";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -86,7 +90,9 @@ function SupportNotifications() {
   };
 
   const list = items.data ?? [];
-  const unread = list.filter((n) => !n.read).length;
+  // Total unread (same number as the bell), not only among the latest 100 listed here.
+  const unreadTotal = useQuery(supportUnreadQuery(userId));
+  const unread = unreadTotal.data ?? list.filter((n) => !n.read).length;
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-4 pb-8 pt-4 md:px-6">
