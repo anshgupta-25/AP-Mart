@@ -88,7 +88,7 @@ const LOW_STOCK = 5;
 
 /** Product photo with a clean icon fallback when there is no image or it fails to load. */
 function Thumb({ src, alt }: { src: string | null; alt: string }) {
-  const { url, failed: signFailed, retry } = useStorageUrl(src);
+  const { url, failed: signFailed, retry, isRef } = useStorageUrl(src);
   const [broken, setBroken] = useState(false);
   const retried = useRef(false);
   const showIcon = !src || signFailed || broken;
@@ -103,8 +103,8 @@ function Thumb({ src, alt }: { src: string | null; alt: string }) {
           src={url}
           alt={alt}
           onError={() => {
-            // An expired signed URL gets one fresh signature before we give up.
-            if (!retried.current) {
+            // An expired signed storage URL gets one fresh signature before we give up.
+            if (isRef && !retried.current) {
               retried.current = true;
               retry();
             } else setBroken(true);
@@ -255,6 +255,7 @@ function Page() {
             </Button>
           </DialogTrigger>
           <ProductDialog
+            key={editing?.id ?? "new"}
             initial={editing}
             categories={cats}
             onSave={(p) => save.mutate(p)}
@@ -302,7 +303,7 @@ function Page() {
               className="rounded-2xl border border-border/60 bg-card p-3.5 shadow-soft"
             >
               <div className="flex gap-3.5">
-                <Thumb src={p.image_url} alt={p.name} />
+                <Thumb key={p.image_url ?? "none"} src={p.image_url} alt={p.name} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start gap-1">
                     <div className="min-w-0 flex-1">
