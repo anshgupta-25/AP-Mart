@@ -95,6 +95,7 @@ import { Route as SuperAdminSettingsRouteImport } from './routes/super-admin.set
 import { Route as SuperadminDashboardRouteImport } from './routes/superadmin.dashboard'
 import { Route as SupportDashboardRouteImport } from './routes/support.dashboard'
 import { Route as SupportMyTicketsRouteImport } from './routes/support.my-tickets'
+import { Route as SupportNotificationsRouteImport } from './routes/support.notifications'
 import { Route as SupportProfileRouteImport } from './routes/support.profile'
 import { Route as AdminComplaintsIndexRouteImport } from './routes/admin.complaints.index'
 import { Route as AdminComplaintsIdRouteImport } from './routes/admin.complaints.$id'
@@ -545,6 +546,11 @@ const SupportMyTicketsRoute = SupportMyTicketsRouteImport.update({
   path: '/my-tickets',
   getParentRoute: () => SupportRoute,
 } as any)
+const SupportNotificationsRoute = SupportNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => SupportRoute,
+} as any)
 const SupportProfileRoute = SupportProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -724,6 +730,7 @@ export interface FileRoutesByFullPath {
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
   '/support/dashboard': typeof SupportDashboardRoute
   '/support/my-tickets': typeof SupportMyTicketsRoute
+  '/support/notifications': typeof SupportNotificationsRoute
   '/support/profile': typeof SupportProfileRoute
   '/orders/': typeof OrdersIndexRoute
   '/admin/complaints/$id': typeof AdminComplaintsIdRoute
@@ -830,6 +837,7 @@ export interface FileRoutesByTo {
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
   '/support/dashboard': typeof SupportDashboardRoute
   '/support/my-tickets': typeof SupportMyTicketsRoute
+  '/support/notifications': typeof SupportNotificationsRoute
   '/support/profile': typeof SupportProfileRoute
   '/orders': typeof OrdersIndexRoute
   '/admin/complaints/$id': typeof AdminComplaintsIdRoute
@@ -937,6 +945,7 @@ export interface FileRoutesById {
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
   '/support/dashboard': typeof SupportDashboardRoute
   '/support/my-tickets': typeof SupportMyTicketsRoute
+  '/support/notifications': typeof SupportNotificationsRoute
   '/support/profile': typeof SupportProfileRoute
   '/orders/': typeof OrdersIndexRoute
   '/admin/complaints/$id': typeof AdminComplaintsIdRoute
@@ -1045,6 +1054,7 @@ export interface FileRouteTypes {
     | '/superadmin/dashboard'
     | '/support/dashboard'
     | '/support/my-tickets'
+    | '/support/notifications'
     | '/support/profile'
     | '/orders/'
     | '/admin/complaints/$id'
@@ -1151,6 +1161,7 @@ export interface FileRouteTypes {
     | '/superadmin/dashboard'
     | '/support/dashboard'
     | '/support/my-tickets'
+    | '/support/notifications'
     | '/support/profile'
     | '/orders'
     | '/admin/complaints/$id'
@@ -1257,6 +1268,7 @@ export interface FileRouteTypes {
     | '/superadmin/dashboard'
     | '/support/dashboard'
     | '/support/my-tickets'
+    | '/support/notifications'
     | '/support/profile'
     | '/orders/'
     | '/admin/complaints/$id'
@@ -1916,6 +1928,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SupportMyTicketsRouteImport
       parentRoute: typeof SupportRoute
     }
+    '/support/notifications': {
+      id: '/support/notifications'
+      path: '/notifications'
+      fullPath: '/support/notifications'
+      preLoaderRoute: typeof SupportNotificationsRouteImport
+      parentRoute: typeof SupportRoute
+    }
     '/support/profile': {
       id: '/support/profile'
       path: '/profile'
@@ -2248,6 +2267,7 @@ const SuperAdminRouteWithChildren = SuperAdminRoute._addFileChildren(
 interface SupportRouteChildren {
   SupportDashboardRoute: typeof SupportDashboardRoute
   SupportMyTicketsRoute: typeof SupportMyTicketsRoute
+  SupportNotificationsRoute: typeof SupportNotificationsRoute
   SupportProfileRoute: typeof SupportProfileRoute
   SupportTicketIdRoute: typeof SupportTicketIdRoute
   SupportTicketsIdRoute: typeof SupportTicketsIdRoute
@@ -2257,6 +2277,7 @@ interface SupportRouteChildren {
 const SupportRouteChildren: SupportRouteChildren = {
   SupportDashboardRoute: SupportDashboardRoute,
   SupportMyTicketsRoute: SupportMyTicketsRoute,
+  SupportNotificationsRoute: SupportNotificationsRoute,
   SupportProfileRoute: SupportProfileRoute,
   SupportTicketIdRoute: SupportTicketIdRoute,
   SupportTicketsIdRoute: SupportTicketsIdRoute,
