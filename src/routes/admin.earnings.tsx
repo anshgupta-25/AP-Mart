@@ -223,10 +223,16 @@ function Page() {
       const ids = Array.from(
         new Set((shopsQ.data ?? []).map((s) => s.owner_id).filter(Boolean)),
       ) as string[];
-      if (!ids.length) return new Map<string, { full_name: string | null; phone: string | null }>();
-      const { data } = await supabase.from("profiles").select("id,full_name,phone").in("id", ids);
       const m = new Map<string, { full_name: string | null; phone: string | null }>();
-      (data ?? []).forEach((p) => m.set(p.id, { full_name: p.full_name, phone: p.phone }));
+      if (!ids.length) return m;
+      // Profiles RLS only lets a user read their own row, so read owner names through the
+      // admin-checked RPC the other admin pages use.
+      const { data, error } = await supabase.rpc("admin_list_shops");
+      if (error) throw error;
+      (data ?? []).forEach((s) => {
+        if (s.owner_id && ids.includes(s.owner_id))
+          m.set(s.owner_id, { full_name: s.owner_name, phone: s.owner_phone });
+      });
       return m;
     },
   });
@@ -342,7 +348,7 @@ function Page() {
       perShop.set(s.id, {
         shop_id: s.id,
         name: s.name,
-        owner: owners.get(s.owner_id ?? "")?.full_name ?? (s.owner_id ? "—" : "Unassigned"),
+        owner: owners.get(s.owner_id ?? "")?.full_name || (s.owner_id ? "—" : "Unassigned"),
         city: s.city,
         pincode: s.pincode,
         status: s.is_open ? "Open" : "Closed",
@@ -441,6 +447,11 @@ function Page() {
   const [pdfBusy, setPdfBusy] = useState(false);
   const exportPdf = async () => {
     if (pdfBusy) return;
+    // Don't export a report of zeros when the data failed to load.
+    if (ordersQ.isError || shopsQ.isError) {
+      toast.error("Couldn't load the earnings data, so the PDF can't be made. Please refresh.");
+      return;
+    }
     setPdfBusy(true);
     try {
       const { downloadEarningsReportPdf } = await import("@/lib/earningsReportPdf");

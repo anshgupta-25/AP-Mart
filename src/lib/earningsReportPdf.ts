@@ -64,6 +64,13 @@ const money = (n: number) =>
     maximumFractionDigits: 2,
   })}`;
 const int = (n: number) => Number(n || 0).toLocaleString("en-IN");
+// The built-in PDF fonts only cover Latin-1 plus a few typographic marks. One character outside
+// that set (Hindi, emoji, ₹) makes jsPDF garble the WHOLE string, so swap just those characters.
+const WINANSI_EXTRA = "–—‘’‚“”„•…€™†‡‰‹›ŠšŽžŒœŸˆ˜ƒ";
+const pdfText = (s: string) =>
+  [...(s ?? "").normalize("NFC")]
+    .map((ch) => (ch.charCodeAt(0) <= 0xff || WINANSI_EXTRA.includes(ch) ? ch : "?"))
+    .join("");
 const pad = (n: number) => String(n).padStart(2, "0");
 const isoDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const stamp = (d: Date) => `${isoDate(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -269,9 +276,9 @@ export async function downloadEarningsReportPdf(data: EarningsReportData): Promi
     head: [["Shop", "Owner", "City", R("Orders"), R("Gross Revenue"), R("Commission")]],
     body: shops.length
       ? shops.map((s) => [
-          s.name,
-          s.owner,
-          s.city,
+          pdfText(s.name),
+          pdfText(s.owner),
+          pdfText(s.city),
           int(s.orders),
           money(s.grossRevenue),
           money(s.commission),
