@@ -1,14 +1,13 @@
 import {
   createFileRoute,
-  Link,
   Navigate,
   Outlet,
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { Bell } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { SupportNotificationBell } from "@/components/support/SupportNotificationBell";
 import { RoleHeader } from "@/components/RoleHeader";
 import { AppShell } from "@/components/shell/AppShell";
 import { SUPPORT_NAV } from "@/lib/nav/support";
@@ -56,15 +55,9 @@ function SupportShell() {
     <AppShell
       nav={SUPPORT_NAV}
       maxWidth="max-w-6xl"
-      trailing={
-        <Link
-          to="/customer/notifications"
-          aria-label="Notifications"
-          className="press grid h-9 w-9 place-items-center rounded-full bg-card"
-        >
-          <Bell className="h-[18px] w-[18px]" />
-        </Link>
-      }
+      // /support/notifications is not a tab, so name it explicitly instead of showing "AP Mart".
+      title={pathname.startsWith("/support/notifications") ? "Notifications" : undefined}
+      trailing={<SupportNotificationBell userId={user?.id} />}
     />
   );
 }

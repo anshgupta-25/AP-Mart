@@ -18,6 +18,7 @@ import { Route as CartRouteImport } from './routes/cart'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CustomerRouteImport } from './routes/customer'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as DeliveryRouteImport } from './routes/delivery'
 import { Route as FavouritesRouteImport } from './routes/favourites'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -95,6 +96,7 @@ import { Route as SuperAdminSettingsRouteImport } from './routes/super-admin.set
 import { Route as SuperadminDashboardRouteImport } from './routes/superadmin.dashboard'
 import { Route as SupportDashboardRouteImport } from './routes/support.dashboard'
 import { Route as SupportMyTicketsRouteImport } from './routes/support.my-tickets'
+import { Route as SupportNotificationsRouteImport } from './routes/support.notifications'
 import { Route as SupportProfileRouteImport } from './routes/support.profile'
 import { Route as AdminComplaintsIndexRouteImport } from './routes/admin.complaints.index'
 import { Route as AdminComplaintsIdRouteImport } from './routes/admin.complaints.$id'
@@ -157,6 +159,11 @@ const CustomerRoute = CustomerRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeleteAccountRoute = DeleteAccountRouteImport.update({
+  id: '/delete-account',
+  path: '/delete-account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeliveryRoute = DeliveryRouteImport.update({
@@ -545,6 +552,11 @@ const SupportMyTicketsRoute = SupportMyTicketsRouteImport.update({
   path: '/my-tickets',
   getParentRoute: () => SupportRoute,
 } as any)
+const SupportNotificationsRoute = SupportNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => SupportRoute,
+} as any)
 const SupportProfileRoute = SupportProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -648,6 +660,7 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRoute
   '/customer': typeof CustomerRouteWithChildren
   '/dashboard': typeof DashboardRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/delivery': typeof DeliveryRouteWithChildren
   '/favourites': typeof FavouritesRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -724,6 +737,7 @@ export interface FileRoutesByFullPath {
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
   '/support/dashboard': typeof SupportDashboardRoute
   '/support/my-tickets': typeof SupportMyTicketsRoute
+  '/support/notifications': typeof SupportNotificationsRoute
   '/support/profile': typeof SupportProfileRoute
   '/orders/': typeof OrdersIndexRoute
   '/admin/complaints/$id': typeof AdminComplaintsIdRoute
@@ -754,6 +768,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/customer': typeof CustomerRouteWithChildren
   '/dashboard': typeof DashboardRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/delivery': typeof DeliveryRouteWithChildren
   '/favourites': typeof FavouritesRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -830,6 +845,7 @@ export interface FileRoutesByTo {
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
   '/support/dashboard': typeof SupportDashboardRoute
   '/support/my-tickets': typeof SupportMyTicketsRoute
+  '/support/notifications': typeof SupportNotificationsRoute
   '/support/profile': typeof SupportProfileRoute
   '/orders': typeof OrdersIndexRoute
   '/admin/complaints/$id': typeof AdminComplaintsIdRoute
@@ -861,6 +877,7 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRoute
   '/customer': typeof CustomerRouteWithChildren
   '/dashboard': typeof DashboardRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/delivery': typeof DeliveryRouteWithChildren
   '/favourites': typeof FavouritesRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -937,6 +954,7 @@ export interface FileRoutesById {
   '/superadmin/dashboard': typeof SuperadminDashboardRoute
   '/support/dashboard': typeof SupportDashboardRoute
   '/support/my-tickets': typeof SupportMyTicketsRoute
+  '/support/notifications': typeof SupportNotificationsRoute
   '/support/profile': typeof SupportProfileRoute
   '/orders/': typeof OrdersIndexRoute
   '/admin/complaints/$id': typeof AdminComplaintsIdRoute
@@ -969,6 +987,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/customer'
     | '/dashboard'
+    | '/delete-account'
     | '/delivery'
     | '/favourites'
     | '/forgot-password'
@@ -1045,6 +1064,7 @@ export interface FileRouteTypes {
     | '/superadmin/dashboard'
     | '/support/dashboard'
     | '/support/my-tickets'
+    | '/support/notifications'
     | '/support/profile'
     | '/orders/'
     | '/admin/complaints/$id'
@@ -1075,6 +1095,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/customer'
     | '/dashboard'
+    | '/delete-account'
     | '/delivery'
     | '/favourites'
     | '/forgot-password'
@@ -1151,6 +1172,7 @@ export interface FileRouteTypes {
     | '/superadmin/dashboard'
     | '/support/dashboard'
     | '/support/my-tickets'
+    | '/support/notifications'
     | '/support/profile'
     | '/orders'
     | '/admin/complaints/$id'
@@ -1181,6 +1203,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/customer'
     | '/dashboard'
+    | '/delete-account'
     | '/delivery'
     | '/favourites'
     | '/forgot-password'
@@ -1257,6 +1280,7 @@ export interface FileRouteTypes {
     | '/superadmin/dashboard'
     | '/support/dashboard'
     | '/support/my-tickets'
+    | '/support/notifications'
     | '/support/profile'
     | '/orders/'
     | '/admin/complaints/$id'
@@ -1288,6 +1312,7 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   CustomerRoute: typeof CustomerRouteWithChildren
   DashboardRoute: typeof DashboardRoute
+  DeleteAccountRoute: typeof DeleteAccountRoute
   DeliveryRoute: typeof DeliveryRouteWithChildren
   FavouritesRoute: typeof FavouritesRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -1375,6 +1400,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/delete-account': {
+      id: '/delete-account'
+      path: '/delete-account'
+      fullPath: '/delete-account'
+      preLoaderRoute: typeof DeleteAccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/delivery': {
@@ -1916,6 +1948,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SupportMyTicketsRouteImport
       parentRoute: typeof SupportRoute
     }
+    '/support/notifications': {
+      id: '/support/notifications'
+      path: '/notifications'
+      fullPath: '/support/notifications'
+      preLoaderRoute: typeof SupportNotificationsRouteImport
+      parentRoute: typeof SupportRoute
+    }
     '/support/profile': {
       id: '/support/profile'
       path: '/profile'
@@ -2248,6 +2287,7 @@ const SuperAdminRouteWithChildren = SuperAdminRoute._addFileChildren(
 interface SupportRouteChildren {
   SupportDashboardRoute: typeof SupportDashboardRoute
   SupportMyTicketsRoute: typeof SupportMyTicketsRoute
+  SupportNotificationsRoute: typeof SupportNotificationsRoute
   SupportProfileRoute: typeof SupportProfileRoute
   SupportTicketIdRoute: typeof SupportTicketIdRoute
   SupportTicketsIdRoute: typeof SupportTicketsIdRoute
@@ -2257,6 +2297,7 @@ interface SupportRouteChildren {
 const SupportRouteChildren: SupportRouteChildren = {
   SupportDashboardRoute: SupportDashboardRoute,
   SupportMyTicketsRoute: SupportMyTicketsRoute,
+  SupportNotificationsRoute: SupportNotificationsRoute,
   SupportProfileRoute: SupportProfileRoute,
   SupportTicketIdRoute: SupportTicketIdRoute,
   SupportTicketsIdRoute: SupportTicketsIdRoute,
@@ -2276,6 +2317,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   CustomerRoute: CustomerRouteWithChildren,
   DashboardRoute: DashboardRoute,
+  DeleteAccountRoute: DeleteAccountRoute,
   DeliveryRoute: DeliveryRouteWithChildren,
   FavouritesRoute: FavouritesRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,

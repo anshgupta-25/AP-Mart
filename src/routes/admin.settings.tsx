@@ -269,6 +269,8 @@ function Page() {
       </section>
       <SupportTicketForm open={ticketOpen} onOpenChange={setTicketOpen} />
 
+      <DeleteAccountSection />
+
       <Separator />
 
       <div className="flex justify-end">
@@ -280,7 +282,6 @@ function Page() {
           <LogOut className="h-4 w-4 mr-2" /> Sign out
         </Button>
       </div>
-      <DeleteAccountSection />
     </div>
   );
 }
