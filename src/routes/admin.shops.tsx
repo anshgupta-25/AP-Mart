@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LeafletMap } from "@/components/maps/LeafletMap";
+import { ShopsGoogleMap } from "@/components/maps/ShopsGoogleMap";
 import { LocationPicker, type LatLng } from "@/components/maps/LocationPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -218,13 +218,6 @@ function Page() {
   const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const valid = shops.filter((s) => s.latitude != null && s.longitude != null);
-  const mapCenter: [number, number] =
-    valid.length > 0
-      ? [
-          valid.reduce((a, s) => a + (s.latitude || 0), 0) / valid.length,
-          valid.reduce((a, s) => a + (s.longitude || 0), 0) / valid.length,
-        ]
-      : [12.9716, 77.5946];
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin-shops"] });
 
@@ -302,43 +295,7 @@ function Page() {
         {/* Mini map */}
         {valid.length > 0 && (
           <div className="relative z-0 isolate">
-            <LeafletMap
-              center={mapCenter}
-              zoom={10}
-              className="h-44 w-full overflow-hidden rounded-xl sm:h-52"
-            >
-              {(RL) => {
-                const { Marker, Popup, Circle } = RL;
-                return (
-                  <>
-                    {valid.map((s) => (
-                      <div key={s.id}>
-                        <Marker position={[s.latitude!, s.longitude!]}>
-                          <Popup>
-                            <div className="font-bold">{s.name}</div>
-                            <div className="text-xs">
-                              {s.address}, {s.city}
-                            </div>
-                            <div className="text-xs">
-                              Radius {s.service_radius_km} km · {s.is_open ? "Open" : "Closed"}
-                            </div>
-                          </Popup>
-                        </Marker>
-                        <Circle
-                          center={[s.latitude!, s.longitude!]}
-                          radius={(Number(s.service_radius_km) || 8) * 1000}
-                          pathOptions={{
-                            color: "hsl(var(--primary))",
-                            weight: 1,
-                            fillOpacity: 0.05,
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </>
-                );
-              }}
-            </LeafletMap>
+            <ShopsGoogleMap shops={valid} className="h-44 w-full sm:h-52" />
           </div>
         )}
 
@@ -484,44 +441,7 @@ function Page() {
             <DialogTitle>All shops on the map</DialogTitle>
           </DialogHeader>
           <div className="relative z-0 isolate">
-            <LeafletMap
-              center={mapCenter}
-              zoom={10}
-              className="h-[70vh] w-full overflow-hidden rounded-xl"
-            >
-              {(RL) => {
-                const { Marker, Popup, Circle } = RL;
-                return (
-                  <>
-                    {valid.map((s) => (
-                      <div key={s.id}>
-                        <Marker position={[s.latitude!, s.longitude!]}>
-                          <Popup>
-                            <div className="font-bold">{s.name}</div>
-                            <div className="text-xs">
-                              {s.address}, {s.city}
-                            </div>
-                            <div className="text-xs">Owner: {s.owner_email || "Unassigned"}</div>
-                            <div className="text-xs">
-                              Radius {s.service_radius_km} km · {s.is_open ? "Open" : "Closed"}
-                            </div>
-                          </Popup>
-                        </Marker>
-                        <Circle
-                          center={[s.latitude!, s.longitude!]}
-                          radius={(Number(s.service_radius_km) || 8) * 1000}
-                          pathOptions={{
-                            color: "hsl(var(--primary))",
-                            weight: 1,
-                            fillOpacity: 0.06,
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </>
-                );
-              }}
-            </LeafletMap>
+            <ShopsGoogleMap shops={valid} className="h-[70vh] w-full" />
           </div>
         </DialogContent>
       </Dialog>
