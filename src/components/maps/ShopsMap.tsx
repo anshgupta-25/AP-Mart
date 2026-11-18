@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { loadGoogleMaps } from "@/lib/googleMaps";
+import { loadGoogleMaps, onGoogleMapsAuthFailure } from "@/lib/googleMaps";
 
 export type ShopMapPoint = {
   id: string;
@@ -70,6 +70,7 @@ export function ShopsMap({
   // Create the map once.
   useEffect(() => {
     let cancelled = false;
+    const stopAuthWatch = onGoogleMapsAuthFailure(() => !cancelled && setError("auth"));
     loadGoogleMaps(["geometry"])
       .then((g) => {
         if (cancelled || !ref.current) return;
@@ -87,6 +88,7 @@ export function ShopsMap({
       .catch((e: Error) => !cancelled && setError(e.message));
     return () => {
       cancelled = true;
+      stopAuthWatch();
       overlays.current.forEach((o) => o.setMap(null));
       overlays.current = [];
       infoRef.current?.close();
@@ -143,7 +145,9 @@ export function ShopsMap({
         className={`${className} grid place-items-center bg-secondary px-4 text-center text-meta text-muted-foreground`}
         role="alert"
       >
-        The map couldn't load. Check the Google Maps key and your connection.
+        {error === "auth"
+          ? "Google Maps rejected the API key. Check that the key is valid, the Maps JavaScript API is enabled, billing is on, and this site is allowed in the key's HTTP referrers."
+          : "The map couldn't load. Check the Google Maps key and your connection."}
       </div>
     );
   }

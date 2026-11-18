@@ -8,11 +8,30 @@ declare global {
     __gmapsResolve?: () => void;
     __gmapsPromise?: Promise<typeof google>;
     __gmapsInit?: () => void;
+    gm_authFailure?: () => void;
+    __gmapsAuthFailed?: boolean;
   }
 }
 
 const BROWSER_KEY = import.meta.env.VITE_GOOGLE_MAPS_BROWSER_KEY as string | undefined;
 const CHANNEL = import.meta.env.VITE_GOOGLE_MAPS_TRACKING_ID as string | undefined;
+const AUTH_FAILURE_EVENT = "gmaps-auth-failure";
+
+/**
+ * Runs `cb` if Google rejects the key (invalid key, Maps JavaScript API not enabled, billing
+ * off, or this domain not in the key's HTTP referrer list). Google reports that through the
+ * global `gm_authFailure`, possibly after a map was already created, so components listen
+ * here to swap the broken map for a clear message. Returns an unsubscribe function.
+ */
+export function onGoogleMapsAuthFailure(cb: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  if (window.__gmapsAuthFailed) {
+    cb();
+    return () => {};
+  }
+  window.addEventListener(AUTH_FAILURE_EVENT, cb);
+  return () => window.removeEventListener(AUTH_FAILURE_EVENT, cb);
+}
 
 export function loadGoogleMaps(
   libraries: ReadonlyArray<"places" | "geometry" | "marker" | "routes"> = ["places", "geometry"],
@@ -30,6 +49,11 @@ export function loadGoogleMaps(
     );
 
   window.__gmapsPromise = new Promise<typeof google>((resolve, reject) => {
+    window.gm_authFailure = () => {
+      window.__gmapsAuthFailed = true;
+      window.dispatchEvent(new Event(AUTH_FAILURE_EVENT));
+      reject(new Error("Google Maps rejected the API key"));
+    };
     window.__gmapsInit = () => {
       if (window.google?.maps) resolve(window.google);
       else reject(new Error("Google Maps failed to initialize"));
