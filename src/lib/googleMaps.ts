@@ -19,8 +19,11 @@ export function loadGoogleMaps(
 ): Promise<typeof google> {
   if (typeof window === "undefined")
     return Promise.reject(new Error("loadGoogleMaps must be called in the browser"));
-  if (window.google?.maps) return Promise.resolve(window.google);
-  if (window.__gmapsPromise) return window.__gmapsPromise;
+  // The script loads once, with the FIRST caller's libraries. A later caller may need more
+  // (e.g. a geometry-only map loaded first, then the Places location picker), so load any
+  // missing ones on demand instead of resolving without them.
+  if (window.google?.maps) return withLibraries(window.google, libraries);
+  if (window.__gmapsPromise) return window.__gmapsPromise.then((g) => withLibraries(g, libraries));
   if (!BROWSER_KEY)
     return Promise.reject(
       new Error("Google Maps browser key missing (set VITE_GOOGLE_MAPS_BROWSER_KEY in .env)."),
@@ -48,6 +51,17 @@ export function loadGoogleMaps(
     document.head.appendChild(s);
   });
   return window.__gmapsPromise;
+}
+
+/** Resolves once every requested library is on `google.maps` (loads the missing ones). */
+async function withLibraries(
+  g: typeof google,
+  libraries: ReadonlyArray<"places" | "geometry" | "marker" | "routes">,
+): Promise<typeof google> {
+  const loaded = g.maps as unknown as Record<string, unknown>;
+  const missing = libraries.filter((lib) => !loaded[lib]);
+  if (missing.length) await Promise.all(missing.map((lib) => g.maps.importLibrary(lib)));
+  return g;
 }
 
 /** Haversine distance (km) — kept as fallback when no live route. Mirrors SQL. */
