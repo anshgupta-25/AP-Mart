@@ -1,6 +1,5 @@
 // Async loader for the Google Maps JavaScript API.
-// Browser key: VITE_GOOGLE_MAPS_API_KEY, falling back to the legacy
-// VITE_GOOGLE_MAPS_BROWSER_KEY. Restrict the key by HTTP referrer in Google Cloud.
+// Uses the browser key VITE_GOOGLE_MAPS_BROWSER_KEY (restrict it by HTTP referrer).
 // Safe to call multiple times — resolves once.
 
 declare global {
@@ -9,39 +8,28 @@ declare global {
     __gmapsResolve?: () => void;
     __gmapsPromise?: Promise<typeof google>;
     __gmapsInit?: () => void;
-    gm_authFailure?: () => void;
-    __gmapsAuthFailed?: boolean;
   }
 }
 
-const BROWSER_KEY =
-  (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) ||
-  (import.meta.env.VITE_GOOGLE_MAPS_BROWSER_KEY as string | undefined);
+const BROWSER_KEY = import.meta.env.VITE_GOOGLE_MAPS_BROWSER_KEY as string | undefined;
 const CHANNEL = import.meta.env.VITE_GOOGLE_MAPS_TRACKING_ID as string | undefined;
-
-export const GOOGLE_MAPS_MISSING_KEY_MESSAGE =
-  "Google Maps API key is missing. Set VITE_GOOGLE_MAPS_API_KEY in .env and restart the dev server.";
-export const GOOGLE_MAPS_AUTH_FAILURE_EVENT = "gmaps-auth-failure";
-export const GOOGLE_MAPS_AUTH_FAILURE_MESSAGE =
-  "Google Maps rejected the API key. Check that the key is valid, the Maps JavaScript API is enabled, billing is active, and this site's domain is allowed by the key's HTTP referrer restriction.";
 
 export function loadGoogleMaps(
   libraries: ReadonlyArray<"places" | "geometry" | "marker" | "routes"> = ["places", "geometry"],
 ): Promise<typeof google> {
   if (typeof window === "undefined")
     return Promise.reject(new Error("loadGoogleMaps must be called in the browser"));
-  if (window.google?.maps) return Promise.resolve(window.google);
-  if (window.__gmapsPromise) return window.__gmapsPromise;
-  if (!BROWSER_KEY) return Promise.reject(new Error(GOOGLE_MAPS_MISSING_KEY_MESSAGE));
+  // The script loads once, with the FIRST caller's libraries. A later caller may need more
+  // (e.g. a geometry-only map loaded first, then the Places location picker), so load any
+  // missing ones on demand instead of resolving without them.
+  if (window.google?.maps) return withLibraries(window.google, libraries);
+  if (window.__gmapsPromise) return window.__gmapsPromise.then((g) => withLibraries(g, libraries));
+  if (!BROWSER_KEY)
+    return Promise.reject(
+      new Error("Google Maps browser key missing (set VITE_GOOGLE_MAPS_BROWSER_KEY in .env)."),
+    );
 
   window.__gmapsPromise = new Promise<typeof google>((resolve, reject) => {
-    // Google calls this when the key is invalid, unauthorized for the referrer, or billing is off.
-    window.gm_authFailure = () => {
-      // May fire after the init callback already resolved, so also flag it and notify listeners.
-      window.__gmapsAuthFailed = true;
-      window.dispatchEvent(new Event(GOOGLE_MAPS_AUTH_FAILURE_EVENT));
-      reject(new Error(GOOGLE_MAPS_AUTH_FAILURE_MESSAGE));
-    };
     window.__gmapsInit = () => {
       if (window.google?.maps) resolve(window.google);
       else reject(new Error("Google Maps failed to initialize"));
@@ -63,6 +51,17 @@ export function loadGoogleMaps(
     document.head.appendChild(s);
   });
   return window.__gmapsPromise;
+}
+
+/** Resolves once every requested library is on `google.maps` (loads the missing ones). */
+async function withLibraries(
+  g: typeof google,
+  libraries: ReadonlyArray<"places" | "geometry" | "marker" | "routes">,
+): Promise<typeof google> {
+  const loaded = g.maps as unknown as Record<string, unknown>;
+  const missing = libraries.filter((lib) => !loaded[lib]);
+  if (missing.length) await Promise.all(missing.map((lib) => g.maps.importLibrary(lib)));
+  return g;
 }
 
 /** Haversine distance (km) — kept as fallback when no live route. Mirrors SQL. */

@@ -15,6 +15,7 @@ import {
   Shield,
   ShieldCheck,
   Trash2,
+  UserX,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,7 +25,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthRequired } from "@/components/AuthRequired";
 import { SupportTicketForm } from "@/components/SupportTicketForm";
-import { DeleteAccountSection } from "@/components/DeleteAccountSection";
 import { patchObject, removeRow, runOptimistic } from "@/lib/optimistic";
 
 const rowCls =
@@ -306,6 +306,12 @@ export function ProfileScreen({ next }: { next: string }) {
           icon={<Info className="h-4 w-4" />}
           label="About AP Mart"
         />
+        <Row
+          to="/delete-account"
+          tint="bg-secondary"
+          icon={<UserX className="h-4 w-4" />}
+          label="Delete account"
+        />
       </div>
 
       <SupportTicketForm open={supportOpen} onOpenChange={setSupportOpen} />
@@ -321,8 +327,6 @@ export function ProfileScreen({ next }: { next: string }) {
           <LogOut className="h-4 w-4" /> Sign out
         </button>
       </div>
-
-      <DeleteAccountSection />
 
       <div className="pt-1 text-center text-caption text-muted-foreground">AP Mart · v1.0</div>
     </div>

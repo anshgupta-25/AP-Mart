@@ -21,7 +21,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { describeAuthError } from "@/lib/authErrors";
 import { cn } from "@/lib/utils";
-import { publicSiteOrigin } from "@/lib/api-base";
 
 export const Route = createFileRoute("/staff-login")({
   head: () => ({ meta: [{ title: "Management Portal — AP Mart" }] }),
@@ -159,14 +158,11 @@ function StaffLoginPage() {
     navigate({ to: target });
   }
 
-  async function handleForgot() {
-    const target = email || window.prompt("Enter your email to receive a reset link") || "";
-    if (!target) return;
-    const { error } = await supabase.auth.resetPasswordForEmail(target, {
-      redirectTo: publicSiteOrigin() + "/reset-password",
+  function handleForgot() {
+    navigate({
+      to: "/forgot-password",
+      search: { ...(email ? { email } : {}), staff: true } as never,
     });
-    if (error) toast.error(error.message);
-    else toast.success("Password reset link sent — check your inbox");
   }
 
   return (

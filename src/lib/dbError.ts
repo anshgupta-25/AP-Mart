@@ -4,9 +4,7 @@
  * and logs the raw error to the console for deeper inspection.
  */
 type ErrorLike =
-  | { message?: unknown; code?: unknown; details?: unknown; hint?: unknown }
-  | null
-  | undefined;
+  { message?: unknown; code?: unknown; details?: unknown; hint?: unknown } | null | undefined;
 
 export function describeError(err: unknown, operation: string, payload?: unknown): Error {
   const error = (typeof err === "object" ? err : { message: err }) as ErrorLike;

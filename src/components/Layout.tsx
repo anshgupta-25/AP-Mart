@@ -18,6 +18,7 @@ const OWN_CHROME_PREFIXES = [
   "/superadmin",
   "/reset-password",
   "/auth",
+  "/delete-account",
 ];
 
 function PublicFooter() {

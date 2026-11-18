@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { describeAuthError } from "@/lib/authErrors";
 import { Phone as PhoneIcon, ArrowLeft, Loader2 } from "lucide-react";
 import { z } from "zod";
-import { signInWithGoogle } from "@/lib/googleAuth";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import {
   getIndianPhoneDiagnostic,
   getPhoneAuthError,
@@ -20,6 +20,8 @@ import {
   withRequestTimeout,
 } from "@/lib/phone";
 import { errorMessage } from "@/lib/utils";
+import { requestSignupCode, type SignupDetails } from "@/lib/authEmail";
+import { VerifyEmailScreen } from "@/components/auth/VerifyEmailStep";
 
 async function redirectByRole(navigate: ReturnType<typeof useNavigate>, userId: string) {
   const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
@@ -50,30 +52,13 @@ function AuthShell() {
 }
 
 function AuthPage() {
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [li, setLi] = useState({ email: "", password: "" });
   const [su, setSu] = useState({ name: "", email: "", password: "" });
+  const [pendingSignup, setPendingSignup] = useState<SignupDetails | null>(null);
   const phoneFlowRef = useRef(false);
-
-  const handleGoogle = async () => {
-    setGoogleLoading(true);
-    try {
-      const result = await signInWithGoogle("/auth/callback");
-      if (result.error) {
-        setGoogleLoading(false);
-        toast.error(result.error.message || "Google sign-in failed");
-      } else if (!result.redirected) {
-        // App: the sign-in browser has closed (deep link handles success).
-        setGoogleLoading(false);
-      }
-    } catch (err) {
-      setGoogleLoading(false);
-      toast.error(errorMessage(err, "Google sign-in failed"));
-    }
-  };
 
   useEffect(() => {
     if (user && !phoneFlowRef.current) void redirectByRole(navigate, user.id);
@@ -94,12 +79,23 @@ function AuthPage() {
 
   const onSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (su.password.length < 8) return toast.error("Password must be at least 8 characters");
+    const details: SignupDetails = {
+      email: su.email.trim().toLowerCase(),
+      password: su.password,
+      fullName: su.name.trim(),
+    };
     setLoading(true);
-    const { error } = await signUp(su.email, su.password, su.name);
+    const { exists, error } = await requestSignupCode(details);
     setLoading(false);
-    if (error) toast.error(describeAuthError(error));
-    else toast.success("Account created! Check your email to confirm.");
+    if (exists) return toast.error("An account with this email already exists. Log in instead.");
+    if (error) return toast.error(error);
+    setPendingSignup(details);
   };
+
+  if (pendingSignup) {
+    return <VerifyEmailScreen details={pendingSignup} onBack={() => setPendingSignup(null)} />;
+  }
 
   return (
     <div className="grid min-h-[80vh] lg:grid-cols-2">
@@ -183,7 +179,7 @@ function AuthPage() {
                   />
                   <Field
                     id="su-password"
-                    label="Password (min 6)"
+                    label="Password (min 8)"
                     type="password"
                     value={su.password}
                     onChange={(v) => setSu({ ...su, password: v })}
@@ -204,30 +200,7 @@ function AuthPage() {
               </div>
             </div>
 
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleGoogle}
-              disabled={loading || googleLoading}
-              className="h-11 w-full gap-2 rounded-xl"
-            >
-              {googleLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  Connecting to Google…
-                </>
-              ) : (
-                <>
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden>
-                    <path
-                      fill="#EA4335"
-                      d="M12 10.2v3.9h5.5c-.24 1.4-1.7 4.1-5.5 4.1-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.7 3.4 14.6 2.4 12 2.4 6.7 2.4 2.5 6.6 2.5 12s4.2 9.6 9.5 9.6c5.5 0 9.1-3.8 9.1-9.3 0-.6-.1-1.1-.2-1.6H12z"
-                    />
-                  </svg>
-                  Continue with Google
-                </>
-              )}
-            </Button>
+            <GoogleSignInButton />
           </div>
           <p className="mt-5 text-center text-small text-muted-foreground">
             By continuing you agree to AP Mart's terms of service.

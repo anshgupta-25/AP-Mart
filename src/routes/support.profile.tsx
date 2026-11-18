@@ -146,6 +146,8 @@ function Page() {
         </div>
       </section>
 
+      <DeleteAccountSection />
+
       <Button
         variant="secondary"
         onClick={handleSignOut}
@@ -155,8 +157,6 @@ function Page() {
         <LogOut className="h-4 w-4" />
         {signingOut ? "Signing out…" : "Log out"}
       </Button>
-
-      <DeleteAccountSection />
     </div>
   );
 }

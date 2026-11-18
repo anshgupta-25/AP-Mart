@@ -2174,7 +2174,7 @@ export type Database = {
           created_at: string
           id: string
           is_internal_note: boolean
-          sender_id: string
+          sender_id: string | null
           sender_role: string
           ticket_id: string
         }
@@ -2183,7 +2183,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_internal_note?: boolean
-          sender_id: string
+          sender_id?: string | null
           sender_role: string
           ticket_id: string
         }
@@ -2192,7 +2192,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_internal_note?: boolean
-          sender_id?: string
+          sender_id?: string | null
           sender_role?: string
           ticket_id?: string
         }
@@ -2341,7 +2341,7 @@ export type Database = {
           message_id: string | null
           mime: string | null
           ticket_id: string
-          uploaded_by: string
+          uploaded_by: string | null
         }
         Insert: {
           created_at?: string
@@ -2351,7 +2351,7 @@ export type Database = {
           message_id?: string | null
           mime?: string | null
           ticket_id: string
-          uploaded_by: string
+          uploaded_by?: string | null
         }
         Update: {
           created_at?: string
@@ -2361,7 +2361,7 @@ export type Database = {
           message_id?: string | null
           mime?: string | null
           ticket_id?: string
-          uploaded_by?: string
+          uploaded_by?: string | null
         }
         Relationships: [
           {
@@ -2565,6 +2565,7 @@ export type Database = {
         Args: never
         Returns: {
           address_line: string
+          assigned_to: string
           category: string
           city: string
           created_at: string
@@ -2573,6 +2574,7 @@ export type Database = {
           id: string
           phone: string
           pincode: string
+          resolved_by: string
           role_at_creation: string
           shop_address: string
           shop_name: string
@@ -3514,22 +3516,15 @@ export type Database = {
         }[]
       }
       support_ticket_context: { Args: { _ticket_id: string }; Returns: Json }
-      update_ticket_status:
-        | {
-            Args: {
-              _status: Database["public"]["Enums"]["ticket_status"]
-              _ticket_id: string
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              _notes?: string
-              _status: Database["public"]["Enums"]["ticket_status"]
-              _ticket_id: string
-            }
-            Returns: undefined
-          }
+      ticket_staff_name: { Args: { _user_id: string }; Returns: string }
+      update_ticket_status: {
+        Args: {
+          _notes?: string
+          _status: Database["public"]["Enums"]["ticket_status"]
+          _ticket_id: string
+        }
+        Returns: undefined
+      }
       user_owns_shop_for_order: {
         Args: { _order_id: string }
         Returns: boolean

@@ -297,6 +297,8 @@ function Page() {
           )}
         </section>
 
+        <DeleteAccountSection />
+
         <Separator />
 
         <div className="flex justify-end">
@@ -308,7 +310,6 @@ function Page() {
             <LogOut className="mr-2 h-4 w-4" /> Sign out
           </Button>
         </div>
-        <DeleteAccountSection />
       </div>
     </>
   );
