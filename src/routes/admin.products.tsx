@@ -1,8 +1,8 @@
 import { createFileRoute, useSearch } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Package, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, MoreVertical, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -43,7 +49,7 @@ import {
   loadProductCategoriesMap,
   saveProductCategories,
 } from "@/lib/productCategories";
-import { StorageImg } from "@/components/StorageImg";
+import { useStorageUrl } from "@/hooks/useStorageUrl";
 
 const searchSchema = z.object({ filter: z.string().optional(), cat: z.string().optional() });
 
@@ -80,12 +86,70 @@ function slugify(s: string) {
 }
 const LOW_STOCK = 5;
 
+/** Product photo with a clean icon fallback when there is no image or it fails to load. */
+function Thumb({ src, alt }: { src: string | null; alt: string }) {
+  const { url, failed: signFailed, retry, isRef } = useStorageUrl(src);
+  const [broken, setBroken] = useState(false);
+  const retried = useRef(false);
+  const showIcon = !src || signFailed || broken;
+  return (
+    <div className="grid h-[72px] w-[72px] shrink-0 place-items-center overflow-hidden rounded-xl bg-secondary/70">
+      {showIcon ? (
+        <Package className="h-6 w-6 text-muted-foreground/60" />
+      ) : url ? (
+        <img
+          loading="lazy"
+          decoding="async"
+          src={url}
+          alt={alt}
+          onError={() => {
+            // An expired signed storage URL gets one fresh signature before we give up.
+            if (isRef && !retried.current) {
+              retried.current = true;
+              retry();
+            } else setBroken(true);
+          }}
+          className="h-full w-full object-cover"
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function StockBadge({ stock }: { stock: number }) {
+  if (stock <= 0)
+    return (
+      <span className="rounded-full bg-tint-rose px-2.5 py-0.5 text-caption font-semibold text-[oklch(0.45_0.12_15)]">
+        Out of stock
+      </span>
+    );
+  if (stock <= LOW_STOCK)
+    return (
+      <span className="rounded-full bg-warning/25 px-2.5 py-0.5 text-caption font-semibold text-warning-foreground">
+        Low stock: {stock}
+      </span>
+    );
+  return (
+    <span className="rounded-full bg-secondary px-2.5 py-0.5 text-caption font-medium text-muted-foreground">
+      In stock: {stock}
+    </span>
+  );
+}
+
 function Page() {
   const { filter, cat } = useSearch({ from: "/admin/products" });
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
   const [confirmDel, setConfirmDel] = useState<Product | null>(null);
+  // A fresh form each time the dialog OPENS (not when it closes, which would flash an empty
+  // "Add product" form during the close animation).
+  const [formKey, setFormKey] = useState(0);
+  const openForm = (p: Product | null) => {
+    setEditing(p);
+    setFormKey((k) => k + 1);
+    setOpen(true);
+  };
   const [q, setQ] = useState("");
   const [catFilter, setCatFilter] = useState<string>(cat ?? "all");
 
@@ -150,7 +214,6 @@ function Page() {
       qc.invalidateQueries({ queryKey: ["admin-products"] });
       qc.invalidateQueries({ queryKey: ["admin-product-categories"] });
       setOpen(false);
-      setEditing(null);
     },
     onError: (e) => toast.error(e.message),
   });
@@ -168,42 +231,32 @@ function Page() {
     onError: (e) => toast.error(e.message),
   });
 
+  const lowOnly = filter === "low-stock";
   let filtered = data.filter((p) => p.name.toLowerCase().includes(q.toLowerCase()));
   if (catFilter !== "all")
     filtered = filtered.filter(
       (p) => p.category_id === catFilter || (catMap[p.id] ?? []).includes(catFilter),
     );
-  if (filter === "low-stock") filtered = filtered.filter((p) => p.stock <= LOW_STOCK);
+  if (lowOnly) filtered = filtered.filter((p) => p.stock <= LOW_STOCK);
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-4 md:px-6 md:py-6">
-      <div className="flex items-end gap-3">
-        <div className="flex-1">
-          <h1 className="large-title">Products</h1>
-          <p className="mt-1 flex items-center gap-2 text-body text-muted-foreground">
-            Catalogue and stock across the marketplace
-            {filter === "low-stock" && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-tint-rose px-2.5 py-0.5 text-caption font-semibold text-[oklch(0.45_0.12_15)]">
-                <AlertTriangle className="h-3 w-3" />
-                Low stock
-              </span>
-            )}
+      <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <h1 className="large-title">{lowOnly ? "Stock alerts" : "Products"}</h1>
+          <p className="mt-0.5 text-meta text-muted-foreground">
+            {lowOnly ? `Products with ${LOW_STOCK} or fewer units left` : "Catalogue and stock"}
           </p>
         </div>
-        <Dialog
-          open={open}
-          onOpenChange={(v) => {
-            setOpen(v);
-            if (!v) setEditing(null);
-          }}
-        >
+        <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setEditing(null)}>
+            <Button onClick={() => openForm(null)}>
               <Plus className="h-4 w-4 mr-1" />
               Add
             </Button>
           </DialogTrigger>
           <ProductDialog
+            key={formKey}
             initial={editing}
             categories={cats}
             onSave={(p) => save.mutate(p)}
@@ -212,15 +265,18 @@ function Page() {
         </Dialog>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Input
-          placeholder="Search products"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="flex-1"
-        />
+      <div className="flex flex-col gap-2.5 sm:flex-row">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search products"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="h-11 rounded-full border border-border/70 bg-card pl-10"
+          />
+        </div>
         <Select value={catFilter} onValueChange={setCatFilter}>
-          <SelectTrigger className="h-11 rounded-xl border-0 bg-secondary sm:w-56">
+          <SelectTrigger className="h-11 rounded-full border border-border/70 bg-card px-4 sm:w-56">
             <SelectValue placeholder="All categories" />
           </SelectTrigger>
           <SelectContent>
@@ -237,70 +293,72 @@ function Page() {
       {isLoading ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-36 rounded-xl shimmer" />
+            <div key={i} className="h-[104px] rounded-2xl shimmer" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((p) => (
-            <div key={p.id} className="overflow-hidden rounded-xl border border-border/70 bg-card">
-              <div className="flex gap-3.5 p-4">
-                <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-xl bg-secondary">
-                  {p.image_url ? (
-                    <StorageImg
-                      loading="lazy"
-                      decoding="async"
-                      src={p.image_url}
-                      alt={p.name}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <Package className="h-6 w-6 text-muted-foreground" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="truncate text-subtitle font-semibold">{p.name}</div>
-                  <div className="truncate text-small text-muted-foreground">
-                    {p.unit} · {p.brand ?? "—"}
+            <div
+              key={p.id}
+              className="rounded-2xl border border-border/60 bg-card p-3.5 shadow-soft"
+            >
+              <div className="flex gap-3.5">
+                <Thumb key={p.image_url ?? "none"} src={p.image_url} alt={p.name} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start gap-1">
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-subtitle font-semibold">{p.name}</div>
+                      <div className="truncate text-small text-muted-foreground">
+                        {p.unit}
+                        {p.brand ? ` · ${p.brand}` : ""}
+                      </div>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label={`Actions for ${p.name}`}
+                          className="press -mr-1.5 -mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-secondary"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onSelect={() => openForm(p)}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onSelect={() => setConfirmDel(p)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
-                  <div className="mt-1 flex items-center gap-2">
+                  <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5">
                     <span className="font-semibold">{rupees(p.price)}</span>
                     {p.mrp > p.price && (
-                      <span className="text-xs line-through text-muted-foreground">
+                      <span className="text-xs text-muted-foreground line-through">
                         {rupees(p.mrp)}
                       </span>
                     )}
-                  </div>
-                  <div
-                    className={`mt-1 text-small ${p.stock <= LOW_STOCK ? "font-semibold text-destructive" : "text-muted-foreground"}`}
-                  >
-                    Stock: {p.stock}
+                    <StockBadge stock={p.stock} />
+                    {!p.is_available && (
+                      <span className="rounded-full bg-secondary px-2.5 py-0.5 text-caption font-medium text-muted-foreground">
+                        Unavailable
+                      </span>
+                    )}
                   </div>
                 </div>
-              </div>
-              <div className="flex border-t border-border/70">
-                <button
-                  onClick={() => {
-                    setEditing(p);
-                    setOpen(true);
-                  }}
-                  className="press flex flex-1 items-center justify-center gap-1.5 py-3 text-body font-medium hover:bg-secondary/60"
-                >
-                  <Pencil className="h-4 w-4" />
-                  Edit
-                </button>
-                <button
-                  onClick={() => setConfirmDel(p)}
-                  className="press flex flex-1 items-center justify-center gap-1.5 border-l border-border/70 py-3 text-body font-medium text-destructive hover:bg-secondary/60"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
               </div>
             </div>
           ))}
           {filtered.length === 0 && (
-            <div className="col-span-full rounded-xl border border-border/70 bg-card px-6 py-10 text-center">
+            <div className="col-span-full rounded-2xl border border-border/60 bg-card px-6 py-12 text-center">
               <div className="text-subtitle font-semibold">No products found</div>
               <p className="mt-0.5 text-meta text-muted-foreground">
                 Try a different search or category.
