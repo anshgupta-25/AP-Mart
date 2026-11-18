@@ -142,6 +142,14 @@ function Page() {
   const [editing, setEditing] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
   const [confirmDel, setConfirmDel] = useState<Product | null>(null);
+  // A fresh form each time the dialog OPENS (not when it closes, which would flash an empty
+  // "Add product" form during the close animation).
+  const [formKey, setFormKey] = useState(0);
+  const openForm = (p: Product | null) => {
+    setEditing(p);
+    setFormKey((k) => k + 1);
+    setOpen(true);
+  };
   const [q, setQ] = useState("");
   const [catFilter, setCatFilter] = useState<string>(cat ?? "all");
 
@@ -206,7 +214,6 @@ function Page() {
       qc.invalidateQueries({ queryKey: ["admin-products"] });
       qc.invalidateQueries({ queryKey: ["admin-product-categories"] });
       setOpen(false);
-      setEditing(null);
     },
     onError: (e) => toast.error(e.message),
   });
@@ -241,21 +248,15 @@ function Page() {
             {lowOnly ? `Products with ${LOW_STOCK} or fewer units left` : "Catalogue and stock"}
           </p>
         </div>
-        <Dialog
-          open={open}
-          onOpenChange={(v) => {
-            setOpen(v);
-            if (!v) setEditing(null);
-          }}
-        >
+        <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setEditing(null)}>
+            <Button onClick={() => openForm(null)}>
               <Plus className="h-4 w-4 mr-1" />
               Add
             </Button>
           </DialogTrigger>
           <ProductDialog
-            key={editing?.id ?? "new"}
+            key={formKey}
             initial={editing}
             categories={cats}
             onSave={(p) => save.mutate(p)}
@@ -324,12 +325,7 @@ function Page() {
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onSelect={() => {
-                            setEditing(p);
-                            setOpen(true);
-                          }}
-                        >
+                        <DropdownMenuItem onSelect={() => openForm(p)}>
                           <Pencil className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
