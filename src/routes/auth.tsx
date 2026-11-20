@@ -270,6 +270,8 @@ function PhoneOtpForm({
   const [resendIn, setResendIn] = useState(0);
   const [form, setForm] = useState({ fullName: "", countryCode: "+91", phone: "", email: "" });
   const [otp, setOtp] = useState("");
+  const [otpLength, setOtpLength] = useState(6);
+  const { sendPhoneOtp, verifyPhoneOtp } = useAuth();
   const [requestedPhone, setRequestedPhone] = useState("");
   const [profile, setProfile] = useState({ fullName: "", email: "", address: "" });
   const timerRef = useRef<number | null>(null);
@@ -319,29 +321,20 @@ function PhoneOtpForm({
     console.info("[Phone OTP] normalized send number", getIndianPhoneDiagnostic(normalizedPhone));
     setOtp("");
     try {
-      const { error } = await withRequestTimeout(
-        supabase.auth.signInWithOtp({
-          phone: normalizedPhone,
-          options: {
-            shouldCreateUser: true,
-            data: {
-              full_name: form.fullName.trim(),
-              phone: normalizedPhone,
-              ...(form.email ? { email: form.email.trim() } : {}),
-            },
-          },
-        }),
-        "send the OTP",
-      );
-      if (error) {
-        showError(getPhoneAuthError(error, "send the OTP"));
+      const res = await withRequestTimeout(sendPhoneOtp(normalizedPhone), "send the OTP");
+      if (res.error) {
+        if (res.retryAfter) setResendIn(res.retryAfter);
+        showError(getPhoneAuthError(res.error, "send the OTP"));
         return;
       }
       onOtpSent();
       setRequestedPhone(normalizedPhone);
-      toast.success(resend ? "New OTP request accepted" : "OTP request accepted");
+      setOtpLength(res.otpLength ?? 6);
+      toast.success(
+        `${resend ? "New code" : "Code"} sent by ${res.via ?? "SMS"} to ${res.maskedPhone ?? "your phone"}`,
+      );
       setStep("verify");
-      setResendIn(30);
+      setResendIn(res.resendIn ?? 30);
     } catch (error) {
       showError(getPhoneAuthError(error, "send the OTP"));
     } finally {
@@ -350,8 +343,8 @@ function PhoneOtpForm({
   };
 
   const verify = async () => {
-    if (!/^\d{6}$/.test(otp)) {
-      showError("Enter the six-digit OTP");
+    if (otp.length !== otpLength || !/^\d+$/.test(otp)) {
+      showError(`Enter the ${otpLength}-digit OTP`);
       return;
     }
     if (!requestedPhone) {
@@ -365,18 +358,22 @@ function PhoneOtpForm({
         "[Phone OTP] normalized verification number",
         getIndianPhoneDiagnostic(requestedPhone),
       );
-      const { data, error } = await withRequestTimeout(
-        supabase.auth.verifyOtp({ phone: requestedPhone, token: otp, type: "sms" }),
+      const result = await withRequestTimeout(
+        verifyPhoneOtp(requestedPhone, otp, true, {
+          fullName: form.fullName.trim() || undefined,
+          email: form.email.trim() || undefined,
+        }),
         "verify the OTP",
       );
-      if (error || !data.user) {
+      if (result.error || !result.userId) {
         showError(
-          error
-            ? getPhoneAuthError(error, "verify the OTP")
+          result.error
+            ? getPhoneAuthError(result.error, "verify the OTP")
             : "The OTP could not be verified. Request a new code and try again.",
         );
         return;
       }
+      const data = { user: { id: result.userId } };
 
       verified = true;
       setStep("complete");
@@ -479,7 +476,7 @@ function PhoneOtpForm({
           <ArrowLeft className="h-3 w-3" /> Change number
         </button>
         <div className="text-sm">
-          We requested a code for <span className="font-bold">{requestedPhone}</span>
+          We sent a code to <span className="font-bold">{requestedPhone}</span>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="otp">OTP code</Label>
@@ -487,10 +484,10 @@ function PhoneOtpForm({
             id="otp"
             inputMode="numeric"
             autoComplete="one-time-code"
-            maxLength={6}
+            maxLength={otpLength}
             value={otp}
             onChange={(e) => {
-              setOtp(e.target.value.replace(/\D/g, "").slice(0, 6));
+              setOtp(e.target.value.replace(/\D/g, "").slice(0, otpLength));
               setErrorMessage("");
             }}
             className="h-11 rounded-xl text-center text-lg font-semibold tracking-[0.5em]"
