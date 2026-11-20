@@ -7,6 +7,7 @@ import { MapPin, Plus, Wallet, CreditCard, Tag, Zap, Truck, Store } from "lucide
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
+import { useShopLock } from "@/hooks/useShopLock";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,7 +33,8 @@ export const Route = createFileRoute("/checkout")({
 
 function CheckoutPage() {
   const { user } = useAuth();
-  const { items, subtotal, clear } = useCart();
+  const { items, subtotal, clear, currentShopId } = useCart();
+  const { locked: sendAllToShop } = useShopLock();
   const navigate = useNavigate();
   const createRzpOrder = useServerFn(createRazorpayOrder);
   const verifyRzp = useServerFn(verifyRazorpayPayment);
@@ -311,12 +313,25 @@ function CheckoutPage() {
       _lng: lng,
       _pincode: addressWithCoords.pincode ?? null,
       _delivery_type: deliveryType,
+      // "Send all to shop": source every item from the selected shop.
+      ...(sendAllToShop && currentShopId ? { _lock_shop_id: currentShopId } : {}),
     });
 
     if (error) {
       setPlacing(false);
       console.error("place_multi_shop_order error:", error);
-      if (String(error.message || "").includes("no_coverage")) {
+      const msg = String(error.message || "");
+      if (msg.includes("shop_lock_unavailable")) {
+        return toast.error(
+          "The selected shop can't supply every item right now. Choose another shop or turn off “Send all to shop”.",
+        );
+      }
+      if (msg.includes("_lock_shop_id") || /could not find the function/i.test(msg)) {
+        return toast.error(
+          "Sending all items to one shop isn't available yet. Turn off “Send all to shop” to place your order.",
+        );
+      }
+      if (msg.includes("no_coverage")) {
         return toast.error(
           "No combination of shops in your area can supply every item in your cart. Please remove unavailable items or change address.",
         );

@@ -3304,6 +3304,7 @@ export type Database = {
           _delivery_type?: string
           _lat?: number
           _lng?: number
+          _lock_shop_id?: string
           _payment_method: string
           _pincode?: string
         }

@@ -10,7 +10,10 @@ import {
   Check,
   ChevronRight,
   Sparkles,
+  Send,
+  CheckCircle2,
 } from "lucide-react";
+import { useShopLock } from "@/hooks/useShopLock";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
@@ -51,6 +54,7 @@ export function CartShopSelector({
   const { pincode, lat: ctxLat, lng: ctxLng } = useDeliveryContext();
   const [open, setOpen] = useState(false);
   const [autoAssigned, setAutoAssigned] = useState(false);
+  const { locked, setLocked } = useShopLock();
 
   const lat = deliveryLat ?? ctxLat ?? null;
   const lng = deliveryLng ?? ctxLng ?? null;
@@ -108,7 +112,9 @@ export function CartShopSelector({
     setAutoAssigned(false);
     await changeShop(s.shop_id);
     setOpen(false);
-    toast.success(`Now ordering from ${s.shop_name}`);
+    toast.success(
+      locked ? `All items will now be sent to ${s.shop_name}` : `Now ordering from ${s.shop_name}`,
+    );
   };
 
   if (!user || items.length === 0) return null;
@@ -120,6 +126,22 @@ export function CartShopSelector({
   const displayEta = active?.delivery_minutes ?? 15;
 
   const noShops = !shopsQuery.isLoading && shops.length === 0;
+  // The lock only applies while the selected shop can supply the whole cart.
+  const lockActive = locked && !!active;
+
+  const toggleLock = () => {
+    if (lockActive) {
+      setLocked(false);
+      toast("Items may be split across nearby shops for faster delivery.");
+      return;
+    }
+    if (!active) {
+      toast.error("This shop can't supply every item in your cart. Select another shop first.");
+      return;
+    }
+    setLocked(true);
+    toast.success(`All items will be sent to ${active.shop_name}`);
+  };
 
   return (
     <>
@@ -131,7 +153,12 @@ export function CartShopSelector({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="eyebrow">Delivering from</span>
-              {autoAssigned && currentShopId && (
+              {lockActive && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-caption font-medium text-primary-foreground">
+                  <Check className="h-2.5 w-2.5" /> All items from this shop
+                </span>
+              )}
+              {autoAssigned && currentShopId && !lockActive && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2 py-0.5 text-caption font-medium text-primary-ink">
                   <Sparkles className="h-2.5 w-2.5" /> Auto selected
                 </span>
@@ -162,15 +189,49 @@ export function CartShopSelector({
               </>
             )}
           </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setOpen(true)}
-            className="h-8 shrink-0 rounded-full px-3"
-            disabled={shops.length === 0}
-          >
-            Change shop <ChevronRight className="h-3 w-3 ml-0.5" />
-          </Button>
+          <div className="flex w-[9.5rem] shrink-0 flex-col gap-2 sm:w-44">
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              disabled={shops.length === 0}
+              className="flex h-9 w-full items-center gap-1.5 rounded-full border border-primary/60 bg-card px-3 text-left text-meta font-semibold text-primary-ink transition-colors hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+            >
+              <Store className="h-4 w-4 shrink-0" />
+              <span className="flex-1 truncate">Select shop</span>
+              <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+            </button>
+            <button
+              type="button"
+              onClick={toggleLock}
+              aria-pressed={lockActive}
+              disabled={noShops || shopsQuery.isLoading || !currentShopId}
+              title={
+                lockActive
+                  ? "All items will be sent to this shop. Tap to allow splitting across shops."
+                  : "Send every item in your cart to this shop"
+              }
+              className={`flex w-full items-center gap-1.5 rounded-2xl border px-3 py-1.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 ${
+                lockActive
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-primary/60 bg-card text-primary-ink hover:bg-primary-soft"
+              }`}
+            >
+              {lockActive ? (
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+              ) : (
+                <Send className="h-4 w-4 shrink-0" />
+              )}
+              <span className="min-w-0 flex-1 leading-tight">
+                <span className="block truncate text-meta font-semibold">All orders</span>
+                <span
+                  className={`block truncate text-caption ${lockActive ? "text-primary-foreground/85" : "text-muted-foreground"}`}
+                >
+                  {lockActive ? "Sending all here" : "Send all to shop"}
+                </span>
+              </span>
+              <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+            </button>
+          </div>
         </div>
       </div>
 
