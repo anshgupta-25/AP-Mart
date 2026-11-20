@@ -11,7 +11,7 @@ import {
   withRequestTimeout,
 } from "@/lib/phone";
 
-/** Normalises an Indian mobile number to E.164, which Supabase phone auth requires. */
+/** Normalises an Indian mobile number to E.164 (+91XXXXXXXXXX). */
 export const toE164 = normalizeIndianPhone;
 
 export function PhoneOtpForm({
@@ -29,6 +29,7 @@ export function PhoneOtpForm({
   const [busy, setBusy] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [cooldown, setCooldown] = useState(0);
+  const [otpLength, setOtpLength] = useState(6);
   const busyRef = useRef(false);
 
   useEffect(() => {
@@ -53,14 +54,16 @@ export function PhoneOtpForm({
         ...getIndianPhoneDiagnostic(e164),
         valid: true,
       });
-      const { error } = await withRequestTimeout(sendPhoneOtp(e164), "send the OTP");
-      if (error) throw error;
+      const res = await withRequestTimeout(sendPhoneOtp(e164), "send the OTP");
+      if (res.error) {
+        if (res.retryAfter) setCooldown(res.retryAfter);
+        throw res.error;
+      }
       setRequestedPhone(e164);
       setSent(true);
-      setCooldown(30);
-      toast.success(
-        "OTP request accepted. SMS delivery depends on Supabase provider configuration.",
-      );
+      setOtpLength(res.otpLength ?? 6);
+      setCooldown(res.resendIn ?? 30);
+      toast.success(`Code sent by ${res.via ?? "SMS"} to ${res.maskedPhone ?? "your phone"}`);
     } catch (error) {
       const message = getPhoneAuthError(error, "send the OTP");
       setErrorMessage(message);
@@ -76,9 +79,9 @@ export function PhoneOtpForm({
       setErrorMessage("Request a new OTP before verifying.");
       return toast.error("Request a new OTP before verifying.");
     }
-    if (!/^\d{6}$/.test(code)) {
-      setErrorMessage("Enter the six-digit code.");
-      return toast.error("Enter the six-digit code.");
+    if (code.length !== otpLength || !/^\d+$/.test(code)) {
+      setErrorMessage(`Enter the ${otpLength}-digit code.`);
+      return toast.error(`Enter the ${otpLength}-digit code.`);
     }
     if (busyRef.current) return;
     busyRef.current = true;
@@ -133,11 +136,11 @@ export function PhoneOtpForm({
           <Input
             inputMode="numeric"
             autoComplete="one-time-code"
-            maxLength={6}
-            placeholder="Enter 6-digit code"
+            maxLength={otpLength}
+            placeholder={`Enter ${otpLength}-digit code`}
             value={code}
             onChange={(e) => {
-              setCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+              setCode(e.target.value.replace(/\D/g, "").slice(0, otpLength));
               setErrorMessage("");
             }}
             className="h-11 pl-11 font-semibold tracking-[0.4em]"

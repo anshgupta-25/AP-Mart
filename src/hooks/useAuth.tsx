@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeIndianPhone } from "@/lib/phone";
+import { requestPhoneOtp, verifyPhoneOtpCode } from "@/lib/phoneOtp.functions";
 import { publicSiteOrigin } from "@/lib/api-base";
 import { disablePush } from "@/integrations/firebase/messaging";
 
@@ -83,12 +84,21 @@ interface AuthContextValue {
     phone?: string,
     extra?: { state?: string; city?: string; pincode?: string },
   ) => Promise<{ error: Error | null }>;
-  sendPhoneOtp: (phone: string) => Promise<{ error: Error | null }>;
+  sendPhoneOtp: (phone: string) => Promise<{
+    error: Error | null;
+    retryAfter?: number;
+    otpLength?: number;
+    resendIn?: number;
+    maskedPhone?: string;
+    /** Human-readable delivery channel, e.g. "SMS" or "WhatsApp". */
+    via?: string;
+  }>;
   verifyPhoneOtp: (
     phone: string,
     code: string,
     remember?: boolean,
-  ) => Promise<{ error: Error | null }>;
+    profile?: { fullName?: string; email?: string },
+  ) => Promise<{ error: Error | null; userId?: string; isNewUser?: boolean }>;
   signOut: () => Promise<void>;
 }
 
@@ -217,35 +227,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const sendPhoneOtp = async (phone: string) => {
+  // Phone OTP goes through our server + APITXT (never Supabase phone auth).
+  const sendPhoneOtp: AuthContextValue["sendPhoneOtp"] = async (phone) => {
     const normalizedPhone = normalizeIndianPhone(phone);
     if (!normalizedPhone) {
       return { error: new Error("Enter a valid 10-digit Indian mobile number") };
     }
-
-    const { error } = await supabase.auth.signInWithOtp({
-      phone: normalizedPhone,
-      options: { shouldCreateUser: true },
-    });
-    return { error };
+    try {
+      const res = await requestPhoneOtp({ data: { phone: normalizedPhone } });
+      if (!res.ok) return { error: new Error(res.message), retryAfter: res.retryAfter };
+      return {
+        error: null,
+        otpLength: res.otpLength,
+        resendIn: res.resendIn,
+        maskedPhone: res.maskedPhone,
+        via:
+          res.channel === "whatsapp" ? "WhatsApp" : res.channel === "voice" ? "voice call" : "SMS",
+      };
+    } catch (error) {
+      console.error("[Phone OTP] send request failed", error);
+      return {
+        error: new Error("Could not reach the server. Check your connection and try again."),
+      };
+    }
   };
 
-  const verifyPhoneOtp = async (phone: string, code: string, remember = true) => {
+  const verifyPhoneOtp: AuthContextValue["verifyPhoneOtp"] = async (
+    phone,
+    code,
+    remember = true,
+    profile,
+  ) => {
     const normalizedPhone = normalizeIndianPhone(phone);
     if (!normalizedPhone) {
       return { error: new Error("Enter a valid 10-digit Indian mobile number") };
     }
-    if (!/^\d{6}$/.test(code)) {
-      return { error: new Error("Enter the six-digit OTP") };
+    if (!/^\d{4,8}$/.test(code)) {
+      return { error: new Error("Enter the code sent to your phone") };
     }
 
+    let res: Awaited<ReturnType<typeof verifyPhoneOtpCode>>;
+    try {
+      res = await verifyPhoneOtpCode({
+        data: { phone: normalizedPhone, code, fullName: profile?.fullName, email: profile?.email },
+      });
+    } catch (error) {
+      console.error("[Phone OTP] verify request failed", error);
+      return {
+        error: new Error("Could not reach the server. Check your connection and try again."),
+      };
+    }
+    if (!res.ok) return { error: new Error(res.message) };
+
     setRememberMe(remember);
-    const { error } = await supabase.auth.verifyOtp({
-      phone: normalizedPhone,
-      token: code,
-      type: "sms",
+    const { data, error } = await supabase.auth.setSession({
+      access_token: res.accessToken,
+      refresh_token: res.refreshToken,
     });
-    return { error };
+    if (error || !data.user) {
+      return { error: error ?? new Error("Sign-in could not be completed. Please try again.") };
+    }
+    return { error: null, userId: data.user.id, isNewUser: res.isNewUser };
   };
 
   const signOut = async () => {
