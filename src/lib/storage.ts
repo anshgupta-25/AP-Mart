@@ -1,5 +1,23 @@
 import { supabase } from "@/integrations/supabase/client";
 import { describeError } from "@/lib/dbError";
+import { removeImageObject, uploadImageObject } from "@/lib/storage.functions";
+
+/** Buckets whose writes go through the server (role + shop ownership enforced there). */
+const SERVER_UPLOAD_BUCKETS: ReadonlySet<string> = new Set([
+  "products",
+  "categories",
+  "offers",
+  "shop-collections",
+]);
+
+async function toBase64(file: Blob): Promise<string> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary);
+}
 
 /**
  * Centralized Supabase Storage service.
@@ -259,28 +277,43 @@ export async function uploadFile(opts: UploadOptions): Promise<StoredObject> {
     if (url) return { ...known, url };
   }
 
-  const path = `${folder}/${crypto.randomUUID()}.${extensionFor(file)}`;
-  let lastError = null;
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    const { error } = await supabase.storage.from(bucket).upload(path, file, {
-      cacheControl: "31536000",
-      upsert: false, // never overwrite
-      contentType: file.type,
-    });
-    if (!error) {
-      lastError = null;
-      break;
+  let path = `${folder}/${crypto.randomUUID()}.${extensionFor(file)}`;
+  if (SERVER_UPLOAD_BUCKETS.has(bucket)) {
+    // Image buckets: the server checks role/shop ownership and writes the file.
+    try {
+      const res = await uploadImageObject({
+        data: { bucket, contentType: file.type, data: await toBase64(file), folder },
+      });
+      path = res.path;
+    } catch (error) {
+      console.error(`[storage.${bucket}.upload] failed`, error);
+      throw new Error(
+        error instanceof Error && error.message ? error.message : `${file.name}: upload failed`,
+      );
     }
-    lastError = error;
-    if (!isTransient(error) || attempt === retries) break;
-    await new Promise((r) => setTimeout(r, 400 * 2 ** attempt));
-  }
-  if (lastError) {
-    throw describeError(lastError, `storage.${bucket}.upload`, {
-      path,
-      type: file.type,
-      size: file.size,
-    });
+  } else {
+    let lastError = null;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      const { error } = await supabase.storage.from(bucket).upload(path, file, {
+        cacheControl: "31536000",
+        upsert: false, // never overwrite
+        contentType: file.type,
+      });
+      if (!error) {
+        lastError = null;
+        break;
+      }
+      lastError = error;
+      if (!isTransient(error) || attempt === retries) break;
+      await new Promise((r) => setTimeout(r, 400 * 2 ** attempt));
+    }
+    if (lastError) {
+      throw describeError(lastError, `storage.${bucket}.upload`, {
+        path,
+        type: file.type,
+        size: file.size,
+      });
+    }
   }
 
   const ref = toStorageRef(bucket, path);
@@ -343,8 +376,16 @@ export async function removeUploadedObject(ref: string): Promise<boolean> {
   if (!ownedThisSession.has(ref)) return false;
   const parsed = parseStorageRef(ref);
   if (!parsed) return false;
-  const { error } = await supabase.storage.from(parsed.bucket).remove([parsed.path]);
-  if (error) return false;
+  if (SERVER_UPLOAD_BUCKETS.has(parsed.bucket)) {
+    try {
+      await removeImageObject({ data: { bucket: parsed.bucket, path: parsed.path } });
+    } catch {
+      return false;
+    }
+  } else {
+    const { error } = await supabase.storage.from(parsed.bucket).remove([parsed.path]);
+    if (error) return false;
+  }
   ownedThisSession.delete(ref);
   invalidateStorageUrl(ref);
   for (const [k, v] of sessionUploads) if (v.ref === ref) sessionUploads.delete(k);
